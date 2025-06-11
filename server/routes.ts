@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertOrderSchema, insertContactMessageSchema } from "@shared/schema";
+import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Exchange rates (in a real app, these would come from an API)

@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate } from "@shared/schema";
 
 export interface IStorage {
   // User methods
@@ -15,23 +15,42 @@ export interface IStorage {
   // Contact message methods
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
   getAllContactMessages(): Promise<ContactMessage[]>;
+  
+  // Exchange rate methods
+  getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined>;
+  getAllExchangeRates(): Promise<ExchangeRate[]>;
+  updateExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private orders: Map<string, Order>;
   private contactMessages: Map<number, ContactMessage>;
+  private exchangeRates: Map<string, ExchangeRate>;
   private currentUserId: number;
   private currentOrderId: number;
   private currentMessageId: number;
+  private currentRateId: number;
 
   constructor() {
     this.users = new Map();
     this.orders = new Map();
     this.contactMessages = new Map();
+    this.exchangeRates = new Map();
     this.currentUserId = 1;
     this.currentOrderId = 1;
     this.currentMessageId = 1;
+    this.currentRateId = 1;
+    
+    // Initialize default admin user
+    const adminUser: User = {
+      id: 1,
+      username: "admin",
+      password: "admin123",
+      role: "admin"
+    };
+    this.users.set(1, adminUser);
+    this.currentUserId = 2;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -46,7 +65,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { ...insertUser, id, role: "user" };
     this.users.set(id, user);
     return user;
   }
@@ -115,6 +134,39 @@ export class MemStorage implements IStorage {
 
   async getAllContactMessages(): Promise<ContactMessage[]> {
     return Array.from(this.contactMessages.values());
+  }
+
+  async getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined> {
+    const key = `${from}-${to}`;
+    return this.exchangeRates.get(key);
+  }
+
+  async getAllExchangeRates(): Promise<ExchangeRate[]> {
+    return Array.from(this.exchangeRates.values());
+  }
+
+  async updateExchangeRate(insertRate: InsertExchangeRate): Promise<ExchangeRate> {
+    const key = `${insertRate.fromCurrency}-${insertRate.toCurrency}`;
+    const existing = this.exchangeRates.get(key);
+    
+    if (existing) {
+      const updatedRate: ExchangeRate = {
+        ...existing,
+        rate: insertRate.rate,
+        updatedAt: new Date(),
+      };
+      this.exchangeRates.set(key, updatedRate);
+      return updatedRate;
+    } else {
+      const id = this.currentRateId++;
+      const newRate: ExchangeRate = {
+        id,
+        ...insertRate,
+        updatedAt: new Date(),
+      };
+      this.exchangeRates.set(key, newRate);
+      return newRate;
+    }
   }
 }
 

@@ -46,11 +46,29 @@ export type Order = typeof orders.$inferSelect;
 export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
 export type ContactMessage = typeof contactMessages.$inferSelect;
 
+// Exchange rates schema for admin management
+export const exchangeRates = pgTable("exchange_rates", {
+  id: serial("id").primaryKey(),
+  fromCurrency: text("from_currency").notNull(),
+  toCurrency: text("to_currency").notNull(),
+  rate: decimal("rate", { precision: 10, scale: 6 }).notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertExchangeRateSchema = createInsertSchema(exchangeRates).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertExchangeRate = z.infer<typeof insertExchangeRateSchema>;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;
+
 // Users schema for existing setup
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").notNull().default("user"), // user, admin
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
