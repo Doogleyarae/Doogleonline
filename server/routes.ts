@@ -118,6 +118,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all contact messages (admin only)
+  app.get("/api/contact", async (req, res) => {
+    try {
+      const messages = await storage.getAllContactMessages();
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get messages" });
+    }
+  });
+
+  // Admin login
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (username === "admin" && password === "admin123") {
+        res.json({ success: true, token: "admin-token-123" });
+      } else {
+        res.status(401).json({ success: false, message: "Invalid credentials" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Update exchange rate (admin only)
+  app.post("/api/admin/exchange-rates", async (req, res) => {
+    try {
+      const validatedData = insertExchangeRateSchema.parse(req.body);
+      const rate = await storage.updateExchangeRate(validatedData);
+      
+      // Also update the in-memory exchange rates
+      if (!exchangeRates[validatedData.fromCurrency]) {
+        exchangeRates[validatedData.fromCurrency] = {};
+      }
+      exchangeRates[validatedData.fromCurrency][validatedData.toCurrency] = parseFloat(validatedData.rate);
+      
+      res.json(rate);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid rate data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update exchange rate" });
+    }
+  });
+
+  // Get all exchange rates (admin only)
+  app.get("/api/admin/exchange-rates", async (req, res) => {
+    try {
+      const rates = await storage.getAllExchangeRates();
+      res.json(rates);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get exchange rates" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

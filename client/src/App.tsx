@@ -10,6 +10,8 @@ import Exchange from "@/pages/exchange";
 import Confirmation from "@/pages/confirmation";
 import TrackOrder from "@/pages/track-order";
 import Contact from "@/pages/contact";
+import AdminLogin from "@/pages/admin-login";
+import AdminDashboard from "@/pages/admin-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +22,8 @@ function Router() {
       <Route path="/confirmation" component={Confirmation} />
       <Route path="/track" component={TrackOrder} />
       <Route path="/contact" component={Contact} />
+      <Route path="/admin" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
