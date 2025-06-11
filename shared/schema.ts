@@ -1,0 +1,62 @@
+import { pgTable, text, serial, timestamp, decimal, integer } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  orderId: text("order_id").notNull().unique(),
+  fullName: text("full_name").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  walletAddress: text("wallet_address").notNull(),
+  sendMethod: text("send_method").notNull(),
+  receiveMethod: text("receive_method").notNull(),
+  sendAmount: decimal("send_amount", { precision: 10, scale: 2 }).notNull(),
+  receiveAmount: decimal("receive_amount", { precision: 10, scale: 2 }).notNull(),
+  exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending, processing, completed, cancelled
+  paymentWallet: text("payment_wallet").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const contactMessages = pgTable("contact_messages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  orderId: true,
+  paymentWallet: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertContactMessageSchema = createInsertSchema(contactMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type Order = typeof orders.$inferSelect;
+export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
+export type ContactMessage = typeof contactMessages.$inferSelect;
+
+// Users schema for existing setup
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
