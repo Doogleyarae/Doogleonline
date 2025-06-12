@@ -167,12 +167,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertExchangeRateSchema.parse(req.body);
       const rate = await storage.updateExchangeRate(validatedData);
       
-      // Also update the in-memory exchange rates
-      if (!exchangeRates[validatedData.fromCurrency]) {
-        exchangeRates[validatedData.fromCurrency] = {};
-      }
-      exchangeRates[validatedData.fromCurrency][validatedData.toCurrency] = parseFloat(validatedData.rate);
-      
       res.json(rate);
     } catch (error) {
       if (error instanceof z.ZodError) {
