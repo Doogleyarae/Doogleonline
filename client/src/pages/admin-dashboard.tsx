@@ -890,6 +890,86 @@ export default function AdminDashboard() {
               {/* Currency-Specific Limits Management */}
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-gray-900">Currency-Specific Limits</h3>
+                
+                {/* Quick Set Currency Limits Form */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-lg mb-3 text-blue-900">Set Individual Currency Pair Limits</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label htmlFor="quickFromCurrency">From Currency (Optional)</Label>
+                      <Select value={limitFromCurrency} onValueChange={setLimitFromCurrency}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select from currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethods.map((method) => (
+                            <SelectItem key={method.value} value={method.value}>
+                              {method.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="quickToCurrency">To Currency</Label>
+                      <Select value={limitToCurrency} onValueChange={setLimitToCurrency}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select to currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethods
+                            .filter(method => method.value !== limitFromCurrency)
+                            .map((method) => (
+                            <SelectItem key={method.value} value={method.value}>
+                              {method.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="quickMinAmount">Min Amount ($)</Label>
+                      <Input
+                        id="quickMinAmount"
+                        type="number"
+                        value={limitMinAmount}
+                        onChange={(e) => setLimitMinAmount(e.target.value)}
+                        placeholder="5"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="quickMaxAmount">Max Amount ($)</Label>
+                      <Input
+                        id="quickMaxAmount"
+                        type="number"
+                        value={limitMaxAmount}
+                        onChange={(e) => setLimitMaxAmount(e.target.value)}
+                        placeholder="10000"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      if (limitFromCurrency && limitToCurrency && limitMinAmount && limitMaxAmount) {
+                        updateCurrencyLimitMutation.mutate({
+                          fromCurrency: limitFromCurrency,
+                          toCurrency: limitToCurrency,
+                          minAmount: limitMinAmount,
+                          maxAmount: limitMaxAmount,
+                        });
+                      }
+                    }}
+                    disabled={!limitFromCurrency || !limitToCurrency || !limitMinAmount || !limitMaxAmount || updateCurrencyLimitMutation.isPending}
+                    className="mt-4"
+                  >
+                    {updateCurrencyLimitMutation.isPending ? "Setting Limit..." : "Set Currency Limit"}
+                  </Button>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {paymentMethods.map((fromMethod) => (
                     <div key={fromMethod.value} className="border rounded-lg p-4">
