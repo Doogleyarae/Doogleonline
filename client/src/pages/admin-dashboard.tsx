@@ -387,6 +387,175 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
 
+        {/* Order History Management */}
+        <TabsContent value="history" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <History className="w-5 h-5 mr-2" />
+                  Order History
+                </div>
+                <Button onClick={exportToCSV} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="search">Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="search"
+                      placeholder="Order ID, Name, Phone..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="status-filter">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="date-filter">Date Range</Label>
+                  <Select value={dateRange} onValueChange={setDateRange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">Last 7 Days</SelectItem>
+                      <SelectItem value="month">Last 30 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchTerm("");
+                      setStatusFilter("all");
+                      setDateRange("all");
+                    }}
+                    className="w-full"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+
+              {/* Results Summary */}
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>
+                  Showing {filteredOrders.length} of {orders.length} orders
+                </span>
+                <span>
+                  Total value: ${filteredOrders.reduce((sum, order) => sum + parseFloat(order.sendAmount), 0).toFixed(2)}
+                </span>
+              </div>
+
+              {/* Orders Table */}
+              {ordersLoading ? (
+                <div className="text-center py-8">Loading orders...</div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No orders found matching your criteria
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>From Method</TableHead>
+                        <TableHead>To Method</TableHead>
+                        <TableHead>Send Amount</TableHead>
+                        <TableHead>Receive Amount</TableHead>
+                        <TableHead>Rate</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Updated</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrders.map((order) => (
+                        <TableRow key={order.orderId} className="hover:bg-gray-50">
+                          <TableCell className="font-medium font-mono text-sm">
+                            {order.orderId}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {order.fullName}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {order.phoneNumber}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {order.sendMethod.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {order.receiveMethod.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            ${parseFloat(order.sendAmount).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {formatCurrency(order.receiveAmount, order.receiveMethod)}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {parseFloat(order.exchangeRate).toFixed(6)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(order.status)}>
+                              <div className="flex items-center">
+                                {getStatusIcon(order.status)}
+                                <span className="ml-1 capitalize">{order.status}</span>
+                              </div>
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {formatDate(order.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {formatDate(order.updatedAt)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Exchange Rates */}
         <TabsContent value="rates" className="space-y-6">
           <Card>
