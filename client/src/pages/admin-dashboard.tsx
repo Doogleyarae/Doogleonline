@@ -558,11 +558,12 @@ export default function AdminDashboard() {
 
         {/* Exchange Rates */}
         <TabsContent value="rates" className="space-y-6">
+          {/* Individual Rate Update */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <TrendingUp className="w-5 h-5 mr-2" />
-                Update Exchange Rates
+                Update Individual Exchange Rate
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -617,6 +618,149 @@ export default function AdminDashboard() {
                     className="w-full"
                   >
                     {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Bulk Rate Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Rate Management
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      paymentMethods.forEach(method => {
+                        updateRateMutation.mutate({
+                          fromCurrency: method.value,
+                          toCurrency: "usd",
+                          rate: "1"
+                        });
+                      });
+                    }}
+                  >
+                    Set All to 1:1
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {paymentMethods.map((fromMethod) => (
+                  <div key={fromMethod.value} className="space-y-3">
+                    <h4 className="font-semibold text-lg capitalize flex items-center">
+                      {fromMethod.label} Exchange Rates
+                    </h4>
+                    <div className="space-y-2">
+                      {paymentMethods
+                        .filter(toMethod => toMethod.value !== fromMethod.value)
+                        .map((toMethod) => (
+                          <div key={`${fromMethod.value}-${toMethod.value}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm font-medium">
+                                {fromMethod.label} → {toMethod.label}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-600 font-mono">
+                                1:1
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setFromCurrency(fromMethod.value);
+                                  setToCurrency(toMethod.value);
+                                  setExchangeRate("1");
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold text-blue-900 mb-2">Quick Actions</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const updates = [
+                        { from: "zaad", to: "usd", rate: "0.0018" },
+                        { from: "sahal", to: "usd", rate: "0.0017" },
+                        { from: "premier", to: "usd", rate: "1" },
+                        { from: "trc20", to: "usd", rate: "1" }
+                      ];
+                      updates.forEach(update => {
+                        updateRateMutation.mutate({
+                          fromCurrency: update.from,
+                          toCurrency: update.to,
+                          rate: update.rate
+                        });
+                      });
+                    }}
+                  >
+                    Real Market Rates
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      paymentMethods.forEach(method => {
+                        updateRateMutation.mutate({
+                          fromCurrency: method.value,
+                          toCurrency: "usd",
+                          rate: "1"
+                        });
+                      });
+                    }}
+                  >
+                    Reset All to 1:1
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const cryptoMethods = ["trx", "trc20", "peb20", "usdc"];
+                      cryptoMethods.forEach(method => {
+                        updateRateMutation.mutate({
+                          fromCurrency: method,
+                          toCurrency: "usd",
+                          rate: "1"
+                        });
+                      });
+                    }}
+                  >
+                    Crypto 1:1
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const mobileMethods = ["zaad", "sahal", "evc", "edahab"];
+                      mobileMethods.forEach(method => {
+                        updateRateMutation.mutate({
+                          fromCurrency: method,
+                          toCurrency: "usd",
+                          rate: "0.0018"
+                        });
+                      });
+                    }}
+                  >
+                    Mobile Money
                   </Button>
                 </div>
               </div>
