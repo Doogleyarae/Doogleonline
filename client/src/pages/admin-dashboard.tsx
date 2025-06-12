@@ -851,19 +851,7 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Current Limits Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 bg-blue-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Global Minimum Limit</h3>
-                  <p className="text-3xl font-bold text-blue-700">${minAmount}</p>
-                  <p className="text-sm text-blue-600 mt-1">Default minimum for all currencies</p>
-                </div>
-                <div className="p-6 bg-green-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-green-900 mb-2">Global Maximum Limit</h3>
-                  <p className="text-3xl font-bold text-green-700">${maxAmount}</p>
-                  <p className="text-sm text-green-600 mt-1">Default maximum for all currencies</p>
-                </div>
-              </div>
+
 
               {/* Currency-Specific Limits Management */}
               <div className="space-y-4">
