@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowUpCircle, ArrowDownCircle, User, Send } from "lucide-react";
@@ -42,6 +43,8 @@ const exchangeFormSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
   walletAddress: z.string().min(1, "Wallet address is required"),
+  rememberDetails: z.boolean().optional(),
+  agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
 });
 
 type ExchangeFormData = z.infer<typeof exchangeFormSchema>;
@@ -63,6 +66,8 @@ export default function Exchange() {
       fullName: "",
       phoneNumber: "",
       walletAddress: "",
+      rememberDetails: false,
+      agreeToTerms: false,
     },
   });
 
@@ -324,6 +329,60 @@ export default function Exchange() {
                         </FormControl>
                         <p className="text-xs text-gray-500">Enter the destination wallet address or account number</p>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Terms and Options */}
+              <Card className="border-2">
+                <CardContent className="pt-6 space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="rememberDetails"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            Remember my details for future transactions
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="agreeToTerms"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            I agree to the{" "}
+                            <a href="/terms" className="text-primary hover:underline">
+                              Terms of Service
+                            </a>{" "}
+                            and{" "}
+                            <a href="/privacy" className="text-primary hover:underline">
+                              Privacy Policy
+                            </a>{" "}
+                            *
+                          </FormLabel>
+                          <FormMessage />
+                        </div>
                       </FormItem>
                     )}
                   />
