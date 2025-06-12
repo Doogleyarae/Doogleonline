@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -22,6 +22,11 @@ export interface IStorage {
   getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined>;
   getAllExchangeRates(): Promise<ExchangeRate[]>;
   updateExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate>;
+  
+  // Currency limit methods
+  getCurrencyLimit(from: string, to: string): Promise<CurrencyLimit | undefined>;
+  getAllCurrencyLimits(): Promise<CurrencyLimit[]>;
+  updateCurrencyLimit(limit: InsertCurrencyLimit): Promise<CurrencyLimit>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -131,6 +136,39 @@ export class DatabaseStorage implements IStorage {
         .values(insertRate)
         .returning();
       return rate;
+    }
+  }
+
+  async getCurrencyLimit(from: string, to: string): Promise<CurrencyLimit | undefined> {
+    const [limit] = await db.select().from(currencyLimits)
+      .where(and(eq(currencyLimits.fromCurrency, from), eq(currencyLimits.toCurrency, to)));
+    return limit || undefined;
+  }
+
+  async getAllCurrencyLimits(): Promise<CurrencyLimit[]> {
+    return await db.select().from(currencyLimits);
+  }
+
+  async updateCurrencyLimit(insertLimit: InsertCurrencyLimit): Promise<CurrencyLimit> {
+    const existing = await this.getCurrencyLimit(insertLimit.fromCurrency, insertLimit.toCurrency);
+    
+    if (existing) {
+      const [limit] = await db
+        .update(currencyLimits)
+        .set({ 
+          minAmount: insertLimit.minAmount, 
+          maxAmount: insertLimit.maxAmount, 
+          updatedAt: new Date() 
+        })
+        .where(eq(currencyLimits.id, existing.id))
+        .returning();
+      return limit;
+    } else {
+      const [limit] = await db
+        .insert(currencyLimits)
+        .values(insertLimit)
+        .returning();
+      return limit;
     }
   }
 }

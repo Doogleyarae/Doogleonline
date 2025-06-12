@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema } from "@shared/schema";
+import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema } from "@shared/schema";
 import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { z } from "zod";
@@ -183,6 +183,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(rates);
     } catch (error) {
       res.status(500).json({ message: "Failed to get exchange rates" });
+    }
+  });
+
+  // Get currency limits for specific pair
+  app.get("/api/currency-limits/:from/:to", async (req, res) => {
+    try {
+      const { from, to } = req.params;
+      const limit = await storage.getCurrencyLimit(from, to);
+      
+      if (limit) {
+        res.json({
+          minAmount: parseFloat(limit.minAmount),
+          maxAmount: parseFloat(limit.maxAmount),
+          from: from.toUpperCase(),
+          to: to.toUpperCase()
+        });
+      } else {
+        // Return default global limits if no specific limit exists
+        res.json({
+          minAmount: 5,
+          maxAmount: 10000,
+          from: from.toUpperCase(),
+          to: to.toUpperCase()
+        });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get currency limits" });
+    }
+  });
+
+  // Update currency limit (admin only)
+  app.post("/api/admin/currency-limits", async (req, res) => {
+    try {
+      const validatedData = insertCurrencyLimitSchema.parse(req.body);
+      const limit = await storage.updateCurrencyLimit(validatedData);
+      
+      res.json(limit);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid limit data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update currency limit" });
+    }
+  });
+
+  // Get all currency limits (admin only)
+  app.get("/api/admin/currency-limits", async (req, res) => {
+    try {
+      const limits = await storage.getAllCurrencyLimits();
+      res.json(limits);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get currency limits" });
     }
   });
 

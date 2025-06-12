@@ -78,3 +78,23 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Currency limits schema for currency-specific exchange limits
+export const currencyLimits = pgTable("currency_limits", {
+  id: serial("id").primaryKey(),
+  fromCurrency: text("from_currency").notNull(),
+  toCurrency: text("to_currency").notNull(),
+  minAmount: decimal("min_amount", { precision: 10, scale: 2 }).notNull().default("5.00"),
+  maxAmount: decimal("max_amount", { precision: 10, scale: 2 }).notNull().default("10000.00"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCurrencyLimitSchema = createInsertSchema(currencyLimits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCurrencyLimit = z.infer<typeof insertCurrencyLimitSchema>;
+export type CurrencyLimit = typeof currencyLimits.$inferSelect;
