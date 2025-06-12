@@ -41,6 +41,9 @@ export default function AdminDashboard() {
   const [limitFromCurrency, setLimitFromCurrency] = useState<string>("all");
   const [limitToCurrency, setLimitToCurrency] = useState<string>("all");
   
+  // Store currency-specific limits
+  const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>({});
+  
   // Order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -110,10 +113,21 @@ export default function AdminDashboard() {
       const response = await apiRequest("POST", "/api/admin/transaction-limits", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Store currency-specific limits locally
+      if (variables.fromCurrency && variables.fromCurrency !== "all" && variables.toCurrency && variables.toCurrency !== "all") {
+        const key = `${variables.fromCurrency}-${variables.toCurrency}`;
+        setCurrencyLimits(prev => ({
+          ...prev,
+          [key]: { min: variables.minAmount, max: variables.maxAmount }
+        }));
+      }
+      
       toast({
         title: "Success",
-        description: "Transaction limits updated successfully",
+        description: variables.fromCurrency !== "all" && variables.toCurrency !== "all" 
+          ? `Limits updated for ${variables.fromCurrency?.toUpperCase()} → ${variables.toCurrency?.toUpperCase()}`
+          : "Global transaction limits updated successfully",
       });
       setLimitFromCurrency("all");
       setLimitToCurrency("all");
@@ -859,35 +873,72 @@ export default function AdminDashboard() {
                       <div className="space-y-2">
                         {paymentMethods
                           .filter(toMethod => toMethod.value !== fromMethod.value)
-                          .map((toMethod) => (
-                            <div key={`${fromMethod.value}-${toMethod.value}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium">
-                                  → {toMethod.label}
-                                </span>
+                          .map((toMethod) => {
+                            const key = `${fromMethod.value}-${toMethod.value}`;
+                            const specificLimits = currencyLimits[key];
+                            const currentMin = specificLimits ? specificLimits.min : minAmount;
+                            const currentMax = specificLimits ? specificLimits.max : maxAmount;
+                            const isCustom = !!specificLimits;
+                            
+                            return (
+                              <div key={key} className={`flex items-center justify-between p-3 rounded-lg ${isCustom ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium">
+                                    → {toMethod.label}
+                                  </span>
+                                  {isCustom && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Custom
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <span className={`text-xs font-mono ${isCustom ? 'text-blue-700 font-semibold' : 'text-gray-600'}`}>
+                                    ${currentMin} - ${currentMax}
+                                  </span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setLimitFromCurrency(fromMethod.value);
+                                      setLimitToCurrency(toMethod.value);
+                                      if (specificLimits) {
+                                        setMinAmount(specificLimits.min);
+                                        setMaxAmount(specificLimits.max);
+                                      }
+                                    }}
+                                  >
+                                    {isCustom ? 'Edit' : 'Set Custom'}
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <span className="text-xs text-gray-600 font-mono">
-                                  ${minAmount} - ${maxAmount}
-                                </span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setLimitFromCurrency(fromMethod.value);
-                                    setLimitToCurrency(toMethod.value);
-                                  }}
-                                >
-                                  Set Custom
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Current Selection Indicator */}
+              {limitFromCurrency !== "all" && limitToCurrency !== "all" && (
+                <div className="p-4 bg-blue-100 border border-blue-300 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-2">Currently Editing Limits For:</h4>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                      {paymentMethods.find(m => m.value === limitFromCurrency)?.label}
+                    </Badge>
+                    <span className="text-blue-700">→</span>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                      {paymentMethods.find(m => m.value === limitToCurrency)?.label}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-2">
+                    Changes will only affect {limitFromCurrency.toUpperCase()} to {limitToCurrency.toUpperCase()} transactions. 
+                    Other currency pairs will keep their current limits.
+                  </p>
+                </div>
+              )}
 
               {/* Update Limits Form */}
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-6 bg-gray-50 rounded-lg">
