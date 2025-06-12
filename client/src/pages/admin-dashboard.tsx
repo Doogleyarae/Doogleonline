@@ -115,8 +115,8 @@ export default function AdminDashboard() {
         title: "Success",
         description: "Transaction limits updated successfully",
       });
-      setLimitFromCurrency("");
-      setLimitToCurrency("");
+      setLimitFromCurrency("all");
+      setLimitToCurrency("all");
     },
     onError: (error: any) => {
       toast({
