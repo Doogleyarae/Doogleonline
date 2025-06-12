@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, formatCurrency } from "@/lib/utils";
-import { Settings, Users, DollarSign, MessageSquare, TrendingUp, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Settings, Users, DollarSign, MessageSquare, TrendingUp, CheckCircle, XCircle, Clock, Search, Download, Filter, History } from "lucide-react";
 import type { Order, ContactMessage } from "@shared/schema";
 
 const paymentMethods = [
@@ -34,6 +34,11 @@ export default function AdminDashboard() {
   const [fromCurrency, setFromCurrency] = useState<string>("");
   const [toCurrency, setToCurrency] = useState<string>("");
   const [exchangeRate, setExchangeRate] = useState<string>("");
+  
+  // Order history filters
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<string>("all");
 
   // Fetch all orders
   const { data: orders = [], isLoading: ordersLoading } = useQuery<Order[]>({
@@ -147,6 +152,65 @@ export default function AdminDashboard() {
     }
   };
 
+  // Filter orders based on search and filters
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = searchTerm === "" || 
+      order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    
+    const orderDate = new Date(order.createdAt);
+    const now = new Date();
+    let matchesDate = true;
+    
+    if (dateRange === "today") {
+      matchesDate = orderDate.toDateString() === now.toDateString();
+    } else if (dateRange === "week") {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      matchesDate = orderDate >= weekAgo;
+    } else if (dateRange === "month") {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      matchesDate = orderDate >= monthAgo;
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  });
+
+  // Export orders to CSV
+  const exportToCSV = () => {
+    const headers = ['Order ID', 'Customer', 'Phone', 'From', 'To', 'Send Amount', 'Receive Amount', 'Status', 'Created'];
+    const rows = filteredOrders.map(order => [
+      order.orderId,
+      order.fullName,
+      order.phoneNumber,
+      order.sendMethod,
+      order.receiveMethod,
+      order.sendAmount,
+      order.receiveAmount,
+      order.status,
+      formatDate(new Date(order.createdAt))
+    ]);
+    
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Success",
+      description: "Orders exported successfully",
+    });
+  };
+
   // Calculate dashboard stats
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
@@ -214,8 +278,9 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="orders" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="history">Order History</TabsTrigger>
           <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
           <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
