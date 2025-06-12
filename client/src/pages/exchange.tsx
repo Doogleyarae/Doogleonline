@@ -28,15 +28,15 @@ const paymentMethods = [
   { value: "usdc", label: "USDC" },
 ];
 
-const exchangeFormSchema = z.object({
+const createExchangeFormSchema = (minAmount: number = 5, maxAmount: number = 10000) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
   receiveMethod: z.string().min(1, "Please select a receive method"),
   sendAmount: z.string().min(1, "Amount is required").refine(
     (val) => {
       const amount = parseFloat(val);
-      return amount >= 5 && amount <= 10000;
+      return amount >= minAmount && amount <= maxAmount;
     },
-    "Amount must be between $5.00 and $10,000.00"
+    `Amount must be between $${minAmount.toFixed(2)} and $${maxAmount.toFixed(2)}`
   ),
   receiveAmount: z.string(),
   exchangeRate: z.string(),
@@ -47,20 +47,33 @@ const exchangeFormSchema = z.object({
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
 });
 
-type ExchangeFormData = z.infer<typeof exchangeFormSchema>;
+type ExchangeFormData = z.infer<ReturnType<typeof createExchangeFormSchema>>;
 
 export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
+  const [sendMethod, setSendMethod] = useState("trc20");
+  const [receiveMethod, setReceiveMethod] = useState("moneygo");
+  const [sendAmount, setSendAmount] = useState("100");
+
+  // Fetch currency-specific limits for the selected pair
+  const { data: currencyLimits } = useQuery({
+    queryKey: [`/api/currency-limits/${sendMethod}/${receiveMethod}`],
+    enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
+  });
+
+  // Get current limits (either custom or default)
+  const currentMinAmount = currencyLimits ? parseFloat(currencyLimits.minAmount) : 5;
+  const currentMaxAmount = currencyLimits ? parseFloat(currencyLimits.maxAmount) : 10000;
 
   const form = useForm<ExchangeFormData>({
-    resolver: zodResolver(exchangeFormSchema),
+    resolver: zodResolver(createExchangeFormSchema(currentMinAmount, currentMaxAmount)),
     defaultValues: {
-      sendMethod: "trc20",
-      receiveMethod: "moneygo",
-      sendAmount: "100",
+      sendMethod: sendMethod,
+      receiveMethod: receiveMethod,
+      sendAmount: sendAmount,
       receiveAmount: "",
       exchangeRate: "",
       fullName: "",
@@ -71,9 +84,12 @@ export default function Exchange() {
     },
   });
 
-  const sendMethod = form.watch("sendMethod");
-  const receiveMethod = form.watch("receiveMethod");
-  const sendAmount = form.watch("sendAmount");
+  // Update form values when state changes
+  useEffect(() => {
+    form.setValue("sendMethod", sendMethod);
+    form.setValue("receiveMethod", receiveMethod);
+    form.setValue("sendAmount", sendAmount);
+  }, [sendMethod, receiveMethod, sendAmount, form]);
 
   // Fetch exchange rate when methods change
   const { data: rateData } = useQuery({
