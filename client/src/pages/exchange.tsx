@@ -55,9 +55,9 @@ export default function Exchange() {
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(exchangeFormSchema),
     defaultValues: {
-      sendMethod: "",
-      receiveMethod: "",
-      sendAmount: "",
+      sendMethod: "trc20",
+      receiveMethod: "moneygo",
+      sendAmount: "100",
       receiveAmount: "",
       exchangeRate: "",
       fullName: "",
