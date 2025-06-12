@@ -6,18 +6,18 @@ import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { z } from "zod";
 
-// Exchange rates (in a real app, these would come from an API)
+// Exchange rates - 1:1 for all currencies (1 dollar equivalent)
 const exchangeRates: Record<string, Record<string, number>> = {
-  'zaad': { 'usd': 0.0018, 'eur': 0.0016, 'sahal': 1.05, 'evc': 1.0, 'edahab': 1.0, 'premier': 0.0018, 'moneygo': 1.0, 'trx': 0.018, 'trc20': 0.0018, 'peb20': 0.0018, 'usdc': 0.0018 },
-  'sahal': { 'usd': 0.0017, 'eur': 0.0015, 'zaad': 0.95, 'evc': 0.95, 'edahab': 0.95, 'premier': 0.0017, 'moneygo': 0.95, 'trx': 0.017, 'trc20': 0.0017, 'peb20': 0.0017, 'usdc': 0.0017 },
-  'evc': { 'usd': 0.0018, 'eur': 0.0016, 'zaad': 1.0, 'sahal': 1.05, 'edahab': 1.0, 'premier': 0.0018, 'moneygo': 1.0, 'trx': 0.018, 'trc20': 0.0018, 'peb20': 0.0018, 'usdc': 0.0018 },
-  'edahab': { 'usd': 0.0018, 'eur': 0.0016, 'zaad': 1.0, 'sahal': 1.05, 'evc': 1.0, 'premier': 0.0018, 'moneygo': 1.0, 'trx': 0.018, 'trc20': 0.0018, 'peb20': 0.0018, 'usdc': 0.0018 },
-  'premier': { 'usd': 1, 'eur': 0.89, 'zaad': 555, 'sahal': 588, 'evc': 555, 'edahab': 555, 'moneygo': 555, 'trx': 10, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'moneygo': { 'usd': 0.0018, 'eur': 0.0016, 'zaad': 1.0, 'sahal': 1.05, 'evc': 1.0, 'edahab': 1.0, 'premier': 0.0018, 'trx': 0.018, 'trc20': 0.0018, 'peb20': 0.0018, 'usdc': 0.0018 },
-  'trx': { 'usd': 0.1, 'eur': 0.089, 'zaad': 55.5, 'sahal': 58.8, 'evc': 55.5, 'edahab': 55.5, 'premier': 0.1, 'moneygo': 55.5, 'trc20': 0.1, 'peb20': 0.1, 'usdc': 0.1 },
-  'trc20': { 'usd': 1, 'eur': 0.89, 'zaad': 555, 'sahal': 588, 'evc': 555, 'edahab': 555, 'premier': 1, 'moneygo': 555, 'trx': 10, 'peb20': 1, 'usdc': 1 },
-  'peb20': { 'usd': 1, 'eur': 0.89, 'zaad': 555, 'sahal': 588, 'evc': 555, 'edahab': 555, 'premier': 1, 'moneygo': 555, 'trx': 10, 'trc20': 1, 'usdc': 1 },
-  'usdc': { 'usd': 1, 'eur': 0.89, 'zaad': 555, 'sahal': 588, 'evc': 555, 'edahab': 555, 'premier': 1, 'moneygo': 555, 'trx': 10, 'trc20': 1, 'peb20': 1 }
+  'zaad': { 'usd': 1, 'eur': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
+  'sahal': { 'usd': 1, 'eur': 1, 'zaad': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
+  'evc': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
+  'edahab': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
+  'premier': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
+  'moneygo': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
+  'trx': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
+  'trc20': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'peb20': 1, 'usdc': 1 },
+  'peb20': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'usdc': 1 },
+  'usdc': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1 }
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
