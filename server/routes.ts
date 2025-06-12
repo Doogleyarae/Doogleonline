@@ -229,50 +229,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Execute SQL query (admin only)
-  app.post("/api/admin/database/query", async (req, res) => {
-    try {
-      const { query } = req.body;
-      
-      if (!query || typeof query !== 'string') {
-        return res.status(400).json({ 
-          error: "Query is required and must be a string" 
-        });
-      }
-
-      // Basic security check - prevent dangerous operations
-      const dangerousKeywords = ['DROP', 'DELETE', 'TRUNCATE', 'ALTER', 'CREATE', 'INSERT', 'UPDATE'];
-      const upperQuery = query.toUpperCase().trim();
-      
-      // Allow SELECT queries and basic operations only
-      if (!upperQuery.startsWith('SELECT') && !upperQuery.startsWith('SHOW') && !upperQuery.startsWith('DESCRIBE')) {
-        // Check for dangerous keywords
-        for (const keyword of dangerousKeywords) {
-          if (upperQuery.includes(keyword)) {
-            return res.status(403).json({ 
-              error: `${keyword} operations are not allowed for security reasons. Use SELECT queries only.` 
-            });
-          }
-        }
-      }
-
-      // Execute the query using the database connection
-      const result = await db.execute(query);
-      
-      res.json({ 
-        data: result.rows || result,
-        message: "Query executed successfully",
-        rowCount: result.rows ? result.rows.length : 0
-      });
-    } catch (error: any) {
-      console.error('Database query error:', error);
-      res.status(500).json({ 
-        error: error.message || "Failed to execute query",
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
-    }
-  });
-
   const httpServer = createServer(app);
   
   // Only initialize WebSocket server in production to avoid conflicts with Vite dev server

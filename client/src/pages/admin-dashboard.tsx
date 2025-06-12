@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatDate, formatCurrency } from "@/lib/utils";
-import { Settings, Users, DollarSign, MessageSquare, TrendingUp, CheckCircle, XCircle, Clock, Search, Download, Filter, History, Database, Play, Trash2, Eye } from "lucide-react";
+import { Settings, Users, DollarSign, MessageSquare, TrendingUp, CheckCircle, XCircle, Clock, Search, Download, Filter, History } from "lucide-react";
 import type { Order, ContactMessage } from "@shared/schema";
 
 const paymentMethods = [
@@ -44,10 +44,7 @@ export default function AdminDashboard() {
   // Store currency-specific limits
   const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>({});
   
-  // Database management
-  const [sqlQuery, setSqlQuery] = useState<string>("");
-  const [queryResult, setQueryResult] = useState<any>(null);
-  const [isExecutingQuery, setIsExecutingQuery] = useState<boolean>(false);
+
   
   // Order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -146,39 +143,7 @@ export default function AdminDashboard() {
     },
   });
 
-  // Execute SQL query mutation
-  const executeSqlMutation = useMutation({
-    mutationFn: async (query: string) => {
-      const response = await apiRequest("POST", "/api/admin/database/query", { query });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      setQueryResult(data);
-      toast({
-        title: "Success",
-        description: "Query executed successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to execute query",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const handleExecuteQuery = () => {
-    if (!sqlQuery.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a SQL query",
-        variant: "destructive",
-      });
-      return;
-    }
-    executeSqlMutation.mutate(sqlQuery);
-  };
 
   const handleStatusUpdate = () => {
     if (!selectedOrderId || !newStatus) {
@@ -385,12 +350,11 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="orders" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="history">Order History</TabsTrigger>
           <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
           <TabsTrigger value="limits">Transaction Limits</TabsTrigger>
-          <TabsTrigger value="database">Database</TabsTrigger>
           <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -1133,210 +1097,6 @@ export default function AdminDashboard() {
                   </p>
                   <p className="text-xs text-gray-600">Transactions within current limits</p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Database Management */}
-        <TabsContent value="database" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Database className="w-5 h-5 mr-2" />
-                Database Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Quick Database Actions */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setSqlQuery("SELECT * FROM orders ORDER BY created_at DESC LIMIT 10;")}
-                  className="flex items-center justify-center"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  View Orders
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setSqlQuery("SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 10;")}
-                  className="flex items-center justify-center"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  View Messages
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setSqlQuery("SELECT * FROM exchange_rates ORDER BY created_at DESC;")}
-                  className="flex items-center justify-center"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  View Rates
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setSqlQuery("SELECT * FROM users ORDER BY created_at DESC;")}
-                  className="flex items-center justify-center"
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  View Users
-                </Button>
-              </div>
-
-              {/* SQL Query Interface */}
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="sqlQuery">SQL Query</Label>
-                  <textarea
-                    id="sqlQuery"
-                    className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md font-mono text-sm"
-                    placeholder="Enter your SQL query here..."
-                    value={sqlQuery}
-                    onChange={(e) => setSqlQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center space-x-4">
-                  <Button
-                    onClick={handleExecuteQuery}
-                    disabled={executeSqlMutation.isPending}
-                    className="flex items-center"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    {executeSqlMutation.isPending ? "Executing..." : "Execute Query"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSqlQuery("");
-                      setQueryResult(null);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Clear
-                  </Button>
-                </div>
-              </div>
-
-              {/* Query Results */}
-              {queryResult && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Query Results</h3>
-                  {queryResult.error ? (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <h4 className="font-semibold text-red-800">Error:</h4>
-                      <p className="text-red-700 font-mono text-sm">{queryResult.error}</p>
-                    </div>
-                  ) : queryResult.data ? (
-                    <div className="border rounded-lg overflow-hidden">
-                      <div className="bg-gray-50 p-3 border-b">
-                        <p className="text-sm text-gray-600">
-                          {Array.isArray(queryResult.data) ? `${queryResult.data.length} rows returned` : "Query executed successfully"}
-                        </p>
-                      </div>
-                      <div className="overflow-x-auto max-h-96">
-                        {Array.isArray(queryResult.data) && queryResult.data.length > 0 ? (
-                          <table className="w-full text-sm">
-                            <thead className="bg-gray-100">
-                              <tr>
-                                {Object.keys(queryResult.data[0]).map((key) => (
-                                  <th key={key} className="px-4 py-2 text-left font-medium text-gray-700">
-                                    {key}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {queryResult.data.map((row: any, index: number) => (
-                                <tr key={index} className="border-t">
-                                  {Object.values(row).map((value: any, cellIndex: number) => (
-                                    <td key={cellIndex} className="px-4 py-2 border-r">
-                                      {value !== null ? String(value) : <span className="text-gray-400">NULL</span>}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        ) : (
-                          <div className="p-4 text-center text-gray-500">
-                            {queryResult.message || "No data returned"}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-green-700">{queryResult.message || "Query executed successfully"}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Database Schema Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Common Queries</h3>
-                  <div className="space-y-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start text-left"
-                      onClick={() => setSqlQuery("SELECT status, COUNT(*) as count FROM orders GROUP BY status;")}
-                    >
-                      Order Status Count
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start text-left"
-                      onClick={() => setSqlQuery("SELECT from_currency, to_currency, COUNT(*) as transactions FROM orders GROUP BY from_currency, to_currency ORDER BY transactions DESC;")}
-                    >
-                      Popular Currency Pairs
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start text-left"
-                      onClick={() => setSqlQuery("SELECT DATE(created_at) as date, COUNT(*) as orders, SUM(CAST(send_amount AS DECIMAL)) as volume FROM orders WHERE created_at >= NOW() - INTERVAL '7 days' GROUP BY DATE(created_at) ORDER BY date;")}
-                    >
-                      Weekly Volume Report
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Database Tables</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="p-3 bg-gray-50 rounded">
-                      <strong>orders</strong>
-                      <p className="text-gray-600">Transaction records</p>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded">
-                      <strong>contact_messages</strong>
-                      <p className="text-gray-600">Customer support messages</p>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded">
-                      <strong>exchange_rates</strong>
-                      <p className="text-gray-600">Currency exchange rates</p>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded">
-                      <strong>users</strong>
-                      <p className="text-gray-600">Admin user accounts</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Safety Warning */}
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h4 className="font-semibold text-yellow-800 mb-2">⚠️ Database Safety</h4>
-                <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• Use SELECT queries to view data safely</li>
-                  <li>• Be careful with UPDATE, DELETE, or DROP statements</li>
-                  <li>• Always backup important data before making changes</li>
-                  <li>• Test queries on development data when possible</li>
-                </ul>
               </div>
             </CardContent>
           </Card>
