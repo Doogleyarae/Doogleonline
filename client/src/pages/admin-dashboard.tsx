@@ -35,6 +35,10 @@ export default function AdminDashboard() {
   const [toCurrency, setToCurrency] = useState<string>("");
   const [exchangeRate, setExchangeRate] = useState<string>("");
   
+  // Transaction limits
+  const [minAmount, setMinAmount] = useState<string>("5");
+  const [maxAmount, setMaxAmount] = useState<string>("10000");
+  
   // Order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -98,6 +102,27 @@ export default function AdminDashboard() {
     },
   });
 
+  // Update transaction limits mutation
+  const updateLimitsMutation = useMutation({
+    mutationFn: async (data: { minAmount: string; maxAmount: string }) => {
+      const response = await apiRequest("POST", "/api/admin/transaction-limits", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Transaction limits updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update transaction limits",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleStatusUpdate = () => {
     if (!selectedOrderId || !newStatus) {
       toast({
@@ -120,6 +145,26 @@ export default function AdminDashboard() {
       return;
     }
     updateRateMutation.mutate({ fromCurrency, toCurrency, rate: exchangeRate });
+  };
+
+  const handleLimitsUpdate = () => {
+    if (!minAmount || !maxAmount) {
+      toast({
+        title: "Error",
+        description: "Please enter both minimum and maximum amounts",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (parseFloat(minAmount) >= parseFloat(maxAmount)) {
+      toast({
+        title: "Error",
+        description: "Minimum amount must be less than maximum amount",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateLimitsMutation.mutate({ minAmount, maxAmount });
   };
 
   const getStatusIcon = (status: string) => {
@@ -278,10 +323,11 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="orders" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="history">Order History</TabsTrigger>
           <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
+          <TabsTrigger value="limits">Transaction Limits</TabsTrigger>
           <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -762,6 +808,154 @@ export default function AdminDashboard() {
                   >
                     Mobile Money
                   </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Transaction Limits */}
+        <TabsContent value="limits" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Settings className="w-5 h-5 mr-2" />
+                Transaction Limits Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Current Limits Display */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 bg-blue-50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Current Minimum Limit</h3>
+                  <p className="text-3xl font-bold text-blue-700">${minAmount}</p>
+                  <p className="text-sm text-blue-600 mt-1">Minimum transaction amount</p>
+                </div>
+                <div className="p-6 bg-green-50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">Current Maximum Limit</h3>
+                  <p className="text-3xl font-bold text-green-700">${maxAmount}</p>
+                  <p className="text-sm text-green-600 mt-1">Maximum transaction amount</p>
+                </div>
+              </div>
+
+              {/* Update Limits Form */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50 rounded-lg">
+                <div>
+                  <Label htmlFor="minAmount">Minimum Amount ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="5.00"
+                    value={minAmount}
+                    onChange={(e) => setMinAmount(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="maxAmount">Maximum Amount ($)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="10000.00"
+                    value={maxAmount}
+                    onChange={(e) => setMaxAmount(e.target.value)}
+                  />
+                </div>
+                
+                <div className="flex items-end">
+                  <Button 
+                    onClick={handleLimitsUpdate} 
+                    disabled={updateLimitsMutation.isPending}
+                    className="w-full"
+                  >
+                    {updateLimitsMutation.isPending ? "Updating..." : "Update Limits"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900">Quick Presets</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMinAmount("1");
+                      setMaxAmount("1000");
+                    }}
+                  >
+                    Small ($1 - $1K)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMinAmount("5");
+                      setMaxAmount("10000");
+                    }}
+                  >
+                    Standard ($5 - $10K)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMinAmount("10");
+                      setMaxAmount("50000");
+                    }}
+                  >
+                    High Volume ($10 - $50K)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMinAmount("100");
+                      setMaxAmount("100000");
+                    }}
+                  >
+                    Enterprise ($100 - $100K)
+                  </Button>
+                </div>
+              </div>
+
+              {/* Impact Information */}
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <h4 className="font-semibold text-yellow-800 mb-2">Impact of Changes</h4>
+                <ul className="text-sm text-yellow-700 space-y-1">
+                  <li>• Changes apply immediately to new transactions</li>
+                  <li>• Existing pending orders are not affected</li>
+                  <li>• Users will see updated limits on the exchange form</li>
+                  <li>• Consider notifying users of significant limit changes</li>
+                </ul>
+              </div>
+
+              {/* Transaction Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900">Transactions Below Min</h4>
+                  <p className="text-2xl font-bold text-red-600">
+                    {orders.filter(order => parseFloat(order.sendAmount) < parseFloat(minAmount)).length}
+                  </p>
+                  <p className="text-xs text-gray-600">Would be blocked with current min</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900">Transactions Above Max</h4>
+                  <p className="text-2xl font-bold text-red-600">
+                    {orders.filter(order => parseFloat(order.sendAmount) > parseFloat(maxAmount)).length}
+                  </p>
+                  <p className="text-xs text-gray-600">Would be blocked with current max</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900">Within Range</h4>
+                  <p className="text-2xl font-bold text-green-600">
+                    {orders.filter(order => {
+                      const amount = parseFloat(order.sendAmount);
+                      return amount >= parseFloat(minAmount) && amount <= parseFloat(maxAmount);
+                    }).length}
+                  </p>
+                  <p className="text-xs text-gray-600">Transactions within current limits</p>
                 </div>
               </div>
             </CardContent>

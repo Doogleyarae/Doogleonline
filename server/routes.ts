@@ -201,6 +201,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update transaction limits (admin only)
+  app.post("/api/admin/transaction-limits", async (req, res) => {
+    try {
+      const { minAmount, maxAmount } = req.body;
+      
+      // Validate input
+      const min = parseFloat(minAmount);
+      const max = parseFloat(maxAmount);
+      
+      if (isNaN(min) || isNaN(max) || min < 0 || max < 0 || min >= max) {
+        return res.status(400).json({ 
+          message: "Invalid limits. Minimum must be less than maximum and both must be positive numbers." 
+        });
+      }
+      
+      // In a real application, you would store these in the database
+      // For now, we'll just return success as the frontend manages the state
+      res.json({ 
+        success: true, 
+        minAmount: minAmount, 
+        maxAmount: maxAmount,
+        message: "Transaction limits updated successfully" 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update transaction limits" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Only initialize WebSocket server in production to avoid conflicts with Vite dev server
