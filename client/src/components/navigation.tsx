@@ -8,6 +8,9 @@ import NotificationsPanel from "@/components/notifications";
 
 const navigationItems = [
   { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/services", label: "Services" },
+  { href: "/how-it-works", label: "How It Works" },
   { href: "/exchange", label: "Exchange" },
   { href: "/track", label: "Track Order" },
   { href: "/orders", label: "Order History" },
