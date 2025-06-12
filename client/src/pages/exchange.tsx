@@ -15,6 +15,19 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowUpCircle, ArrowDownCircle, User, Send } from "lucide-react";
 
+interface ExchangeRateResponse {
+  rate: number;
+  from: string;
+  to: string;
+}
+
+interface CurrencyLimitsResponse {
+  minAmount: number;
+  maxAmount: number;
+  from: string;
+  to: string;
+}
+
 const paymentMethods = [
   { value: "zaad", label: "Zaad" },
   { value: "sahal", label: "Sahal" },
@@ -59,14 +72,14 @@ export default function Exchange() {
   const [sendAmount, setSendAmount] = useState("100");
 
   // Fetch currency-specific limits for the selected pair
-  const { data: currencyLimits } = useQuery({
+  const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
   });
 
   // Get current limits (either custom or default)
-  const currentMinAmount = currencyLimits ? parseFloat(currencyLimits.minAmount) : 5;
-  const currentMaxAmount = currencyLimits ? parseFloat(currencyLimits.maxAmount) : 10000;
+  const currentMinAmount = currencyLimits?.minAmount || 5;
+  const currentMaxAmount = currencyLimits?.maxAmount || 10000;
 
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(createExchangeFormSchema(currentMinAmount, currentMaxAmount)),
@@ -92,7 +105,7 @@ export default function Exchange() {
   }, [sendMethod, receiveMethod, sendAmount, form]);
 
   // Fetch exchange rate when methods change
-  const { data: rateData } = useQuery({
+  const { data: rateData } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
   });
