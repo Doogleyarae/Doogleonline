@@ -38,6 +38,8 @@ export default function AdminDashboard() {
   // Transaction limits
   const [minAmount, setMinAmount] = useState<string>("5");
   const [maxAmount, setMaxAmount] = useState<string>("10000");
+  const [limitFromCurrency, setLimitFromCurrency] = useState<string>("all");
+  const [limitToCurrency, setLimitToCurrency] = useState<string>("all");
   
   // Order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -104,7 +106,7 @@ export default function AdminDashboard() {
 
   // Update transaction limits mutation
   const updateLimitsMutation = useMutation({
-    mutationFn: async (data: { minAmount: string; maxAmount: string }) => {
+    mutationFn: async (data: { minAmount: string; maxAmount: string; fromCurrency?: string; toCurrency?: string }) => {
       const response = await apiRequest("POST", "/api/admin/transaction-limits", data);
       return response.json();
     },
@@ -113,6 +115,8 @@ export default function AdminDashboard() {
         title: "Success",
         description: "Transaction limits updated successfully",
       });
+      setLimitFromCurrency("");
+      setLimitToCurrency("");
     },
     onError: (error: any) => {
       toast({
@@ -164,7 +168,12 @@ export default function AdminDashboard() {
       });
       return;
     }
-    updateLimitsMutation.mutate({ minAmount, maxAmount });
+    updateLimitsMutation.mutate({ 
+      minAmount, 
+      maxAmount, 
+      fromCurrency: limitFromCurrency === "all" ? undefined : limitFromCurrency || undefined,
+      toCurrency: limitToCurrency === "all" ? undefined : limitToCurrency || undefined
+    });
   };
 
   const getStatusIcon = (status: string) => {
@@ -827,19 +836,95 @@ export default function AdminDashboard() {
               {/* Current Limits Display */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="p-6 bg-blue-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Current Minimum Limit</h3>
+                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Global Minimum Limit</h3>
                   <p className="text-3xl font-bold text-blue-700">${minAmount}</p>
-                  <p className="text-sm text-blue-600 mt-1">Minimum transaction amount</p>
+                  <p className="text-sm text-blue-600 mt-1">Default minimum for all currencies</p>
                 </div>
                 <div className="p-6 bg-green-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-green-900 mb-2">Current Maximum Limit</h3>
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">Global Maximum Limit</h3>
                   <p className="text-3xl font-bold text-green-700">${maxAmount}</p>
-                  <p className="text-sm text-green-600 mt-1">Maximum transaction amount</p>
+                  <p className="text-sm text-green-600 mt-1">Default maximum for all currencies</p>
+                </div>
+              </div>
+
+              {/* Currency-Specific Limits Management */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold text-gray-900">Currency-Specific Limits</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {paymentMethods.map((fromMethod) => (
+                    <div key={fromMethod.value} className="border rounded-lg p-4">
+                      <h4 className="font-semibold text-lg mb-3 capitalize text-gray-800">
+                        {fromMethod.label} Outgoing Limits
+                      </h4>
+                      <div className="space-y-2">
+                        {paymentMethods
+                          .filter(toMethod => toMethod.value !== fromMethod.value)
+                          .map((toMethod) => (
+                            <div key={`${fromMethod.value}-${toMethod.value}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-medium">
+                                  → {toMethod.label}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs text-gray-600 font-mono">
+                                  ${minAmount} - ${maxAmount}
+                                </span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setLimitFromCurrency(fromMethod.value);
+                                    setLimitToCurrency(toMethod.value);
+                                  }}
+                                >
+                                  Set Custom
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Update Limits Form */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-6 bg-gray-50 rounded-lg">
+                <div>
+                  <Label htmlFor="limitFromCurrency">From Currency (Optional)</Label>
+                  <Select value={limitFromCurrency} onValueChange={setLimitFromCurrency}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All currencies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All currencies</SelectItem>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="limitToCurrency">To Currency (Optional)</Label>
+                  <Select value={limitToCurrency} onValueChange={setLimitToCurrency}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All currencies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All currencies</SelectItem>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div>
                   <Label htmlFor="minAmount">Minimum Amount ($)</Label>
                   <Input
