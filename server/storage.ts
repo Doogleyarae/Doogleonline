@@ -1,4 +1,6 @@
 import { users, orders, contactMessages, exchangeRates, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -22,60 +24,30 @@ export interface IStorage {
   updateExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private orders: Map<string, Order>;
-  private contactMessages: Map<number, ContactMessage>;
-  private exchangeRates: Map<string, ExchangeRate>;
-  private currentUserId: number;
-  private currentOrderId: number;
-  private currentMessageId: number;
-  private currentRateId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.orders = new Map();
-    this.contactMessages = new Map();
-    this.exchangeRates = new Map();
-    this.currentUserId = 1;
-    this.currentOrderId = 1;
-    this.currentMessageId = 1;
-    this.currentRateId = 1;
-    
-    // Initialize default admin user
-    const adminUser: User = {
-      id: 1,
-      username: "admin",
-      password: "admin123",
-      role: "admin"
-    };
-    this.users.set(1, adminUser);
-    this.currentUserId = 2;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id, role: "user" };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values({ ...insertUser, role: "user" })
+      .returning();
     return user;
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const id = this.currentOrderId++;
-    const orderId = `DGL-${new Date().getFullYear()}-${id.toString().padStart(6, '0')}`;
-    const now = new Date();
+    const orderCount = await db.select().from(orders);
+    const orderId = `DGL-${new Date().getFullYear()}-${(orderCount.length + 1).toString().padStart(6, '0')}`;
     
-    // Mock payment wallet addresses based on receive method
+    // Payment wallet addresses based on receive method
     const paymentWallets: Record<string, string> = {
       'zaad': '+252611234567',
       'sahal': '+252612345678',
@@ -89,85 +61,78 @@ export class MemStorage implements IStorage {
       'usdc': '0x123456789ABCDEF0123456789ABCDEF01'
     };
 
-    const order: Order = {
-      id,
-      orderId,
-      ...insertOrder,
-      paymentWallet: paymentWallets[insertOrder.receiveMethod] || 'Unknown',
-      status: 'pending',
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    this.orders.set(orderId, order);
+    const [order] = await db
+      .insert(orders)
+      .values({
+        orderId,
+        ...insertOrder,
+        paymentWallet: paymentWallets[insertOrder.receiveMethod] || 'Unknown',
+        status: 'pending',
+      })
+      .returning();
     return order;
   }
 
   async getOrder(orderId: string): Promise<Order | undefined> {
-    return this.orders.get(orderId);
+    const [order] = await db.select().from(orders).where(eq(orders.orderId, orderId));
+    return order || undefined;
   }
 
   async getAllOrders(): Promise<Order[]> {
-    return Array.from(this.orders.values());
+    return await db.select().from(orders);
   }
 
   async updateOrderStatus(orderId: string, status: string): Promise<Order | undefined> {
-    const order = this.orders.get(orderId);
-    if (order) {
-      const updatedOrder = { ...order, status, updatedAt: new Date() };
-      this.orders.set(orderId, updatedOrder);
-      return updatedOrder;
-    }
-    return undefined;
+    const [order] = await db
+      .update(orders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(orders.orderId, orderId))
+      .returning();
+    return order || undefined;
   }
 
   async createContactMessage(insertMessage: InsertContactMessage): Promise<ContactMessage> {
-    const id = this.currentMessageId++;
-    const message: ContactMessage = {
-      id,
-      ...insertMessage,
-      createdAt: new Date(),
-    };
-    this.contactMessages.set(id, message);
+    const [message] = await db
+      .insert(contactMessages)
+      .values(insertMessage)
+      .returning();
     return message;
   }
 
   async getAllContactMessages(): Promise<ContactMessage[]> {
-    return Array.from(this.contactMessages.values());
+    return await db.select().from(contactMessages);
   }
 
   async getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined> {
-    const key = `${from}-${to}`;
-    return this.exchangeRates.get(key);
+    const [rate] = await db
+      .select()
+      .from(exchangeRates)
+      .where(and(eq(exchangeRates.fromCurrency, from), eq(exchangeRates.toCurrency, to)));
+    return rate || undefined;
   }
 
   async getAllExchangeRates(): Promise<ExchangeRate[]> {
-    return Array.from(this.exchangeRates.values());
+    return await db.select().from(exchangeRates);
   }
 
   async updateExchangeRate(insertRate: InsertExchangeRate): Promise<ExchangeRate> {
-    const key = `${insertRate.fromCurrency}-${insertRate.toCurrency}`;
-    const existing = this.exchangeRates.get(key);
+    const existing = await this.getExchangeRate(insertRate.fromCurrency, insertRate.toCurrency);
     
     if (existing) {
-      const updatedRate: ExchangeRate = {
-        ...existing,
-        rate: insertRate.rate,
-        updatedAt: new Date(),
-      };
-      this.exchangeRates.set(key, updatedRate);
-      return updatedRate;
+      const [rate] = await db
+        .update(exchangeRates)
+        .set({ rate: insertRate.rate, updatedAt: new Date() })
+        .where(eq(exchangeRates.id, existing.id))
+        .returning();
+      return rate;
     } else {
-      const id = this.currentRateId++;
-      const newRate: ExchangeRate = {
-        id,
-        ...insertRate,
-        updatedAt: new Date(),
-      };
-      this.exchangeRates.set(key, newRate);
-      return newRate;
+      const [rate] = await db
+        .insert(exchangeRates)
+        .values(insertRate)
+        .returning();
+      return rate;
     }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
