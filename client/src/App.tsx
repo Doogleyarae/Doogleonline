@@ -16,6 +16,7 @@ import Contact from "@/pages/contact";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminAnalytics from "@/pages/admin-analytics";
+import LimitManagement from "@/pages/limit-management";
 import OrderHistory from "@/pages/order-history";
 import NotFound from "@/pages/not-found";
 
