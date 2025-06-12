@@ -15,6 +15,7 @@ const navigationItems = [
   { href: "/contact", label: "Contact" },
   { href: "/about", label: "About" },
   { href: "/admin", label: "Admin" },
+  { href: "/admin/limits", label: "Manage Limits" },
 ];
 
 export default function Navigation() {

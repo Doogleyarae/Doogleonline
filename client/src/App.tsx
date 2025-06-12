@@ -35,6 +35,7 @@ function Router() {
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
+      <Route path="/admin/limits" component={LimitManagement} />
       <Route component={NotFound} />
     </Switch>
   );
