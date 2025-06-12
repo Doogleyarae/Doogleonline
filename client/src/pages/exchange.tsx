@@ -235,8 +235,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: $5.00</span>
-                            <span>Max: $10,000</span>
+                            <span>Min: ${currentMinAmount.toFixed(2)}</span>
+                            <span>Max: ${currentMaxAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -297,8 +297,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: $5.00</span>
-                            <span>Max: $10,000</span>
+                            <span>Min: ${currentMinAmount.toFixed(2)}</span>
+                            <span>Max: ${currentMaxAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
