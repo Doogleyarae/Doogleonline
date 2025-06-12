@@ -13,7 +13,10 @@ export class WebSocketManager {
   private clients: Set<WebSocket> = new Set();
 
   initialize(server: Server) {
-    this.wss = new WebSocketServer({ server });
+    this.wss = new WebSocketServer({ 
+      server,
+      path: '/ws'
+    });
     
     this.wss.on('connection', (ws: WebSocket) => {
       this.clients.add(ws);

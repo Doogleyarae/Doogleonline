@@ -53,6 +53,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send order confirmation email
       await emailService.sendOrderConfirmation(order);
       
+      // Notify connected clients via WebSocket
+      wsManager.notifyNewOrder(order);
+      
       res.json(order);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -97,6 +100,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send status update email
       await emailService.sendStatusUpdate(order);
       
+      // Notify connected clients via WebSocket
+      wsManager.notifyOrderUpdate(order);
+      
       res.json(order);
     } catch (error) {
       res.status(500).json({ message: "Failed to update order status" });
@@ -122,6 +128,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send confirmation email to customer and notification to admin
       await emailService.sendContactConfirmation(message);
       await emailService.notifyAdmin(message);
+      
+      // Notify connected clients via WebSocket
+      wsManager.notifyNewMessage(message);
       
       res.json(message);
     } catch (error) {
@@ -189,5 +198,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Only initialize WebSocket server in production to avoid conflicts with Vite dev server
+  if (process.env.NODE_ENV === 'production') {
+    wsManager.initialize(httpServer);
+  }
+  
   return httpServer;
 }
