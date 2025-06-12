@@ -38,11 +38,10 @@ export default function AdminDashboard() {
   // Transaction limits
   const [minAmount, setMinAmount] = useState<string>("5");
   const [maxAmount, setMaxAmount] = useState<string>("10000");
-  const [limitFromCurrency, setLimitFromCurrency] = useState<string>("all");
-  const [limitToCurrency, setLimitToCurrency] = useState<string>("all");
-  
-  // Store currency-specific limits
-  const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>({});
+  const [limitFromCurrency, setLimitFromCurrency] = useState<string>("");
+  const [limitToCurrency, setLimitToCurrency] = useState<string>("");
+  const [limitMinAmount, setLimitMinAmount] = useState<string>("5");
+  const [limitMaxAmount, setLimitMaxAmount] = useState<string>("10000");
   
 
   
@@ -857,7 +856,7 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-gray-900">Currency-Specific Limits</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {paymentMethods.filter(method => method.value !== 'sahal' && method.value !== 'zaad' && method.value !== 'evc' && method.value !== 'edahab' && method.value !== 'premier' && method.value !== 'moneygo' && method.value !== 'trx' && method.value !== 'trc20' && method.value !== 'peb20' && method.value !== 'usdc').map((fromMethod) => (
+                  {paymentMethods.map((fromMethod) => (
                     <div key={fromMethod.value} className="border rounded-lg p-4">
                       <h4 className="font-semibold text-lg mb-3 capitalize text-gray-800">
                         {fromMethod.label} Outgoing Limits
@@ -867,7 +866,9 @@ export default function AdminDashboard() {
                           .filter(toMethod => toMethod.value !== fromMethod.value)
                           .map((toMethod) => {
                             const key = `${fromMethod.value}-${toMethod.value}`;
-                            const specificLimits = currencyLimits[key];
+                            const specificLimits = currencyLimitsData?.find((limit: any) => 
+                              limit.fromCurrency === fromMethod.value && limit.toCurrency === toMethod.value
+                            );
                             const currentMin = specificLimits ? specificLimits.min : minAmount;
                             const currentMax = specificLimits ? specificLimits.max : maxAmount;
                             const isCustom = !!specificLimits;

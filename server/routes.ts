@@ -34,13 +34,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       
+      // Get currency-specific limits for this pair
+      const currencyLimit = await storage.getCurrencyLimit(validatedData.sendMethod, validatedData.receiveMethod);
+      
+      // Use currency-specific limits if available, otherwise use global defaults
+      const minAmount = currencyLimit ? parseFloat(currencyLimit.minAmount) : 5;
+      const maxAmount = currencyLimit ? parseFloat(currencyLimit.maxAmount) : 10000;
+      
       // Validate amount range
       const amount = parseFloat(validatedData.sendAmount);
-      if (amount < 5) {
-        return res.status(400).json({ message: "Minimum send amount is $5.00" });
+      if (amount < minAmount) {
+        return res.status(400).json({ message: `Minimum send amount is $${minAmount.toFixed(2)}` });
       }
-      if (amount > 10000) {
-        return res.status(400).json({ message: "Maximum send amount is $10,000.00" });
+      if (amount > maxAmount) {
+        return res.status(400).json({ message: `Maximum send amount is $${maxAmount.toFixed(2)}` });
       }
       
       const order = await storage.createOrder(validatedData);
