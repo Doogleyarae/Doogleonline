@@ -200,7 +200,10 @@ export default function Exchange() {
                               {...field}
                             />
                           </FormControl>
-                          <p className="text-xs text-gray-500">Minimum: $5.00 • Maximum: $10,000.00</p>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Min: $5.00</span>
+                            <span>Max: $10,000</span>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
