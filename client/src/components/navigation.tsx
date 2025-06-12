@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import NotificationsPanel from "@/components/notifications";
 
 const navigationItems = [
   { href: "/", label: "Home" },
@@ -43,6 +44,7 @@ export default function Navigation() {
                   </span>
                 </Link>
               ))}
+              <NotificationsPanel />
             </div>
           </div>
 

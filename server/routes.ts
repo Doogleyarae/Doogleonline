@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema } from "@shared/schema";
+import { emailService } from "./email";
+import { wsManager } from "./websocket";
 import { z } from "zod";
 
 // Exchange rates (in a real app, these would come from an API)
@@ -47,6 +49,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const order = await storage.createOrder(validatedData);
+      
+      // Send order confirmation email
+      await emailService.sendOrderConfirmation(order);
+      
       res.json(order);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -88,6 +94,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
       
+      // Send status update email
+      await emailService.sendStatusUpdate(order);
+      
       res.json(order);
     } catch (error) {
       res.status(500).json({ message: "Failed to update order status" });
@@ -109,6 +118,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertContactMessageSchema.parse(req.body);
       const message = await storage.createContactMessage(validatedData);
+      
+      // Send confirmation email to customer and notification to admin
+      await emailService.sendContactConfirmation(message);
+      await emailService.notifyAdmin(message);
+      
       res.json(message);
     } catch (error) {
       if (error instanceof z.ZodError) {
