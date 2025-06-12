@@ -42,6 +42,47 @@ export default function AdminDashboard() {
   const [limitToCurrency, setLimitToCurrency] = useState<string>("");
   const [limitMinAmount, setLimitMinAmount] = useState<string>("5");
   const [limitMaxAmount, setLimitMaxAmount] = useState<string>("10000");
+
+  // Query currency limits
+  const { data: currencyLimitsData } = useQuery({
+    queryKey: ["/api/admin/currency-limits"],
+    enabled: true,
+  });
+
+  // Mutation for updating currency limits
+  const updateCurrencyLimitMutation = useMutation({
+    mutationFn: async (data: { fromCurrency: string; toCurrency: string; minAmount: string; maxAmount: string }) => {
+      const response = await fetch("/api/admin/currency-limits", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/currency-limits"] });
+      setLimitFromCurrency("");
+      setLimitToCurrency("");
+      setLimitMinAmount("5");
+      setLimitMaxAmount("10000");
+      toast({
+        title: "Success",
+        description: "Currency limit updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update currency limit",
+        variant: "destructive",
+      });
+    },
+  });
   
 
   
@@ -116,13 +157,7 @@ export default function AdminDashboard() {
     },
     onSuccess: (data, variables) => {
       // Store currency-specific limits locally
-      if (variables.fromCurrency && variables.fromCurrency !== "all" && variables.toCurrency && variables.toCurrency !== "all") {
-        const key = `${variables.fromCurrency}-${variables.toCurrency}`;
-        setCurrencyLimits(prev => ({
-          ...prev,
-          [key]: { min: variables.minAmount, max: variables.maxAmount }
-        }));
-      }
+      // Currency limit updated successfully via API
       
       toast({
         title: "Success",
@@ -866,11 +901,11 @@ export default function AdminDashboard() {
                           .filter(toMethod => toMethod.value !== fromMethod.value)
                           .map((toMethod) => {
                             const key = `${fromMethod.value}-${toMethod.value}`;
-                            const specificLimits = currencyLimitsData?.find((limit: any) => 
+                            const specificLimits = Array.isArray(currencyLimitsData) ? currencyLimitsData.find((limit: any) => 
                               limit.fromCurrency === fromMethod.value && limit.toCurrency === toMethod.value
-                            );
-                            const currentMin = specificLimits ? specificLimits.min : minAmount;
-                            const currentMax = specificLimits ? specificLimits.max : maxAmount;
+                            ) : undefined;
+                            const currentMin = specificLimits ? parseFloat(specificLimits.minAmount).toFixed(2) : minAmount;
+                            const currentMax = specificLimits ? parseFloat(specificLimits.maxAmount).toFixed(2) : maxAmount;
                             const isCustom = !!specificLimits;
                             
                             return (
@@ -896,8 +931,8 @@ export default function AdminDashboard() {
                                       setLimitFromCurrency(fromMethod.value);
                                       setLimitToCurrency(toMethod.value);
                                       if (specificLimits) {
-                                        setMinAmount(specificLimits.min);
-                                        setMaxAmount(specificLimits.max);
+                                        setLimitMinAmount(parseFloat(specificLimits.minAmount).toString());
+                                        setLimitMaxAmount(parseFloat(specificLimits.maxAmount).toString());
                                       }
                                     }}
                                   >
@@ -913,8 +948,79 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {/* Currency Pair Limits Form */}
+              {limitFromCurrency && limitToCurrency && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-3">Set Limits for Currency Pair</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label>From Currency</Label>
+                      <div className="p-2 bg-blue-100 rounded border text-blue-800 font-medium">
+                        {paymentMethods.find(m => m.value === limitFromCurrency)?.label}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>To Currency</Label>
+                      <div className="p-2 bg-blue-100 rounded border text-blue-800 font-medium">
+                        {paymentMethods.find(m => m.value === limitToCurrency)?.label}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="limitMin">Min Amount ($)</Label>
+                      <Input
+                        id="limitMin"
+                        type="number"
+                        value={limitMinAmount}
+                        onChange={(e) => setLimitMinAmount(e.target.value)}
+                        placeholder="5"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="limitMax">Max Amount ($)</Label>
+                      <Input
+                        id="limitMax"
+                        type="number"
+                        value={limitMaxAmount}
+                        onChange={(e) => setLimitMaxAmount(e.target.value)}
+                        placeholder="10000"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      onClick={() => {
+                        updateCurrencyLimitMutation.mutate({
+                          fromCurrency: limitFromCurrency,
+                          toCurrency: limitToCurrency,
+                          minAmount: limitMinAmount,
+                          maxAmount: limitMaxAmount,
+                        });
+                      }}
+                      disabled={updateCurrencyLimitMutation.isPending}
+                    >
+                      {updateCurrencyLimitMutation.isPending ? "Updating..." : "Set Currency Limit"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setLimitFromCurrency("");
+                        setLimitToCurrency("");
+                        setLimitMinAmount("5");
+                        setLimitMaxAmount("10000");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Current Selection Indicator */}
-              {limitFromCurrency !== "all" && limitToCurrency !== "all" && (
+              {false && (
                 <div className="p-4 bg-blue-100 border border-blue-300 rounded-lg">
                   <h4 className="font-semibold text-blue-900 mb-2">Currently Editing Limits For:</h4>
                   <div className="flex items-center space-x-2">
