@@ -43,9 +43,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       
-      // Validate minimum amount
-      if (parseFloat(validatedData.sendAmount) < 5) {
+      // Validate amount range
+      const amount = parseFloat(validatedData.sendAmount);
+      if (amount < 5) {
         return res.status(400).json({ message: "Minimum send amount is $5.00" });
+      }
+      if (amount > 10000) {
+        return res.status(400).json({ message: "Maximum send amount is $10,000.00" });
       }
       
       const order = await storage.createOrder(validatedData);

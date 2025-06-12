@@ -31,8 +31,11 @@ const exchangeFormSchema = z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
   receiveMethod: z.string().min(1, "Please select a receive method"),
   sendAmount: z.string().min(1, "Amount is required").refine(
-    (val) => parseFloat(val) >= 5,
-    "Minimum amount is $5.00"
+    (val) => {
+      const amount = parseFloat(val);
+      return amount >= 5 && amount <= 10000;
+    },
+    "Amount must be between $5.00 and $10,000.00"
   ),
   receiveAmount: z.string(),
   exchangeRate: z.string(),
@@ -193,10 +196,11 @@ export default function Exchange() {
                               placeholder="0.00"
                               step="0.01"
                               min="5"
+                              max="10000"
                               {...field}
                             />
                           </FormControl>
-                          <p className="text-xs text-gray-500">Minimum: $5.00</p>
+                          <p className="text-xs text-gray-500">Minimum: $5.00 • Maximum: $10,000.00</p>
                           <FormMessage />
                         </FormItem>
                       )}
