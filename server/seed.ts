@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, exchangeRates } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 
 async function seedDatabase() {
   try {
@@ -17,6 +17,35 @@ async function seedDatabase() {
       console.log("✓ Admin user created");
     } else {
       console.log("✓ Admin user already exists");
+    }
+
+    // Seed default exchange rates (1:1 for all currencies)
+    const currencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20', 'usdc'];
+    const defaultRates = [];
+
+    for (const from of currencies) {
+      for (const to of currencies) {
+        if (from !== to) {
+          // Check if rate already exists
+          const existingRate = await db.select().from(exchangeRates)
+            .where(and(eq(exchangeRates.fromCurrency, from), eq(exchangeRates.toCurrency, to)));
+          
+          if (existingRate.length === 0) {
+            defaultRates.push({
+              fromCurrency: from,
+              toCurrency: to,
+              rate: "1.00"
+            });
+          }
+        }
+      }
+    }
+
+    if (defaultRates.length > 0) {
+      await db.insert(exchangeRates).values(defaultRates);
+      console.log(`✓ Seeded ${defaultRates.length} default exchange rates`);
+    } else {
+      console.log("✓ Exchange rates already exist");
     }
     
     console.log("✓ Database seeded successfully");

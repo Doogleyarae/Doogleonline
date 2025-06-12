@@ -6,19 +6,8 @@ import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { z } from "zod";
 
-// Exchange rates - 1:1 for all currencies (1 dollar equivalent)
-const exchangeRates: Record<string, Record<string, number>> = {
-  'zaad': { 'usd': 1, 'eur': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'sahal': { 'usd': 1, 'eur': 1, 'zaad': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'evc': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'edahab': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'premier': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'moneygo': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'trx': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'trx': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trc20': 1, 'peb20': 1, 'usdc': 1 },
-  'trc20': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'peb20': 1, 'usdc': 1 },
-  'peb20': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'usdc': 1 },
-  'usdc': { 'usd': 1, 'eur': 1, 'zaad': 1, 'sahal': 1, 'evc': 1, 'edahab': 1, 'premier': 1, 'moneygo': 1, 'trx': 1, 'trc20': 1, 'peb20': 1 }
-};
+// Default fallback exchange rate
+const DEFAULT_EXCHANGE_RATE = 1.0;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -27,12 +16,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { from, to } = req.params;
       
-      if (!exchangeRates[from] || !exchangeRates[from][to]) {
-        return res.status(400).json({ message: "Exchange rate not available for this currency pair" });
+      // First try to get from database
+      const dbRate = await storage.getExchangeRate(from, to);
+      if (dbRate) {
+        return res.json({ rate: parseFloat(dbRate.rate), from: from.toUpperCase(), to: to.toUpperCase() });
       }
       
-      const rate = exchangeRates[from][to];
-      res.json({ rate, from: from.toUpperCase(), to: to.toUpperCase() });
+      // Fallback to default 1:1 rate
+      res.json({ rate: DEFAULT_EXCHANGE_RATE, from: from.toUpperCase(), to: to.toUpperCase() });
     } catch (error) {
       res.status(500).json({ message: "Failed to get exchange rate" });
     }
