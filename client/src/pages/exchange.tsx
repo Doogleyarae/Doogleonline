@@ -262,7 +262,10 @@ export default function Exchange() {
                               {...field}
                             />
                           </FormControl>
-                          <p className="text-xs text-gray-500">Auto-calculated based on current rates</p>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Min: $5.00</span>
+                            <span>Max: $10,000</span>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
