@@ -214,10 +214,11 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="orders" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="orders">Orders Management</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
-          <TabsTrigger value="messages">Contact Messages</TabsTrigger>
+          <TabsTrigger value="messages">Messages</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         {/* Orders Management */}
@@ -425,6 +426,118 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <TrendingUp className="w-8 h-8 text-primary mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Completion Rate</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0}%
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <DollarSign className="w-8 h-8 text-green-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : '0.00'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <MessageSquare className="w-8 h-8 text-purple-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Support Tickets</p>
+                    <p className="text-2xl font-bold text-gray-900">{messages.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <CheckCircle className="w-8 h-8 text-green-500 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Processing Time</p>
+                    <p className="text-2xl font-bold text-gray-900">~15min</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {orders.slice(0, 5).map((order) => (
+                    <div key={order.orderId} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                      <div>
+                        <p className="font-medium">{order.orderId}</p>
+                        <p className="text-sm text-gray-600">{order.fullName}</p>
+                      </div>
+                      <Badge className={getStatusColor(order.status)}>
+                        {order.status}
+                      </Badge>
+                    </div>
+                  ))}
+                  {orders.length === 0 && (
+                    <p className="text-center text-gray-500 py-4">No orders yet</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Popular Currency Pairs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {orders.length > 0 ? (
+                    Object.entries(
+                      orders.reduce((acc, order) => {
+                        const pair = `${order.sendMethod.toUpperCase()} → ${order.receiveMethod.toUpperCase()}`;
+                        acc[pair] = (acc[pair] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>)
+                    )
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 5)
+                    .map(([pair, count]) => (
+                      <div key={pair} className="flex justify-between items-center">
+                        <span className="font-medium">{pair}</span>
+                        <Badge variant="outline">{count} orders</Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center text-gray-500 py-4">No currency pairs yet</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

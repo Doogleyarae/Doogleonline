@@ -9,6 +9,7 @@ const navigationItems = [
   { href: "/", label: "Home" },
   { href: "/exchange", label: "Exchange" },
   { href: "/track", label: "Track Order" },
+  { href: "/orders", label: "Order History" },
   { href: "/contact", label: "Contact" },
   { href: "/admin", label: "Admin" },
 ];
