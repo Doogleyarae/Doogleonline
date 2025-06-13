@@ -70,6 +70,7 @@ export default function Exchange() {
   const [sendMethod, setSendMethod] = useState("trc20");
   const [receiveMethod, setReceiveMethod] = useState("moneygo");
   const [sendAmount, setSendAmount] = useState("100");
+  const [formKey, setFormKey] = useState(0);
 
   // Fetch currency-specific limits for the selected pair
   const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
@@ -96,6 +97,15 @@ export default function Exchange() {
       agreeToTerms: false,
     },
   });
+
+  // Update form validation when currency limits change
+  useEffect(() => {
+    // Clear form validation and set values
+    form.clearErrors();
+    form.setValue("sendMethod", sendMethod);
+    form.setValue("receiveMethod", receiveMethod);
+    form.setValue("sendAmount", sendAmount);
+  }, [currentMinAmount, currentMaxAmount, sendMethod, receiveMethod, sendAmount, form]);
 
   // Update form values when state changes
   useEffect(() => {
