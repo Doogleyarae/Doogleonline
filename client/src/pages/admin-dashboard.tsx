@@ -272,17 +272,24 @@ export default function AdminDashboard() {
   // Wallet management mutations
   const updateWalletMutation = useMutation({
     mutationFn: async ({ method, address }: { method: string; address: string }) => {
-      return await apiRequest('POST', '/api/admin/wallet-addresses', { method, address });
+      const response = await apiRequest('POST', '/api/admin/wallet-addresses', { method, address });
+      return await response.json();
     },
     onSuccess: (data: any, variables: { method: string; address: string }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/wallet-addresses'] });
       setLastUpdated(data?.lastUpdated || new Date().toISOString());
+      // Update local state immediately
+      setWalletAddresses(prev => ({
+        ...prev,
+        [variables.method]: variables.address
+      }));
       toast({
         title: "Wallet Updated",
-        description: `${variables.method} wallet address updated successfully`,
+        description: `${variables.method.toUpperCase()} wallet address updated successfully`,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Wallet update error:', error);
       toast({
         title: "Update Failed",
         description: "Failed to update wallet address",
@@ -293,17 +300,24 @@ export default function AdminDashboard() {
 
   const updateApiEndpointMutation = useMutation({
     mutationFn: async ({ endpoint, url }: { endpoint: string; url: string }) => {
-      return await apiRequest('POST', '/api/admin/api-endpoints', { endpoint, url });
+      const response = await apiRequest('POST', '/api/admin/api-endpoints', { endpoint, url });
+      return await response.json();
     },
     onSuccess: (data: any, variables: { endpoint: string; url: string }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/api-endpoints'] });
       setLastUpdated(data?.lastUpdated || new Date().toISOString());
+      // Update local state immediately
+      setApiEndpoints(prev => ({
+        ...prev,
+        [variables.endpoint]: variables.url
+      }));
       toast({
         title: "API Endpoint Updated",
-        description: `${variables.endpoint} endpoint updated successfully`,
+        description: `${variables.endpoint.toUpperCase()} endpoint updated successfully`,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('API endpoint update error:', error);
       toast({
         title: "Update Failed",
         description: "Failed to update API endpoint",
@@ -321,6 +335,7 @@ export default function AdminDashboard() {
       });
       return;
     }
+    console.log('Updating wallet:', { method, address });
     updateWalletMutation.mutate({ method, address });
   };
 
@@ -891,39 +906,48 @@ export default function AdminDashboard() {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {Object.entries(walletAddresses).map(([method, address]) => {
-                    const methodLabel = paymentMethods.find(p => p.value === method)?.label || method.toUpperCase();
-                    return (
-                      <div key={method} className="space-y-2">
-                        <Label htmlFor={`wallet-${method}`} className="text-sm font-semibold">
-                          {methodLabel}
-                        </Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id={`wallet-${method}`}
-                            value={address}
-                            onChange={(e) => setWalletAddresses(prev => ({
-                              ...prev,
-                              [method]: e.target.value
-                            }))}
-                            placeholder={`Enter ${methodLabel} wallet/account`}
-                            className="flex-1"
-                          />
-                          <Button
-                            onClick={() => handleWalletUpdate(method, address)}
-                            disabled={updateWalletMutation.isPending}
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            Save
-                          </Button>
+                  {walletData ? (
+                    Object.entries(walletAddresses).map(([method, address]) => {
+                      const methodLabel = paymentMethods.find(p => p.value === method)?.label || method.toUpperCase();
+                      return (
+                        <div key={method} className="space-y-2">
+                          <Label htmlFor={`wallet-${method}`} className="text-sm font-semibold">
+                            {methodLabel}
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id={`wallet-${method}`}
+                              value={address || ''}
+                              onChange={(e) => setWalletAddresses(prev => ({
+                                ...prev,
+                                [method]: e.target.value
+                              }))}
+                              placeholder={`Enter ${methodLabel} wallet/account`}
+                              className="flex-1"
+                            />
+                            <Button
+                              onClick={() => handleWalletUpdate(method, address)}
+                              disabled={updateWalletMutation.isPending}
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {updateWalletMutation.isPending ? "Saving..." : "Save"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Current: {address || 'Not configured'}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          Current: {address || 'Not configured'}
-                        </p>
+                      );
+                    })
+                  ) : (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <p className="text-sm text-gray-600">Loading wallet addresses...</p>
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
                   
                   {lastUpdated && (
                     <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
@@ -947,39 +971,48 @@ export default function AdminDashboard() {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {Object.entries(apiEndpoints).map(([endpoint, url]) => {
-                    const endpointLabel = endpoint.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    return (
-                      <div key={endpoint} className="space-y-2">
-                        <Label htmlFor={`api-${endpoint}`} className="text-sm font-semibold">
-                          {endpointLabel}
-                        </Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id={`api-${endpoint}`}
-                            value={url}
-                            onChange={(e) => setApiEndpoints(prev => ({
-                              ...prev,
-                              [endpoint]: e.target.value
-                            }))}
-                            placeholder={`Enter ${endpointLabel} URL`}
-                            className="flex-1"
-                          />
-                          <Button
-                            onClick={() => handleApiEndpointUpdate(endpoint, url)}
-                            disabled={updateApiEndpointMutation.isPending}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            Save
-                          </Button>
+                  {apiData ? (
+                    Object.entries(apiEndpoints).map(([endpoint, url]) => {
+                      const endpointLabel = endpoint.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      return (
+                        <div key={endpoint} className="space-y-2">
+                          <Label htmlFor={`api-${endpoint}`} className="text-sm font-semibold">
+                            {endpointLabel}
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id={`api-${endpoint}`}
+                              value={url || ''}
+                              onChange={(e) => setApiEndpoints(prev => ({
+                                ...prev,
+                                [endpoint]: e.target.value
+                              }))}
+                              placeholder={`Enter ${endpointLabel} URL`}
+                              className="flex-1"
+                            />
+                            <Button
+                              onClick={() => handleApiEndpointUpdate(endpoint, url)}
+                              disabled={updateApiEndpointMutation.isPending}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {updateApiEndpointMutation.isPending ? "Saving..." : "Save"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Current: {url || 'Not configured'}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          Current: {url || 'Not configured'}
-                        </p>
+                      );
+                    })
+                  ) : (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                        <p className="text-sm text-gray-600">Loading API endpoints...</p>
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
