@@ -41,17 +41,28 @@ const paymentMethods = [
   { value: "usdc", label: "USDC" },
 ];
 
-const createExchangeFormSchema = (minAmount: number = 5, maxAmount: number = 10000) => z.object({
+const createExchangeFormSchema = (
+  minSendAmount: number = 5, 
+  maxSendAmount: number = 10000,
+  minReceiveAmount: number = 5,
+  maxReceiveAmount: number = 10000
+) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
   receiveMethod: z.string().min(1, "Please select a receive method"),
   sendAmount: z.string().min(1, "Amount is required").refine(
     (val) => {
       const amount = parseFloat(val);
-      return amount >= minAmount && amount <= maxAmount;
+      return amount >= minSendAmount && amount <= maxSendAmount;
     },
-    `Amount must be between $${minAmount.toFixed(2)} and $${maxAmount.toFixed(2)}`
+    `Send amount must be between ${minSendAmount.toFixed(2)} and ${maxSendAmount.toFixed(2)}`
   ),
-  receiveAmount: z.string(),
+  receiveAmount: z.string().min(1, "Amount is required").refine(
+    (val) => {
+      const amount = parseFloat(val);
+      return amount >= minReceiveAmount && amount <= maxReceiveAmount;
+    },
+    `Receive amount must be between ${minReceiveAmount.toFixed(2)} and ${maxReceiveAmount.toFixed(2)}`
+  ),
   exchangeRate: z.string(),
   fullName: z.string().min(1, "Full name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
@@ -74,6 +85,12 @@ export default function Exchange() {
   const [formKey, setFormKey] = useState(0);
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
+  const [dynamicLimits, setDynamicLimits] = useState({
+    minSendAmount: 5,
+    maxSendAmount: 10000,
+    minReceiveAmount: 5,
+    maxReceiveAmount: 10000,
+  });
 
   // Fetch currency-specific limits for the selected pair
   const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
@@ -81,12 +98,13 @@ export default function Exchange() {
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
   });
 
-  // Get current limits (either custom or default)
-  const currentMinAmount = currencyLimits?.minAmount || 5;
-  const currentMaxAmount = currencyLimits?.maxAmount || 10000;
-
   const form = useForm<ExchangeFormData>({
-    resolver: zodResolver(createExchangeFormSchema(currentMinAmount, currentMaxAmount)),
+    resolver: zodResolver(createExchangeFormSchema(
+      dynamicLimits.minSendAmount, 
+      dynamicLimits.maxSendAmount,
+      dynamicLimits.minReceiveAmount,
+      dynamicLimits.maxReceiveAmount
+    )),
     defaultValues: {
       sendMethod: sendMethod,
       receiveMethod: receiveMethod,
@@ -101,10 +119,28 @@ export default function Exchange() {
     },
   });
 
-  // Update form key to force re-render when limits change
+  // Calculate dynamic limits when exchange rate or currency limits change
   useEffect(() => {
-    setFormKey(prev => prev + 1);
-  }, [currentMinAmount, currentMaxAmount]);
+    if (currencyLimits && exchangeRate > 0) {
+      const baseLimits = {
+        minAmount: currencyLimits.minAmount,
+        maxAmount: currencyLimits.maxAmount,
+      };
+
+      // Calculate dynamic limits based on exchange rate
+      // Send limits: base limits from database
+      // Receive limits: calculated from send limits using exchange rate
+      const newLimits = {
+        minSendAmount: baseLimits.minAmount,
+        maxSendAmount: baseLimits.maxAmount,
+        minReceiveAmount: baseLimits.minAmount * exchangeRate,
+        maxReceiveAmount: baseLimits.maxAmount * exchangeRate,
+      };
+
+      setDynamicLimits(newLimits);
+      setFormKey(prev => prev + 1); // Force form re-render with new limits
+    }
+  }, [currencyLimits, exchangeRate]);
 
   // Update form values when state changes
   useEffect(() => {
