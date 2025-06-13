@@ -9,32 +9,52 @@ import { z } from "zod";
 // Default fallback exchange rate
 const DEFAULT_EXCHANGE_RATE = 1.0;
 
-// Global variable to store currency limits (in memory for now)
-let currencyLimits: Record<string, { min: number; max: number }> = {
-  zaad: { min: 5, max: 10000 },
-  sahal: { min: 5, max: 10000 },
-  evc: { min: 5, max: 10000 },
-  edahab: { min: 5, max: 10000 },
-  premier: { min: 5, max: 10000 },
-  moneygo: { min: 5, max: 10000 },
-  trx: { min: 1, max: 999 },
-  trc20: { min: 1, max: 999 },
-  peb20: { min: 5, max: 10000 },
-  usdc: { min: 5, max: 10000 }
-};
-
-// Function to get currency limits with fallback
-function getCurrencyLimits(currency: string): { min: number; max: number } {
-  const normalized = currency.toLowerCase();
-  return currencyLimits[normalized] || { min: 5, max: 10000 };
+// Database-backed currency limits storage using currency_limits table
+async function getCurrencyLimits(currency: string): Promise<{ min: number; max: number }> {
+  try {
+    // Try to get custom limits from database first
+    const customLimit = await storage.getCurrencyLimit(currency, 'default');
+    if (customLimit) {
+      return {
+        min: parseFloat(customLimit.minAmount),
+        max: parseFloat(customLimit.maxAmount)
+      };
+    }
+  } catch (error) {
+    console.log(`No custom limits found for ${currency}, using defaults`);
+  }
+  
+  // Default fallback limits
+  const defaults: Record<string, { min: number; max: number }> = {
+    zaad: { min: 5, max: 10000 },
+    sahal: { min: 5, max: 10000 },
+    evc: { min: 5, max: 10000 },
+    edahab: { min: 5, max: 10000 },
+    premier: { min: 5, max: 10000 },
+    moneygo: { min: 5, max: 10000 },
+    trx: { min: 1, max: 999 },
+    trc20: { min: 1, max: 999 },
+    peb20: { min: 5, max: 10000 },
+    usdc: { min: 5, max: 10000 }
+  };
+  
+  return defaults[currency.toLowerCase()] || { min: 5, max: 10000 };
 }
 
-// Function to update currency limits
-function updateCurrencyLimits(currency: string, min: number, max: number): void {
-  const normalized = currency.toLowerCase();
-  currencyLimits[normalized] = { min, max };
-  console.log(`Updated ${currency} limits: min=${min}, max=${max}`);
-  console.log('Current limits:', currencyLimits);
+// Function to update currency limits in database
+async function updateCurrencyLimits(currency: string, min: number, max: number): Promise<void> {
+  try {
+    await storage.updateCurrencyLimit({
+      fromCurrency: currency.toLowerCase(),
+      toCurrency: 'default',
+      minAmount: min.toString(),
+      maxAmount: max.toString()
+    });
+    console.log(`Updated ${currency} limits in database: min=${min}, max=${max}`);
+  } catch (error) {
+    console.error(`Failed to update ${currency} limits:`, error);
+    throw error;
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -225,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/currency-limits/:currency", async (req, res) => {
     try {
       const { currency } = req.params;
-      const limits = getCurrencyLimits(currency);
+      const limits = await getCurrencyLimits(currency);
       
       res.json({
         minAmount: limits.min,
@@ -241,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/currency-limits/:from/:to", async (req, res) => {
     try {
       const { from, to } = req.params;
-      const fromLimits = getCurrencyLimits(from);
+      const fromLimits = await getCurrencyLimits(from);
       
       res.json({
         minAmount: fromLimits.min,
@@ -259,7 +279,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all currency limits (admin only)
   app.get("/api/admin/balance-limits", async (req, res) => {
     try {
-      res.json(currencyLimits);
+      const currencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20', 'usdc'];
+      const allLimits: Record<string, { min: number; max: number }> = {};
+      
+      for (const currency of currencies) {
+        allLimits[currency] = await getCurrencyLimits(currency);
+      }
+      
+      res.json(allLimits);
     } catch (error) {
       res.status(500).json({ message: "Failed to get currency limits" });
     }
@@ -281,7 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid amount values" });
       }
       
-      updateCurrencyLimits(currency, min, max);
+      await updateCurrencyLimits(currency, min, max);
       
       res.json({
         currency: currency.toUpperCase(),
