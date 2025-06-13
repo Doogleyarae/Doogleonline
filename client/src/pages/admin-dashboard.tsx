@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   
   // State for balance management
   const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>({});
-
+  
   // Fetch current currency limits from backend
   const { data: backendLimits } = useQuery({
     queryKey: ["/api/admin/balance-limits"],
@@ -383,10 +383,30 @@ export default function AdminDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Order Management</CardTitle>
-                <p className="text-sm text-gray-600">
-                  Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.
-                </p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Order Management</CardTitle>
+                    <p className="text-sm text-gray-600">
+                      Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="status-filter">Filter:</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="All Orders" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Orders</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {ordersLoading ? (
@@ -406,7 +426,9 @@ export default function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {orders.map((order) => (
+                        {orders
+                          .filter((order) => statusFilter === "all" || order.status === statusFilter)
+                          .map((order) => (
                           <TableRow key={order.orderId}>
                             <TableCell className="font-medium">{order.orderId}</TableCell>
                             <TableCell>{order.fullName}</TableCell>
