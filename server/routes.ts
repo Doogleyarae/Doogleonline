@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema } from "@shared/schema";
 import { emailService } from "./email";
 import { wsManager } from "./websocket";
+import { orderProcessor } from "./orderProcessor";
 import { z } from "zod";
 
 // Default fallback exchange rate
@@ -153,9 +154,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Notify connected clients via WebSocket
       wsManager.notifyOrderUpdate(order);
       
+      // Handle order processing timers based on status
+      if (status === "paid") {
+        // Start 15-minute timer for automatic completion
+        orderProcessor.startProcessingTimer(orderId);
+        console.log(`Order ${orderId} marked as paid, starting 15-minute processing timer`);
+      } else if (status === "cancelled") {
+        // Clear any existing timer for cancelled orders
+        orderProcessor.clearTimer(orderId);
+        console.log(`Order ${orderId} cancelled, clearing processing timer`);
+      }
+      
       res.json(order);
     } catch (error) {
       res.status(500).json({ message: "Failed to update order status" });
+    }
+  });
+
+  // Get order processing status
+  app.get("/api/orders/:orderId/processing-status", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const isProcessing = orderProcessor.isProcessing(orderId);
+      const remainingTime = orderProcessor.getRemainingTime(orderId);
+      
+      res.json({
+        isProcessing,
+        remainingTimeMinutes: remainingTime
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get processing status" });
     }
   });
 

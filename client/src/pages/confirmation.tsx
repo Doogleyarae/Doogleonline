@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Copy, CreditCard, X, Clock } from "lucide-react";
+import { CheckCircle, Copy, CreditCard, X, Clock, Timer } from "lucide-react";
 import { formatDate, formatCurrency, copyToClipboard } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 
 export default function Confirmation() {
   const [order, setOrder] = useState<Order | null>(null);
+  const [countdown, setCountdown] = useState<number>(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -20,6 +21,38 @@ export default function Confirmation() {
       setOrder(JSON.parse(storedOrder));
     }
   }, []);
+
+  // Query processing status for paid orders
+  const { data: processingStatus } = useQuery<{ isProcessing: boolean; remainingTimeMinutes: number }>({
+    queryKey: ["/api/orders", order?.orderId, "processing-status"],
+    enabled: !!order && order.status === "paid",
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+
+  // Countdown timer for paid orders
+  useEffect(() => {
+    if (order?.status === "paid" && processingStatus?.isProcessing) {
+      setCountdown(15 * 60); // 15 minutes in seconds
+      
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [order?.status, processingStatus]);
+
+  const formatCountdown = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
@@ -192,6 +225,27 @@ export default function Confirmation() {
                     Cancel Order
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Processing Timer for Paid Orders */}
+          {order.status === "paid" && processingStatus?.isProcessing && countdown > 0 && (
+            <Card className="bg-blue-50 border border-blue-200 mb-6">
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-3">
+                  <Timer className="w-5 h-5 text-blue-600 mr-2" />
+                  <h3 className="text-sm font-semibold text-blue-900">Processing Your Payment</h3>
+                </div>
+                <p className="text-blue-700 text-sm mb-3">
+                  Your order will be automatically completed in:
+                </p>
+                <div className="text-2xl font-bold text-blue-800 mb-2">
+                  {formatCountdown(countdown)}
+                </div>
+                <p className="text-xs text-blue-600">
+                  Processing typically takes 15 minutes after payment confirmation
+                </p>
               </CardContent>
             </Card>
           )}
