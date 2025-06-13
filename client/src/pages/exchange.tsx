@@ -257,6 +257,24 @@ export default function Exchange() {
                   <span className="text-sm font-medium text-blue-800">Current Rate:</span>
                   <span className="text-lg font-bold text-blue-900">{rateDisplay}</span>
                 </div>
+                {currencyLimits && exchangeRate > 0 && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="text-blue-700 font-medium">Send Limits:</span>
+                        <div className="text-blue-600">
+                          ${dynamicLimits.minSendAmount.toFixed(2)} - ${dynamicLimits.maxSendAmount.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Receive Limits:</span>
+                        <div className="text-blue-600">
+                          ${dynamicLimits.minReceiveAmount.toFixed(2)} - ${dynamicLimits.maxReceiveAmount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Send Section */}
@@ -318,8 +336,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: ${currentMinAmount.toFixed(2)}</span>
-                            <span>Max: ${currentMaxAmount.toLocaleString()}</span>
+                            <span>Min: ${dynamicLimits.minSendAmount.toFixed(2)}</span>
+                            <span>Max: ${dynamicLimits.maxSendAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -386,8 +404,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: ${(currentMinAmount * exchangeRate).toFixed(2)}</span>
-                            <span>Max: ${(currentMaxAmount * exchangeRate).toLocaleString()}</span>
+                            <span>Min: ${dynamicLimits.minReceiveAmount.toFixed(2)}</span>
+                            <span>Max: ${dynamicLimits.maxReceiveAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>

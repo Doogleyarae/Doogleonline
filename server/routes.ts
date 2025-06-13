@@ -83,20 +83,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       
-      // Get currency-specific limits for this pair
+      // Get currency-specific limits and exchange rate for this pair
       const currencyLimit = await storage.getCurrencyLimit(validatedData.sendMethod, validatedData.receiveMethod);
+      const exchangeRateData = await storage.getExchangeRate(validatedData.sendMethod, validatedData.receiveMethod);
+      
+      if (!exchangeRateData) {
+        return res.status(400).json({ message: "Exchange rate not available for this currency pair" });
+      }
       
       // Use currency-specific limits if available, otherwise use global defaults
-      const minAmount = currencyLimit ? parseFloat(currencyLimit.minAmount) : 5;
-      const maxAmount = currencyLimit ? parseFloat(currencyLimit.maxAmount) : 10000;
+      const baseLimits = {
+        minAmount: currencyLimit ? parseFloat(currencyLimit.minAmount) : 5,
+        maxAmount: currencyLimit ? parseFloat(currencyLimit.maxAmount) : 10000,
+      };
       
-      // Validate amount range
-      const amount = parseFloat(validatedData.sendAmount);
-      if (amount < minAmount) {
-        return res.status(400).json({ message: `Minimum send amount is $${minAmount.toFixed(2)}` });
+      const exchangeRate = parseFloat(exchangeRateData.rate);
+      
+      // Calculate dynamic limits based on exchange rate
+      const dynamicLimits = {
+        minSendAmount: baseLimits.minAmount,
+        maxSendAmount: baseLimits.maxAmount,
+        minReceiveAmount: baseLimits.minAmount * exchangeRate,
+        maxReceiveAmount: baseLimits.maxAmount * exchangeRate,
+      };
+      
+      // Validate send amount
+      const sendAmount = parseFloat(validatedData.sendAmount);
+      if (sendAmount < dynamicLimits.minSendAmount) {
+        return res.status(400).json({ 
+          message: `Minimum send amount is ${dynamicLimits.minSendAmount.toFixed(2)}` 
+        });
       }
-      if (amount > maxAmount) {
-        return res.status(400).json({ message: `Maximum send amount is $${maxAmount.toFixed(2)}` });
+      if (sendAmount > dynamicLimits.maxSendAmount) {
+        return res.status(400).json({ 
+          message: `Maximum send amount is ${dynamicLimits.maxSendAmount.toFixed(2)}` 
+        });
+      }
+      
+      // Validate receive amount
+      const receiveAmount = parseFloat(validatedData.receiveAmount);
+      if (receiveAmount < dynamicLimits.minReceiveAmount) {
+        return res.status(400).json({ 
+          message: `Minimum receive amount is ${dynamicLimits.minReceiveAmount.toFixed(2)}` 
+        });
+      }
+      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+        return res.status(400).json({ 
+          message: `Maximum receive amount is ${dynamicLimits.maxReceiveAmount.toFixed(2)}` 
+        });
+      }
+      
+      // Validate that the amounts match the exchange rate (with small tolerance for rounding)
+      const calculatedReceiveAmount = sendAmount * exchangeRate;
+      const amountDifference = Math.abs(receiveAmount - calculatedReceiveAmount);
+      const tolerance = 0.02; // 2 cent tolerance for rounding differences
+      
+      if (amountDifference > tolerance) {
+        return res.status(400).json({ 
+          message: `Amount mismatch: expected receive amount ${calculatedReceiveAmount.toFixed(2)} based on current exchange rate` 
+        });
       }
       
       const order = await storage.createOrder(validatedData);
