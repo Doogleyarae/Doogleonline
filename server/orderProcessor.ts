@@ -35,7 +35,7 @@ class OrderProcessor {
       } catch (error) {
         console.error(`Error auto-completing order ${orderId}:`, error);
       }
-    }, 30 * 1000); // 30 seconds for demo (normally 15 * 60 * 1000)
+    }, 15 * 60 * 1000); // 15 minutes
 
     this.timers.set(orderId, timer);
   }
