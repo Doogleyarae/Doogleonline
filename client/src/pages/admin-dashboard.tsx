@@ -119,10 +119,44 @@ export default function AdminDashboard() {
   // State for balance management
   const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>({});
   
+  // State for wallet management
+  const [walletAddresses, setWalletAddresses] = useState<Record<string, string>>({});
+  const [apiEndpoints, setApiEndpoints] = useState<Record<string, string>>({
+    'rate_update': '',
+    'order_status': '',
+    'webhook_url': '',
+    'notification_api': ''
+  });
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+  
+  // Fetch wallet addresses
+  const { data: walletData } = useQuery({
+    queryKey: ["/api/admin/wallet-addresses"],
+  });
+
+  // Fetch API endpoints
+  const { data: apiData } = useQuery({
+    queryKey: ["/api/admin/api-endpoints"],
+  });
+
   // Fetch current currency limits from backend
   const { data: backendLimits } = useQuery({
     queryKey: ["/api/admin/balance-limits"],
   });
+
+  // Update local state when wallet data is loaded
+  useEffect(() => {
+    if (walletData && typeof walletData === 'object') {
+      setWalletAddresses(walletData as Record<string, string>);
+    }
+  }, [walletData]);
+
+  // Update local state when API data is loaded
+  useEffect(() => {
+    if (apiData && typeof apiData === 'object') {
+      setApiEndpoints(apiData as Record<string, string>);
+    }
+  }, [apiData]);
 
   // Update local state when backend data is loaded
   useEffect(() => {
@@ -233,6 +267,73 @@ export default function AdminDashboard() {
       return;
     }
     updateRateMutation.mutate({ fromCurrency, toCurrency, rate: exchangeRate });
+  };
+
+  // Wallet management mutations
+  const updateWalletMutation = useMutation({
+    mutationFn: async ({ method, address }: { method: string; address: string }) => {
+      return await apiRequest('/api/admin/wallet-addresses', 'POST', { method, address });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/wallet-addresses'] });
+      setLastUpdated(data.lastUpdated || new Date().toISOString());
+      toast({
+        title: "Wallet Updated",
+        description: `${data.method} wallet address updated successfully`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update wallet address",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateApiEndpointMutation = useMutation({
+    mutationFn: async ({ endpoint, url }: { endpoint: string; url: string }) => {
+      return await apiRequest('/api/admin/api-endpoints', 'POST', { endpoint, url });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/api-endpoints'] });
+      setLastUpdated(data.lastUpdated || new Date().toISOString());
+      toast({
+        title: "API Endpoint Updated",
+        description: `${data.endpoint} endpoint updated successfully`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update API endpoint",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleWalletUpdate = (method: string, address: string) => {
+    if (!address.trim()) {
+      toast({
+        title: "Error",
+        description: "Wallet address cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateWalletMutation.mutate({ method, address });
+  };
+
+  const handleApiEndpointUpdate = (endpoint: string, url: string) => {
+    if (!url.trim()) {
+      toast({
+        title: "Error",
+        description: "API URL cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateApiEndpointMutation.mutate({ endpoint, url });
   };
 
 

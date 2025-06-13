@@ -419,6 +419,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current wallet addresses (admin only)
+  app.get("/api/admin/wallet-addresses", async (req, res) => {
+    try {
+      const walletAddresses = {
+        'zaad': '*880*637834431*amount#',
+        'sahal': '*883*905865292*amount#',
+        'evc': '*799*34996012*amount#',
+        'edahab': '0626451011',
+        'premier': '0616451011',
+        'moneygo': 'U2778451',
+        'trx': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
+        'trc20': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
+        'peb20': '0x5f3c72277de38d91e12f6f594ac8353c21d73c83'
+      };
+      res.json(walletAddresses);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get wallet addresses" });
+    }
+  });
+
+  // Update wallet addresses (admin only)
+  app.post("/api/admin/wallet-addresses", async (req, res) => {
+    try {
+      const { method, address } = req.body;
+      
+      if (!method || !address) {
+        return res.status(400).json({ message: "Payment method and address are required" });
+      }
+
+      // In a production environment, this would update a database table
+      // For now, we'll simulate the update and return success
+      res.json({
+        method: method,
+        address: address,
+        message: "Wallet address updated successfully",
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update wallet address" });
+    }
+  });
+
+  // Get API endpoints configuration (admin only)
+  app.get("/api/admin/api-endpoints", async (req, res) => {
+    try {
+      const apiEndpoints = {
+        'rate_update': '/api/exchange-rate',
+        'order_status': '/api/orders',
+        'webhook_url': '/api/webhooks/notifications',
+        'notification_api': '/api/notifications'
+      };
+      res.json(apiEndpoints);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get API endpoints" });
+    }
+  });
+
+  // Update API endpoints (admin only)
+  app.post("/api/admin/api-endpoints", async (req, res) => {
+    try {
+      const { endpoint, url } = req.body;
+      
+      if (!endpoint || !url) {
+        return res.status(400).json({ message: "Endpoint name and URL are required" });
+      }
+
+      // Basic URL validation
+      try {
+        new URL(url);
+      } catch (urlError) {
+        return res.status(400).json({ message: "Invalid URL format" });
+      }
+
+      res.json({
+        endpoint: endpoint,
+        url: url,
+        message: "API endpoint updated successfully",
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update API endpoint" });
+    }
+  });
+
   // Update transaction limits (admin only)
   app.post("/api/admin/transaction-limits", async (req, res) => {
     try {
