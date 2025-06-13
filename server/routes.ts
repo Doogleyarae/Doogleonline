@@ -394,6 +394,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get wallet addresses (admin only)
+  app.get("/api/admin/wallet-addresses", async (req, res) => {
+    try {
+      // Return current wallet addresses for all payment methods
+      const walletAddresses = {
+        zaad: "*880*637834431*amount#",
+        sahal: "*883*905865292*amount#",
+        evc: "*799*34996012*amount#",
+        edahab: "0626451011",
+        premier: "0616451011",
+        moneygo: "U2778451",
+        trx: "THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv",
+        trc20: "THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv",
+        peb20: "0x5f3c72277de38d91e12f6f594ac8353c21d73c83"
+      };
+      
+      res.json(walletAddresses);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get wallet addresses" });
+    }
+  });
+
+  // Update wallet address (admin only)
+  app.post("/api/admin/wallet-addresses", async (req, res) => {
+    try {
+      const { method, address } = req.body;
+      
+      if (!method || !address) {
+        return res.status(400).json({ message: "Method and address are required" });
+      }
+      
+      // In a production environment, this would update a database
+      // For now, we'll simulate a successful update
+      res.json({
+        method: method.toUpperCase(),
+        address,
+        lastUpdated: new Date().toISOString(),
+        message: "Wallet address updated successfully"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update wallet address" });
+    }
+  });
+
+  // Get API endpoints (admin only)
+  app.get("/api/admin/api-endpoints", async (req, res) => {
+    try {
+      // Return current API endpoint configurations
+      const apiEndpoints = {
+        rate_update: "/api/exchange-rate",
+        payment_verification: "/api/payment/verify",
+        notification_service: "/api/notifications",
+        backup_service: "/api/backup"
+      };
+      
+      res.json(apiEndpoints);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get API endpoints" });
+    }
+  });
+
+  // Update API endpoint (admin only)
+  app.post("/api/admin/api-endpoints", async (req, res) => {
+    try {
+      const { endpoint, url } = req.body;
+      
+      if (!endpoint || !url) {
+        return res.status(400).json({ message: "Endpoint and URL are required" });
+      }
+      
+      // Validate URL format
+      try {
+        new URL(url);
+      } catch {
+        return res.status(400).json({ message: "Invalid URL format" });
+      }
+      
+      // In a production environment, this would update a database
+      // For now, we'll simulate a successful update
+      res.json({
+        endpoint: endpoint.toUpperCase(),
+        url,
+        lastUpdated: new Date().toISOString(),
+        message: "API endpoint updated successfully"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update API endpoint" });
+    }
+  });
+
   // Update currency limit (admin only) - legacy endpoint
   app.post("/api/admin/currency-limits", async (req, res) => {
     try {

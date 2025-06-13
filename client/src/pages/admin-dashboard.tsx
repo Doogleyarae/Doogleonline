@@ -272,14 +272,14 @@ export default function AdminDashboard() {
   // Wallet management mutations
   const updateWalletMutation = useMutation({
     mutationFn: async ({ method, address }: { method: string; address: string }) => {
-      return await apiRequest('/api/admin/wallet-addresses', 'POST', { method, address });
+      return await apiRequest('POST', '/api/admin/wallet-addresses', { method, address });
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: any, variables: { method: string; address: string }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/wallet-addresses'] });
       setLastUpdated(data?.lastUpdated || new Date().toISOString());
       toast({
         title: "Wallet Updated",
-        description: `${data?.method || method} wallet address updated successfully`,
+        description: `${variables.method} wallet address updated successfully`,
       });
     },
     onError: () => {
@@ -293,14 +293,14 @@ export default function AdminDashboard() {
 
   const updateApiEndpointMutation = useMutation({
     mutationFn: async ({ endpoint, url }: { endpoint: string; url: string }) => {
-      return await apiRequest('/api/admin/api-endpoints', 'POST', { endpoint, url });
+      return await apiRequest('POST', '/api/admin/api-endpoints', { endpoint, url });
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: any, variables: { endpoint: string; url: string }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/api-endpoints'] });
       setLastUpdated(data?.lastUpdated || new Date().toISOString());
       toast({
         title: "API Endpoint Updated",
-        description: `${data?.endpoint || endpoint} endpoint updated successfully`,
+        description: `${variables.endpoint} endpoint updated successfully`,
       });
     },
     onError: () => {
