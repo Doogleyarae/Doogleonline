@@ -9,6 +9,20 @@ import { z } from "zod";
 // Default fallback exchange rate
 const DEFAULT_EXCHANGE_RATE = 1.0;
 
+// Global variable to store currency limits (in memory for now)
+let currencyLimits: Record<string, { min: number; max: number }> = {
+  zaad: { min: 5, max: 10000 },
+  sahal: { min: 5, max: 10000 },
+  evc: { min: 5, max: 10000 },
+  edahab: { min: 5, max: 10000 },
+  premier: { min: 5, max: 10000 },
+  moneygo: { min: 5, max: 10000 },
+  trx: { min: 1, max: 999 },
+  trc20: { min: 1, max: 999 },
+  peb20: { min: 5, max: 10000 },
+  usdc: { min: 5, max: 10000 }
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get exchange rate
@@ -193,34 +207,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get currency limits for specific pair
-  app.get("/api/currency-limits/:from/:to", async (req, res) => {
+  // Get individual currency limits (new balance management system)
+  app.get("/api/currency-limits/:currency", async (req, res) => {
     try {
-      const { from, to } = req.params;
-      const limit = await storage.getCurrencyLimit(from, to);
+      const { currency } = req.params;
+      const limits = currencyLimits[currency.toLowerCase()] || { min: 5, max: 10000 };
       
-      if (limit) {
-        res.json({
-          minAmount: parseFloat(limit.minAmount),
-          maxAmount: parseFloat(limit.maxAmount),
-          from: from.toUpperCase(),
-          to: to.toUpperCase()
-        });
-      } else {
-        // Return default global limits if no specific limit exists
-        res.json({
-          minAmount: 5,
-          maxAmount: 10000,
-          from: from.toUpperCase(),
-          to: to.toUpperCase()
-        });
-      }
+      res.json({
+        minAmount: limits.min,
+        maxAmount: limits.max,
+        currency: currency.toUpperCase()
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to get currency limits" });
     }
   });
 
-  // Update currency limit (admin only)
+  // Get currency limits for specific pair (legacy endpoint)
+  app.get("/api/currency-limits/:from/:to", async (req, res) => {
+    try {
+      const { from, to } = req.params;
+      const fromLimits = currencyLimits[from.toLowerCase()] || { min: 5, max: 10000 };
+      
+      res.json({
+        minAmount: fromLimits.min,
+        maxAmount: fromLimits.max,
+        from: from.toUpperCase(),
+        to: to.toUpperCase()
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get currency limits" });
+    }
+  });
+
+
+
+  // Update individual currency limits (admin only)
+  app.post("/api/admin/balance-limits", async (req, res) => {
+    try {
+      const { currency, minAmount, maxAmount } = req.body;
+      
+      if (!currency || minAmount === undefined || maxAmount === undefined) {
+        return res.status(400).json({ message: "Currency, minAmount, and maxAmount are required" });
+      }
+      
+      const min = parseFloat(minAmount);
+      const max = parseFloat(maxAmount);
+      
+      if (min < 0 || max < 0 || min >= max) {
+        return res.status(400).json({ message: "Invalid amount values" });
+      }
+      
+      currencyLimits[currency.toLowerCase()] = { min, max };
+      
+      res.json({
+        currency: currency.toUpperCase(),
+        minAmount: min,
+        maxAmount: max,
+        message: "Currency limits updated successfully"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update currency limits" });
+    }
+  });
+
+  // Update currency limit (admin only) - legacy endpoint
   app.post("/api/admin/currency-limits", async (req, res) => {
     try {
       const validatedData = insertCurrencyLimitSchema.parse(req.body);
