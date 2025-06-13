@@ -389,6 +389,11 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-600">
                       Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.
                     </p>
+                    {statusFilter !== "all" && (
+                      <p className="text-sm font-medium text-blue-600 mt-1">
+                        Showing {statusFilter} orders only ({orders.filter(order => order.status === statusFilter).length} found)
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Label htmlFor="status-filter">Filter:</Label>
@@ -426,107 +431,119 @@ export default function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {orders
-                          .filter((order) => {
-                            console.log(`Filter: ${statusFilter}, Order: ${order.orderId}, Status: ${order.status}, Match: ${statusFilter === "all" || order.status === statusFilter}`);
-                            return statusFilter === "all" || order.status === statusFilter;
-                          })
-                          .map((order) => (
-                          <TableRow key={order.orderId}>
-                            <TableCell className="font-medium">{order.orderId}</TableCell>
-                            <TableCell>{order.fullName}</TableCell>
-                            <TableCell>{formatCurrency(order.sendAmount, order.sendMethod)}</TableCell>
-                            <TableCell>{formatCurrency(order.receiveAmount, order.receiveMethod)}</TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(order.status)}>
-                                <div className="flex items-center">
-                                  {getStatusIcon(order.status)}
-                                  <span className="ml-1 capitalize">{order.status}</span>
-                                </div>
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{formatDate(order.createdAt)}</TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                {order.status === "pending" || order.status === "paid" ? (
-                                  <>
-                                    {/* Accept Order Confirmation Dialog */}
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          disabled={acceptOrderMutation.isPending}
-                                          className="bg-green-600 hover:bg-green-700 text-white"
-                                        >
-                                          <CheckCircle className="w-3 h-3 mr-1" />
-                                          Accept
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Accept Order</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Are you sure you want to accept order {order.orderId}? This will mark the order as completed and cannot be undone.
-                                            <div className="mt-3 p-3 bg-gray-50 rounded">
-                                              <p><strong>Customer:</strong> {order.fullName}</p>
-                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
-                                            </div>
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => acceptOrderMutation.mutate(order.orderId)}
-                                            className="bg-green-600 hover:bg-green-700"
+                        {(() => {
+                          const filteredOrders = orders.filter((order) => statusFilter === "all" || order.status === statusFilter);
+                          
+                          if (filteredOrders.length === 0) {
+                            return (
+                              <TableRow>
+                                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                                  {statusFilter === "all" 
+                                    ? "No orders found" 
+                                    : `No ${statusFilter} orders found`
+                                  }
+                                </TableCell>
+                              </TableRow>
+                            );
+                          }
+                          
+                          return filteredOrders.map((order) => (
+                            <TableRow key={order.orderId}>
+                              <TableCell className="font-medium">{order.orderId}</TableCell>
+                              <TableCell>{order.fullName}</TableCell>
+                              <TableCell>{formatCurrency(order.sendAmount, order.sendMethod)}</TableCell>
+                              <TableCell>{formatCurrency(order.receiveAmount, order.receiveMethod)}</TableCell>
+                              <TableCell>
+                                <Badge className={getStatusColor(order.status)}>
+                                  <div className="flex items-center">
+                                    {getStatusIcon(order.status)}
+                                    <span className="ml-1 capitalize">{order.status}</span>
+                                  </div>
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{formatDate(order.createdAt)}</TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  {order.status === "pending" || order.status === "paid" ? (
+                                    <>
+                                      {/* Accept Order Confirmation Dialog */}
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            disabled={acceptOrderMutation.isPending}
+                                            className="bg-green-600 hover:bg-green-700 text-white"
                                           >
-                                            Accept Order
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
+                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                            Accept
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Accept Order</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to accept order {order.orderId}? This will mark the order as completed and cannot be undone.
+                                              <div className="mt-3 p-3 bg-gray-50 rounded">
+                                                <p><strong>Customer:</strong> {order.fullName}</p>
+                                                <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                              </div>
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => acceptOrderMutation.mutate(order.orderId)}
+                                              className="bg-green-600 hover:bg-green-700"
+                                            >
+                                              Accept Order
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
 
-                                    {/* Cancel Order Confirmation Dialog */}
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="destructive"
-                                          disabled={cancelOrderMutation.isPending}
-                                        >
-                                          <XCircle className="w-3 h-3 mr-1" />
-                                          Cancel
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Cancel Order</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Are you sure you want to cancel order {order.orderId}? This action cannot be undone and the customer will be notified.
-                                            <div className="mt-3 p-3 bg-gray-50 rounded">
-                                              <p><strong>Customer:</strong> {order.fullName}</p>
-                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
-                                            </div>
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Keep Order</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => cancelOrderMutation.mutate(order.orderId)}
-                                            className="bg-red-600 hover:bg-red-700"
+                                      {/* Cancel Order Confirmation Dialog */}
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            disabled={cancelOrderMutation.isPending}
                                           >
-                                            Cancel Order
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  </>
-                                ) : (
-                                  <span className="text-gray-500 text-sm">No actions available</span>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                                            <XCircle className="w-3 h-3 mr-1" />
+                                            Cancel
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to cancel order {order.orderId}? This action cannot be undone and the customer will be notified.
+                                              <div className="mt-3 p-3 bg-gray-50 rounded">
+                                                <p><strong>Customer:</strong> {order.fullName}</p>
+                                                <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                              </div>
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => cancelOrderMutation.mutate(order.orderId)}
+                                              className="bg-red-600 hover:bg-red-700"
+                                            >
+                                              Cancel Order
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </>
+                                  ) : (
+                                    <span className="text-gray-500 text-sm">No actions available</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ));
+                        })()}
                       </TableBody>
                     </Table>
                   </div>
