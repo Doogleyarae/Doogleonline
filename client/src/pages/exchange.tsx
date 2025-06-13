@@ -98,14 +98,10 @@ export default function Exchange() {
     },
   });
 
-  // Update form validation when currency limits change
+  // Update form key to force re-render when limits change
   useEffect(() => {
-    // Clear form validation and set values
-    form.clearErrors();
-    form.setValue("sendMethod", sendMethod);
-    form.setValue("receiveMethod", receiveMethod);
-    form.setValue("sendAmount", sendAmount);
-  }, [currentMinAmount, currentMaxAmount, sendMethod, receiveMethod, sendAmount, form]);
+    setFormKey(prev => prev + 1);
+  }, [currentMinAmount, currentMaxAmount]);
 
   // Update form values when state changes
   useEffect(() => {
