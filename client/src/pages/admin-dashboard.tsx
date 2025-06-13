@@ -427,7 +427,10 @@ export default function AdminDashboard() {
                       </TableHeader>
                       <TableBody>
                         {orders
-                          .filter((order) => statusFilter === "all" || order.status === statusFilter)
+                          .filter((order) => {
+                            console.log(`Filter: ${statusFilter}, Order: ${order.orderId}, Status: ${order.status}, Match: ${statusFilter === "all" || order.status === statusFilter}`);
+                            return statusFilter === "all" || order.status === statusFilter;
+                          })
                           .map((order) => (
                           <TableRow key={order.orderId}>
                             <TableCell className="font-medium">{order.orderId}</TableCell>
