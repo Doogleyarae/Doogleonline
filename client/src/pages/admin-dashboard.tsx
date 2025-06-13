@@ -274,12 +274,12 @@ export default function AdminDashboard() {
     mutationFn: async ({ method, address }: { method: string; address: string }) => {
       return await apiRequest('/api/admin/wallet-addresses', 'POST', { method, address });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/wallet-addresses'] });
-      setLastUpdated(data.lastUpdated || new Date().toISOString());
+      setLastUpdated(data?.lastUpdated || new Date().toISOString());
       toast({
         title: "Wallet Updated",
-        description: `${data.method} wallet address updated successfully`,
+        description: `${data?.method || method} wallet address updated successfully`,
       });
     },
     onError: () => {
@@ -295,12 +295,12 @@ export default function AdminDashboard() {
     mutationFn: async ({ endpoint, url }: { endpoint: string; url: string }) => {
       return await apiRequest('/api/admin/api-endpoints', 'POST', { endpoint, url });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/api-endpoints'] });
-      setLastUpdated(data.lastUpdated || new Date().toISOString());
+      setLastUpdated(data?.lastUpdated || new Date().toISOString());
       toast({
         title: "API Endpoint Updated",
-        description: `${data.endpoint} endpoint updated successfully`,
+        description: `${data?.endpoint || endpoint} endpoint updated successfully`,
       });
     },
     onError: () => {
@@ -419,10 +419,11 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
             <TabsTrigger value="limits">Balance Management</TabsTrigger>
+            <TabsTrigger value="wallets">Wallet Settings</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -870,6 +871,197 @@ export default function AdminDashboard() {
                     <li>• Each currency has its own individual limits</li>
                     <li>• Existing pending orders are not affected</li>
                   </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Wallet Management Tab */}
+          <TabsContent value="wallets" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Wallet Address Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="w-5 h-5 mr-2" />
+                    Payment Wallet Management
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Update wallet addresses and account numbers for each payment method
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {Object.entries(walletAddresses).map(([method, address]) => {
+                    const methodLabel = paymentMethods.find(p => p.value === method)?.label || method.toUpperCase();
+                    return (
+                      <div key={method} className="space-y-2">
+                        <Label htmlFor={`wallet-${method}`} className="text-sm font-semibold">
+                          {methodLabel}
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id={`wallet-${method}`}
+                            value={address}
+                            onChange={(e) => setWalletAddresses(prev => ({
+                              ...prev,
+                              [method]: e.target.value
+                            }))}
+                            placeholder={`Enter ${methodLabel} wallet/account`}
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={() => handleWalletUpdate(method, address)}
+                            disabled={updateWalletMutation.isPending}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            Save
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Current: {address || 'Not configured'}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  
+                  {lastUpdated && (
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <p className="text-sm text-green-800">
+                        Last updated: {new Date(lastUpdated).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* API Endpoints Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="w-5 h-5 mr-2" />
+                    API Endpoint Configuration
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Configure API endpoints for external integrations
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {Object.entries(apiEndpoints).map(([endpoint, url]) => {
+                    const endpointLabel = endpoint.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    return (
+                      <div key={endpoint} className="space-y-2">
+                        <Label htmlFor={`api-${endpoint}`} className="text-sm font-semibold">
+                          {endpointLabel}
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id={`api-${endpoint}`}
+                            value={url}
+                            onChange={(e) => setApiEndpoints(prev => ({
+                              ...prev,
+                              [endpoint]: e.target.value
+                            }))}
+                            placeholder={`Enter ${endpointLabel} URL`}
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={() => handleApiEndpointUpdate(endpoint, url)}
+                            disabled={updateApiEndpointMutation.isPending}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Save
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Current: {url || 'Not configured'}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Current Wallet Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Current Wallet Configuration</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Overview of all configured payment methods and their addresses
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Payment Method</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Type</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Address/Account</th>
+                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(walletAddresses).map(([method, address]) => {
+                        const methodData = paymentMethods.find(p => p.value === method);
+                        const methodLabel = methodData?.label || method.toUpperCase();
+                        
+                        let methodType = "Digital Wallet";
+                        if (method === 'premier') methodType = "Bank Account";
+                        else if (['zaad', 'sahal', 'evc'].includes(method)) methodType = "Mobile Money";
+                        else if (['trc20', 'trx', 'peb20'].includes(method)) methodType = "Cryptocurrency";
+                        
+                        return (
+                          <tr key={method} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-4 py-2 font-medium">{methodLabel}</td>
+                            <td className="border border-gray-300 px-4 py-2">{methodType}</td>
+                            <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
+                              {address || 'Not configured'}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-2">
+                              <Badge 
+                                variant="outline" 
+                                className={address ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}
+                              >
+                                {address ? 'Configured' : 'Missing'}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Security and Usage Guidelines */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Security Guidelines</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-800 mb-2">Wallet Security</h4>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• Verify wallet addresses before saving</li>
+                      <li>• Use secure, dedicated business accounts</li>
+                      <li>• Enable two-factor authentication when available</li>
+                      <li>• Regularly monitor account balances</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <h4 className="font-semibold text-orange-800 mb-2">API Configuration</h4>
+                    <ul className="text-sm text-orange-700 space-y-1">
+                      <li>• Test endpoints before applying changes</li>
+                      <li>• Use HTTPS URLs for security</li>
+                      <li>• Validate API responses in testing</li>
+                      <li>• Keep backup of working configurations</li>
+                    </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
