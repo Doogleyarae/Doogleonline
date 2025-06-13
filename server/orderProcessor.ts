@@ -12,7 +12,7 @@ class OrderProcessor {
 
     console.log(`Starting 15-minute processing timer for order ${orderId}`);
     
-    // Set timer for 15 minutes (900000 ms)
+    // Set timer for 15 minutes (900000 ms) - using 30 seconds for demo
     const timer = setTimeout(async () => {
       try {
         console.log(`Processing timer completed for order ${orderId}, marking as completed`);
@@ -35,7 +35,7 @@ class OrderProcessor {
       } catch (error) {
         console.error(`Error auto-completing order ${orderId}:`, error);
       }
-    }, 15 * 60 * 1000); // 15 minutes
+    }, 30 * 1000); // 30 seconds for demo (normally 15 * 60 * 1000)
 
     this.timers.set(orderId, timer);
   }
