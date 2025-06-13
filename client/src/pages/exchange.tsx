@@ -72,8 +72,6 @@ export default function Exchange() {
   const [sendAmount, setSendAmount] = useState("100");
   const [receiveAmount, setReceiveAmount] = useState("");
   const [formKey, setFormKey] = useState(0);
-  const [isUpdatingSendAmount, setIsUpdatingSendAmount] = useState(false);
-  const [isUpdatingReceiveAmount, setIsUpdatingReceiveAmount] = useState(false);
 
   // Fetch currency-specific limits for the selected pair
   const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
@@ -91,8 +89,8 @@ export default function Exchange() {
       sendMethod: sendMethod,
       receiveMethod: receiveMethod,
       sendAmount: sendAmount,
-      receiveAmount: "",
-      exchangeRate: "",
+      receiveAmount: receiveAmount,
+      exchangeRate: exchangeRate.toString(),
       fullName: "",
       phoneNumber: "",
       walletAddress: "",
@@ -110,13 +108,9 @@ export default function Exchange() {
   useEffect(() => {
     form.setValue("sendMethod", sendMethod);
     form.setValue("receiveMethod", receiveMethod);
-    if (!isUpdatingSendAmount) {
-      form.setValue("sendAmount", sendAmount);
-    }
-    if (!isUpdatingReceiveAmount) {
-      form.setValue("receiveAmount", receiveAmount);
-    }
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, form, isUpdatingSendAmount, isUpdatingReceiveAmount]);
+    form.setValue("sendAmount", sendAmount);
+    form.setValue("receiveAmount", receiveAmount);
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
 
   // Fetch exchange rate when methods change
   const { data: rateData } = useQuery<ExchangeRateResponse>({
@@ -124,43 +118,44 @@ export default function Exchange() {
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
   });
 
-  // Update exchange rate when rate data changes
+  // Update exchange rate and calculate initial receive amount
   useEffect(() => {
     if (rateData) {
       const rate = rateData.rate;
       setExchangeRate(rate);
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
-    }
-  }, [rateData, sendMethod, receiveMethod, form]);
-
-  // Calculate receive amount when send amount changes
-  useEffect(() => {
-    if (exchangeRate > 0 && sendAmount && !isUpdatingReceiveAmount) {
-      const amount = parseFloat(sendAmount) || 0;
-      if (amount > 0) {
-        const convertedAmount = (amount * exchangeRate).toFixed(2);
-        setIsUpdatingSendAmount(true);
+      
+      // Calculate initial receive amount based on current send amount
+      if (sendAmount) {
+        const amount = parseFloat(sendAmount) || 0;
+        const convertedAmount = (amount * rate).toFixed(2);
         setReceiveAmount(convertedAmount);
         form.setValue("receiveAmount", convertedAmount);
-        setTimeout(() => setIsUpdatingSendAmount(false), 100);
       }
     }
-  }, [sendAmount, exchangeRate, form, isUpdatingReceiveAmount]);
+  }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
 
-  // Calculate send amount when receive amount changes
-  useEffect(() => {
-    if (exchangeRate > 0 && receiveAmount && !isUpdatingSendAmount) {
-      const amount = parseFloat(receiveAmount) || 0;
-      if (amount > 0) {
-        const convertedAmount = (amount / exchangeRate).toFixed(2);
-        setIsUpdatingReceiveAmount(true);
-        setSendAmount(convertedAmount);
-        form.setValue("sendAmount", convertedAmount);
-        setTimeout(() => setIsUpdatingReceiveAmount(false), 100);
-      }
+  // Handle amount calculations with proper state management
+  const handleSendAmountChange = (value: string) => {
+    setSendAmount(value);
+    if (exchangeRate > 0 && value) {
+      const amount = parseFloat(value) || 0;
+      const convertedAmount = (amount * exchangeRate).toFixed(2);
+      setReceiveAmount(convertedAmount);
+      form.setValue("receiveAmount", convertedAmount);
     }
-  }, [receiveAmount, exchangeRate, form, isUpdatingSendAmount]);
+  };
+
+  const handleReceiveAmountChange = (value: string) => {
+    setReceiveAmount(value);
+    if (exchangeRate > 0 && value) {
+      const amount = parseFloat(value) || 0;
+      const convertedAmount = (amount / exchangeRate).toFixed(2);
+      setSendAmount(convertedAmount);
+      form.setValue("sendAmount", convertedAmount);
+    }
+  };
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: ExchangeFormData) => {
@@ -276,7 +271,7 @@ export default function Exchange() {
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e);
-                                setSendAmount(e.target.value);
+                                handleSendAmountChange(e.target.value);
                               }}
                             />
                           </FormControl>
@@ -344,7 +339,7 @@ export default function Exchange() {
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e);
-                                setReceiveAmount(e.target.value);
+                                handleReceiveAmountChange(e.target.value);
                               }}
                             />
                           </FormControl>
