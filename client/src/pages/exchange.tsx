@@ -99,6 +99,7 @@ export default function Exchange() {
     savedData, 
     toggleRemind, 
     updateSavedField,
+    forceRemoveData,
     hasSavedData 
   } = useFormDataMemory('exchange');
 
@@ -160,6 +161,16 @@ export default function Exchange() {
     form.setValue("receiveAmount", receiveAmount);
   }, [sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
 
+  // Restore saved data when component mounts or saved data changes
+  useEffect(() => {
+    if (isReminded && hasSavedData) {
+      form.setValue("fullName", savedData.fullName || "");
+      form.setValue("phoneNumber", savedData.phoneNumber || "");
+      form.setValue("walletAddress", savedData.walletAddress || "");
+      form.setValue("rememberDetails", true);
+    }
+  }, [isReminded, savedData, hasSavedData, form]);
+
   // Fetch exchange rate when methods change
   const { data: rateData } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
@@ -216,7 +227,7 @@ export default function Exchange() {
     }
   };
 
-  // Toggle remind functionality
+  // Toggle remind functionality with complete form control
   const handleToggleRemind = () => {
     const currentFormData = form.getValues();
     const dataToSave = {
@@ -225,16 +236,22 @@ export default function Exchange() {
       walletAddress: currentFormData.walletAddress,
     };
     
-    toggleRemind(dataToSave);
-    form.setValue("rememberDetails", !isReminded);
+    const newRemindStatus = toggleRemind(dataToSave);
+    form.setValue("rememberDetails", newRemindStatus);
     
-    if (!isReminded) {
+    if (newRemindStatus) {
+      // When turning ON - save current data
       toast({
         title: "Data Saved",
         description: "Your personal details will be remembered for future exchanges.",
         variant: "default",
       });
     } else {
+      // When turning OFF - clear form fields immediately
+      form.setValue("fullName", "");
+      form.setValue("phoneNumber", "");
+      form.setValue("walletAddress", "");
+      
       toast({
         title: "Data Cleared",
         description: "Your saved personal details have been removed.",
@@ -472,12 +489,16 @@ export default function Exchange() {
                       variant={isReminded ? "default" : "outline"}
                       size="sm"
                       onClick={handleToggleRemind}
-                      className="flex items-center space-x-2"
+                      className={`flex items-center space-x-2 transition-all ${
+                        isReminded 
+                          ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                          : "border-blue-600 text-blue-600 hover:bg-blue-50"
+                      }`}
                     >
                       {isReminded ? (
                         <>
                           <Bell className="w-4 h-4" />
-                          <span>Reminded</span>
+                          <span>ON</span>
                         </>
                       ) : (
                         <>

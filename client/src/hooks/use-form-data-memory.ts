@@ -62,7 +62,7 @@ export function useFormDataMemory(formKey: string = 'default') {
     }
   };
 
-  // Toggle remind status
+  // Toggle remind status with complete data control
   const toggleRemind = (currentData?: FormData) => {
     const newRemindStatus = !isReminded;
     setIsReminded(newRemindStatus);
@@ -89,6 +89,19 @@ export function useFormDataMemory(formKey: string = 'default') {
       } catch (error) {
         console.warn('Failed to clear form data:', error);
       }
+    }
+    
+    return newRemindStatus;
+  };
+
+  // Force clear all data (for immediate form reset)
+  const forceRemoveData = () => {
+    try {
+      localStorage.removeItem(storageKey);
+      setSavedData({});
+      setIsReminded(false);
+    } catch (error) {
+      console.warn('Failed to force clear form data:', error);
     }
   };
 
@@ -118,6 +131,7 @@ export function useFormDataMemory(formKey: string = 'default') {
     toggleRemind,
     clearSavedData,
     updateSavedField,
+    forceRemoveData,
     hasSavedData: Object.keys(savedData).some(key => savedData[key])
   };
 }
