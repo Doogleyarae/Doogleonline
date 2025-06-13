@@ -17,6 +17,7 @@ import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminAnalytics from "@/pages/admin-analytics";
 import OrderHistory from "@/pages/order-history";
+import CompletedOrders from "@/pages/completed-orders";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/track" component={TrackOrder} />
       <Route path="/contact" component={Contact} />
       <Route path="/orders" component={OrderHistory} />
+      <Route path="/completed" component={CompletedOrders} />
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
