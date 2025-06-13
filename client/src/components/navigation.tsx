@@ -12,7 +12,6 @@ const navigationItems = [
   { href: "/how-it-works", label: "How It Works" },
   { href: "/exchange", label: "Exchange" },
   { href: "/track", label: "Track Order" },
-  { href: "/completed", label: "Completed Orders" },
   { href: "/contact", label: "Contact" },
   { href: "/about", label: "About" },
   { href: "/admin", label: "Admin" },
