@@ -148,10 +148,12 @@ export default function Exchange() {
   };
 
   const handleReceiveAmountChange = (value: string) => {
+    console.log('Receive amount changed to:', value, 'Exchange rate:', exchangeRate);
     setReceiveAmount(value);
     if (exchangeRate > 0 && value) {
       const amount = parseFloat(value) || 0;
       const convertedAmount = (amount / exchangeRate).toFixed(2);
+      console.log('Calculated send amount:', convertedAmount);
       setSendAmount(convertedAmount);
       form.setValue("sendAmount", convertedAmount);
     }
