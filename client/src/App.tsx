@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import { useScrollMemory } from "@/hooks/use-scroll-memory";
 import Home from "@/pages/home";
 import About from "@/pages/about";
 import Services from "@/pages/services";
@@ -21,6 +22,9 @@ import CompletedOrders from "@/pages/completed-orders";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  // Initialize scroll memory for the entire app
+  useScrollMemory();
+  
   return (
     <Switch>
       <Route path="/" component={Home} />

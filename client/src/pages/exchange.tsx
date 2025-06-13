@@ -13,7 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowUpCircle, ArrowDownCircle, User, Send } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, User, Send, Bell, BellOff } from "lucide-react";
+import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 
 interface ExchangeRateResponse {
   rate: number;
@@ -92,6 +93,15 @@ export default function Exchange() {
     maxReceiveAmount: 10000,
   });
 
+  // Initialize form data memory for auto-save functionality
+  const { 
+    isReminded, 
+    savedData, 
+    toggleRemind, 
+    updateSavedField,
+    hasSavedData 
+  } = useFormDataMemory('exchange');
+
   // Fetch currency-specific limits for the selected pair
   const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${sendMethod}/${receiveMethod}`],
@@ -111,10 +121,10 @@ export default function Exchange() {
       sendAmount: sendAmount,
       receiveAmount: receiveAmount,
       exchangeRate: exchangeRate.toString(),
-      fullName: "",
-      phoneNumber: "",
-      walletAddress: "",
-      rememberDetails: false,
+      fullName: savedData.fullName || "",
+      phoneNumber: savedData.phoneNumber || "",
+      walletAddress: savedData.walletAddress || "",
+      rememberDetails: isReminded,
       agreeToTerms: false,
     },
   });
@@ -196,6 +206,40 @@ export default function Exchange() {
       setSendAmount(convertedAmount);
       form.setValue("sendAmount", convertedAmount);
       setTimeout(() => setCalculatingFromReceive(false), 50);
+    }
+  };
+
+  // Handle form field changes and auto-save when remind is enabled
+  const handleFieldChange = (field: string, value: any) => {
+    if (isReminded) {
+      updateSavedField(field, value);
+    }
+  };
+
+  // Toggle remind functionality
+  const handleToggleRemind = () => {
+    const currentFormData = form.getValues();
+    const dataToSave = {
+      fullName: currentFormData.fullName,
+      phoneNumber: currentFormData.phoneNumber,
+      walletAddress: currentFormData.walletAddress,
+    };
+    
+    toggleRemind(dataToSave);
+    form.setValue("rememberDetails", !isReminded);
+    
+    if (!isReminded) {
+      toast({
+        title: "Data Saved",
+        description: "Your personal details will be remembered for future exchanges.",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Data Cleared",
+        description: "Your saved personal details have been removed.",
+        variant: "default",
+      });
     }
   };
 
