@@ -462,10 +462,36 @@ export default function Exchange() {
               {/* Customer Information */}
               <Card className="border-2">
                 <CardHeader>
-                  <CardTitle className="flex items-center text-lg font-semibold">
-                    <User className="w-5 h-5 mr-2 text-gray-600" />
-                    Customer Information
+                  <CardTitle className="flex items-center justify-between text-lg font-semibold">
+                    <div className="flex items-center">
+                      <User className="w-5 h-5 mr-2 text-gray-600" />
+                      Customer Information
+                    </div>
+                    <Button
+                      type="button"
+                      variant={isReminded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleToggleRemind}
+                      className="flex items-center space-x-2"
+                    >
+                      {isReminded ? (
+                        <>
+                          <Bell className="w-4 h-4" />
+                          <span>Reminded</span>
+                        </>
+                      ) : (
+                        <>
+                          <BellOff className="w-4 h-4" />
+                          <span>Remind Me</span>
+                        </>
+                      )}
+                    </Button>
                   </CardTitle>
+                  {isReminded && (
+                    <p className="text-sm text-blue-600 mt-2">
+                      Your personal details are being automatically saved and will be remembered for future exchanges.
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -476,7 +502,14 @@ export default function Exchange() {
                         <FormItem>
                           <FormLabel>Full Name *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter your full name" {...field} />
+                            <Input 
+                              placeholder="Enter your full name" 
+                              {...field} 
+                              onChange={(e) => {
+                                field.onChange(e);
+                                handleFieldChange('fullName', e.target.value);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -490,7 +523,14 @@ export default function Exchange() {
                         <FormItem>
                           <FormLabel>Phone Number *</FormLabel>
                           <FormControl>
-                            <Input placeholder="+252 XX XXX XXXX" {...field} />
+                            <Input 
+                              placeholder="+252 XX XXX XXXX" 
+                              {...field} 
+                              onChange={(e) => {
+                                field.onChange(e);
+                                handleFieldChange('phoneNumber', e.target.value);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -505,7 +545,14 @@ export default function Exchange() {
                       <FormItem>
                         <FormLabel>Wallet Address / Account Number *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter wallet address or account number" {...field} />
+                          <Input 
+                            placeholder="Enter wallet address or account number" 
+                            {...field} 
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleFieldChange('walletAddress', e.target.value);
+                            }}
+                          />
                         </FormControl>
                         <p className="text-xs text-gray-500">Enter the destination wallet address or account number</p>
                         <FormMessage />

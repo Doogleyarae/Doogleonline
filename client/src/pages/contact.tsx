@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Mail, Phone, Clock } from "lucide-react";
+import { Mail, Phone, Clock, Bell, BellOff } from "lucide-react";
+import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -31,13 +32,22 @@ const subjects = [
 export default function Contact() {
   const { toast } = useToast();
 
+  // Initialize form data memory for auto-save functionality
+  const { 
+    isReminded, 
+    savedData, 
+    toggleRemind, 
+    updateSavedField,
+    hasSavedData 
+  } = useFormDataMemory('contact');
+
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
+      name: savedData.name || "",
+      email: savedData.email || "",
+      subject: savedData.subject || "",
+      message: savedData.message || "",
     },
   });
 
@@ -61,6 +71,40 @@ export default function Contact() {
       });
     },
   });
+
+  // Handle form field changes and auto-save when remind is enabled
+  const handleFieldChange = (field: string, value: any) => {
+    if (isReminded) {
+      updateSavedField(field, value);
+    }
+  };
+
+  // Toggle remind functionality
+  const handleToggleRemind = () => {
+    const currentFormData = form.getValues();
+    const dataToSave = {
+      name: currentFormData.name,
+      email: currentFormData.email,
+      subject: currentFormData.subject,
+      message: currentFormData.message,
+    };
+    
+    toggleRemind(dataToSave);
+    
+    if (!isReminded) {
+      toast({
+        title: "Data Saved",
+        description: "Your contact details will be remembered for future messages.",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Data Cleared",
+        description: "Your saved contact details have been removed.",
+        variant: "default",
+      });
+    }
+  };
 
   const onSubmit = (data: ContactFormData) => {
     sendMessageMutation.mutate(data);
