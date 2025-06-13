@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -72,6 +72,8 @@ export default function Exchange() {
   const [sendAmount, setSendAmount] = useState("100");
   const [receiveAmount, setReceiveAmount] = useState("");
   const [formKey, setFormKey] = useState(0);
+  const [calculatingFromSend, setCalculatingFromSend] = useState(false);
+  const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
 
   // Fetch currency-specific limits for the selected pair
   const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
@@ -136,26 +138,28 @@ export default function Exchange() {
     }
   }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
 
-  // Handle amount calculations with proper state management
+  // Handle amount calculations with prevention of loops
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
-    if (exchangeRate > 0 && value) {
+    if (!calculatingFromReceive && exchangeRate > 0 && value) {
+      setCalculatingFromSend(true);
       const amount = parseFloat(value) || 0;
       const convertedAmount = (amount * exchangeRate).toFixed(2);
       setReceiveAmount(convertedAmount);
       form.setValue("receiveAmount", convertedAmount);
+      setTimeout(() => setCalculatingFromSend(false), 50);
     }
   };
 
   const handleReceiveAmountChange = (value: string) => {
-    console.log('Receive amount changed to:', value, 'Exchange rate:', exchangeRate);
     setReceiveAmount(value);
-    if (exchangeRate > 0 && value) {
+    if (!calculatingFromSend && exchangeRate > 0 && value) {
+      setCalculatingFromReceive(true);
       const amount = parseFloat(value) || 0;
       const convertedAmount = (amount / exchangeRate).toFixed(2);
-      console.log('Calculated send amount:', convertedAmount);
       setSendAmount(convertedAmount);
       form.setValue("sendAmount", convertedAmount);
+      setTimeout(() => setCalculatingFromReceive(false), 50);
     }
   };
 
