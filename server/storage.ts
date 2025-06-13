@@ -54,16 +54,15 @@ export class DatabaseStorage implements IStorage {
     
     // Payment wallet addresses based on receive method
     const paymentWallets: Record<string, string> = {
-      'zaad': '+252611234567',
-      'sahal': '+252612345678',
-      'evc': '+252613456789',
-      'edahab': '+252614567890',
-      'premier': 'ACC-PREMIER-123456',
-      'moneygo': '+252615678901',
-      'trx': 'TRX1234567890ABCDEF',
-      'trc20': '0x742d35CC6634C0532925a3b8D404FD8C',
-      'peb20': '0x8A194C6634C0532925a3b8D404FD8C74',
-      'usdc': '0x123456789ABCDEF0123456789ABCDEF01'
+      'zaad': '*880*637834431*amount#',
+      'sahal': '*883*905865292*amount#',
+      'evc': '*799*34996012*amount#',
+      'edahab': '0626451011',
+      'premier': '0616451011',
+      'moneygo': 'U2778451',
+      'trx': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
+      'trc20': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
+      'peb20': '0x5f3c72277de38d91e12f6f594ac8353c21d73c83'
     };
 
     const [order] = await db
