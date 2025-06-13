@@ -11,7 +11,7 @@ export default function HowItWorks() {
       description: "Select the currency you want to send and the currency you want to receive from our supported payment methods.",
       icon: CreditCard,
       details: [
-        "11+ payment methods supported",
+        "9 payment methods supported",
         "Real-time exchange rates",
         "Transparent fee structure",
         "Instant rate calculation"
@@ -87,8 +87,7 @@ export default function HowItWorks() {
     { name: "MoneyGo", type: "Digital Wallet", color: "bg-indigo-500" },
     { name: "TRX", type: "Cryptocurrency", color: "bg-yellow-500" },
     { name: "TRC20", type: "Cryptocurrency", color: "bg-teal-500" },
-    { name: "PEB20", type: "Cryptocurrency", color: "bg-pink-500" },
-    { name: "USDC", type: "Cryptocurrency", color: "bg-cyan-500" }
+    { name: "PEB20", type: "Cryptocurrency", color: "bg-pink-500" }
   ];
 
   const testimonials = [

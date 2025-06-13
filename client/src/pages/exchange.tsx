@@ -38,6 +38,7 @@ import premierLogo from "@assets/premier bank_1749853582326.png";
 import trc20Logo from "@assets/trc20_1749853582327.png";
 import peb20Logo from "@assets/peb20_1749853582325.png";
 import trxLogo from "@assets/trx_1749853582329.png";
+import moneygoLogo from "@assets/__moneygo_1_1749853748726.png";
 
 const paymentMethods = [
   { value: "zaad", label: "Zaad", logo: zaadLogo },
@@ -45,11 +46,10 @@ const paymentMethods = [
   { value: "evc", label: "EVC Plus", logo: evcLogo },
   { value: "edahab", label: "eDahab", logo: edahabLogo },
   { value: "premier", label: "Premier Bank", logo: premierLogo },
-  { value: "moneygo", label: "MoneyGo", logo: null },
+  { value: "moneygo", label: "MoneyGo", logo: moneygoLogo },
   { value: "trx", label: "TRX", logo: trxLogo },
   { value: "trc20", label: "TRC20", logo: trc20Logo },
   { value: "peb20", label: "PEB20", logo: peb20Logo },
-  { value: "usdc", label: "USDC", logo: null },
 ];
 
 const createExchangeFormSchema = (

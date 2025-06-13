@@ -113,8 +113,7 @@ export default function Services() {
       methods: [
         { name: "TRX", description: "TRON blockchain cryptocurrency", users: "Global" },
         { name: "TRC20", description: "TRON network token standard", users: "Global" },
-        { name: "PEB20", description: "Advanced blockchain protocol", users: "Global" },
-        { name: "USDC", description: "USD-backed stablecoin", users: "Global" }
+        { name: "PEB20", description: "Advanced blockchain protocol", users: "Global" }
       ],
       color: "from-orange-500 to-yellow-600"
     }

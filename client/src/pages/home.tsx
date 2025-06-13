@@ -8,11 +8,10 @@ const paymentMethods = [
   { name: "Sahal", type: "Mobile Money" },
   { name: "EVC Plus", type: "Mobile Money" },
   { name: "eDahab", type: "Mobile Money" },
-  { name: "MoneyGo", type: "Mobile Money" },
+  { name: "MoneyGo", type: "Digital Wallet" },
   { name: "TRX", type: "Cryptocurrency" },
   { name: "TRC20", type: "Token Standard" },
   { name: "PEB20", type: "Token Standard" },
-  { name: "USDC", type: "Stablecoin" },
   { name: "Premier", type: "Bank Transfer" },
 ];
 
