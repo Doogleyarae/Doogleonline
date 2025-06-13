@@ -885,96 +885,96 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-
-
-              {/* Currency-Specific Limits Management */}
-              <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-900">Currency-Specific Limits</h3>
+              {/* New Currency Management System */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 className="text-xl font-semibold text-blue-900 mb-4">Currency Limits Management</h3>
+                <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for individual currencies</p>
                 
-                {/* Quick Set Currency Limits Form */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-lg mb-3 text-blue-900">Set Individual Currency Pair Limits</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <Label htmlFor="quickFromCurrency">From Currency (Optional)</Label>
-                      <Select value={limitFromCurrency} onValueChange={setLimitFromCurrency}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select from currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {paymentMethods.map((method) => (
-                            <SelectItem key={method.value} value={method.value}>
-                              {method.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="quickToCurrency">To Currency</Label>
-                      <Select value={limitToCurrency} onValueChange={setLimitToCurrency}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select to currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {paymentMethods
-                            .filter(method => method.value !== limitFromCurrency)
-                            .map((method) => (
-                            <SelectItem key={method.value} value={method.value}>
-                              {method.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="quickMinAmount">Min Amount ($)</Label>
-                      <Input
-                        id="quickMinAmount"
-                        type="number"
-                        value={limitMinAmount}
-                        onChange={(e) => setLimitMinAmount(e.target.value)}
-                        placeholder="5"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="quickMaxAmount">Max Amount ($)</Label>
-                      <Input
-                        id="quickMaxAmount"
-                        type="number"
-                        value={limitMaxAmount}
-                        onChange={(e) => setLimitMaxAmount(e.target.value)}
-                        placeholder="10000"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <Label htmlFor="fromCurrency">From Currency</Label>
+                    <Select value={limitFromCurrency} onValueChange={setLimitFromCurrency}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select from currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((method) => (
+                          <SelectItem key={method.value} value={method.value}>
+                            {method.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button
-                    onClick={() => {
-                      if (limitFromCurrency && limitToCurrency && limitMinAmount && limitMaxAmount) {
-                        updateCurrencyLimitMutation.mutate({
-                          fromCurrency: limitFromCurrency,
-                          toCurrency: limitToCurrency,
-                          minAmount: limitMinAmount,
-                          maxAmount: limitMaxAmount,
-                        });
-                      }
-                    }}
-                    disabled={!limitFromCurrency || !limitToCurrency || !limitMinAmount || !limitMaxAmount || updateCurrencyLimitMutation.isPending}
-                    className="mt-4"
-                  >
-                    {updateCurrencyLimitMutation.isPending ? "Setting Limit..." : "Set Currency Limit"}
-                  </Button>
+                  <div>
+                    <Label htmlFor="toCurrency">To Currency</Label>
+                    <Select value={limitToCurrency} onValueChange={setLimitToCurrency}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select to currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods
+                          .filter(method => method.value !== limitFromCurrency)
+                          .map((method) => (
+                            <SelectItem key={method.value} value={method.value}>
+                              {method.label}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="minAmount">Min Amount ($)</Label>
+                    <Input
+                      id="minAmount"
+                      type="number"
+                      value={limitMinAmount}
+                      onChange={(e) => setLimitMinAmount(e.target.value)}
+                      placeholder="5"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="maxAmount">Max Amount ($)</Label>
+                    <Input
+                      id="maxAmount"
+                      type="number"
+                      value={limitMaxAmount}
+                      onChange={(e) => setLimitMaxAmount(e.target.value)}
+                      placeholder="10000"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
                 </div>
+                
+                <Button
+                  onClick={() => {
+                    if (limitFromCurrency && limitToCurrency && limitMinAmount && limitMaxAmount) {
+                      updateCurrencyLimitMutation.mutate({
+                        fromCurrency: limitFromCurrency,
+                        toCurrency: limitToCurrency,
+                        minAmount: limitMinAmount,
+                        maxAmount: limitMaxAmount,
+                      });
+                    }
+                  }}
+                  disabled={!limitFromCurrency || !limitToCurrency || !limitMinAmount || !limitMaxAmount || updateCurrencyLimitMutation.isPending}
+                  className="w-full"
+                >
+                  {updateCurrencyLimitMutation.isPending ? "Setting Limit..." : "Set Currency Limit"}
+                </Button>
+              </div>
 
+              {/* Display Current Currency Limits */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Current Currency Limits</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {paymentMethods.map((fromMethod) => (
                     <div key={fromMethod.value} className="border rounded-lg p-4">
                       <h4 className="font-semibold text-lg mb-3 capitalize text-gray-800">
-                        {fromMethod.label} Outgoing Limits
+                        {fromMethod.label} Limits
                       </h4>
                       <div className="space-y-2">
                         {paymentMethods
@@ -984,8 +984,8 @@ export default function AdminDashboard() {
                             const specificLimits = Array.isArray(currencyLimitsData) ? currencyLimitsData.find((limit: any) => 
                               limit.fromCurrency === fromMethod.value && limit.toCurrency === toMethod.value
                             ) : undefined;
-                            const currentMin = specificLimits ? parseFloat(specificLimits.minAmount).toFixed(2) : minAmount;
-                            const currentMax = specificLimits ? parseFloat(specificLimits.maxAmount).toFixed(2) : maxAmount;
+                            const currentMin = specificLimits ? parseFloat(specificLimits.minAmount).toFixed(2) : "5.00";
+                            const currentMax = specificLimits ? parseFloat(specificLimits.maxAmount).toFixed(2) : "10000.00";
                             const isCustom = !!specificLimits;
                             
                             return (
@@ -1013,10 +1013,13 @@ export default function AdminDashboard() {
                                       if (specificLimits) {
                                         setLimitMinAmount(parseFloat(specificLimits.minAmount).toString());
                                         setLimitMaxAmount(parseFloat(specificLimits.maxAmount).toString());
+                                      } else {
+                                        setLimitMinAmount("5");
+                                        setLimitMaxAmount("10000");
                                       }
                                     }}
                                   >
-                                    {isCustom ? 'Edit' : 'Set Custom'}
+                                    {isCustom ? 'Edit' : 'Set Limit'}
                                   </Button>
                                 </div>
                               </div>
@@ -1027,226 +1030,108 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {/* Currency Pair Limits Form */}
-              {limitFromCurrency && limitToCurrency && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-3">Set Limits for Currency Pair</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <Label>From Currency</Label>
-                      <div className="p-2 bg-blue-100 rounded border text-blue-800 font-medium">
-                        {paymentMethods.find(m => m.value === limitFromCurrency)?.label}
-                      </div>
-                    </div>
-                    <div>
-                      <Label>To Currency</Label>
-                      <div className="p-2 bg-blue-100 rounded border text-blue-800 font-medium">
-                        {paymentMethods.find(m => m.value === limitToCurrency)?.label}
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="limitMin">Min Amount ($)</Label>
-                      <Input
-                        id="limitMin"
-                        type="number"
-                        value={limitMinAmount}
-                        onChange={(e) => setLimitMinAmount(e.target.value)}
-                        placeholder="5"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="limitMax">Max Amount ($)</Label>
-                      <Input
-                        id="limitMax"
-                        type="number"
-                        value={limitMaxAmount}
-                        onChange={(e) => setLimitMaxAmount(e.target.value)}
-                        placeholder="10000"
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      onClick={() => {
-                        updateCurrencyLimitMutation.mutate({
-                          fromCurrency: limitFromCurrency,
-                          toCurrency: limitToCurrency,
-                          minAmount: limitMinAmount,
-                          maxAmount: limitMaxAmount,
-                        });
-                      }}
-                      disabled={updateCurrencyLimitMutation.isPending}
-                    >
-                      {updateCurrencyLimitMutation.isPending ? "Updating..." : "Set Currency Limit"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setLimitFromCurrency("");
-                        setLimitToCurrency("");
-                        setLimitMinAmount("5");
-                        setLimitMaxAmount("10000");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
+        {/* Messages Tab */}
+        <TabsContent value="messages" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MessageSquare className="w-5 h-5 mr-2" />
+                Contact Messages
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {messagesLoading ? (
+                <p>Loading messages...</p>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <Card key={message.id} className="border-l-4 border-l-primary">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-semibold">{message.name}</h4>
+                            <p className="text-sm text-gray-600">{message.email}</p>
+                          </div>
+                          <Badge variant="outline">{message.subject}</Badge>
+                        </div>
+                        <p className="text-gray-700 mb-2">{message.message}</p>
+                        <p className="text-xs text-gray-500">{formatDate(message.createdAt)}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {messages.length === 0 && (
+                    <p className="text-center text-gray-500 py-8">No messages yet</p>
+                  )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              {/* Current Selection Indicator */}
-              {false && (
-                <div className="p-4 bg-blue-100 border border-blue-300 rounded-lg">
-                  <h4 className="font-semibold text-blue-900 mb-2">Currently Editing Limits For:</h4>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-                      {paymentMethods.find(m => m.value === limitFromCurrency)?.label}
-                    </Badge>
-                    <span className="text-blue-700">→</span>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-                      {paymentMethods.find(m => m.value === limitToCurrency)?.label}
-                    </Badge>
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <TrendingUp className="w-8 h-8 text-primary mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Completion Rate</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 0}%
+                    </p>
                   </div>
-                  <p className="text-sm text-blue-600 mt-2">
-                    Changes will only affect {limitFromCurrency.toUpperCase()} to {limitToCurrency.toUpperCase()} transactions. 
-                    Other currency pairs will keep their current limits.
-                  </p>
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              {/* Update Limits Form */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-6 bg-gray-50 rounded-lg">
-                <div>
-                  <Label htmlFor="limitFromCurrency">From Currency (Optional)</Label>
-                  <Select value={limitFromCurrency} onValueChange={setLimitFromCurrency}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All currencies" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All currencies</SelectItem>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method.value} value={method.value}>
-                          {method.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <DollarSign className="w-8 h-8 text-green-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Volume</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${totalVolume.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div>
-                  <Label htmlFor="limitToCurrency">To Currency (Optional)</Label>
-                  <Select value={limitToCurrency} onValueChange={setLimitToCurrency}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All currencies" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All currencies</SelectItem>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method.value} value={method.value}>
-                          {method.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Users className="w-8 h-8 text-blue-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                    <p className="text-2xl font-bold text-gray-900">{totalOrders}</p>
+                  </div>
                 </div>
-                
-                <div>
-                  <Label htmlFor="minAmount">Minimum Amount ($)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="5.00"
-                    value={minAmount}
-                    onChange={(e) => setMinAmount(e.target.value)}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="maxAmount">Maximum Amount ($)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="10000.00"
-                    value={maxAmount}
-                    onChange={(e) => setMaxAmount(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex items-end">
-                  <Button 
-                    onClick={handleLimitsUpdate} 
-                    disabled={updateLimitsMutation.isPending}
-                    className="w-full"
-                  >
-                    {updateLimitsMutation.isPending ? "Updating..." : "Update Limits"}
-                  </Button>
-                </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Quick Presets */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900">Quick Presets</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setMinAmount("1");
-                      setMaxAmount("1000");
-                    }}
-                  >
-                    Small ($1 - $1K)
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setMinAmount("5");
-                      setMaxAmount("10000");
-                    }}
-                  >
-                    Standard ($5 - $10K)
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setMinAmount("10");
-                      setMaxAmount("50000");
-                    }}
-                  >
-                    High Volume ($10 - $50K)
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setMinAmount("100");
-                      setMaxAmount("100000");
-                    }}
-                  >
-                    Enterprise ($100 - $100K)
-                  </Button>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Clock className="w-8 h-8 text-orange-600 mr-3" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending Orders</p>
+                    <p className="text-2xl font-bold text-gray-900">{pendingOrders}</p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Impact Information */}
-              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <h4 className="font-semibold text-yellow-800 mb-2">Impact of Changes</h4>
-                <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• Changes apply immediately to new transactions</li>
-                  <li>• Existing pending orders are not affected</li>
-                  <li>• Users will see updated limits on the exchange form</li>
-                  <li>• Consider notifying users of significant limit changes</li>
-                </ul>
-              </div>
-
-              {/* Transaction Statistics */}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-medium text-gray-900">Transactions Below Min</h4>
