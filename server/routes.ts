@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { orderId } = req.params;
       const { status } = req.body;
       
-      if (!['pending', 'processing', 'completed', 'cancelled'].includes(status)) {
+      if (!['pending', 'processing', 'completed', 'cancelled', 'paid'].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
       
@@ -198,31 +198,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(messages);
     } catch (error) {
       res.status(500).json({ message: "Failed to get messages" });
-    }
-  });
-
-  // Update order status
-  app.patch("/api/orders/:orderId/status", async (req, res) => {
-    try {
-      const { orderId } = req.params;
-      const { status } = req.body;
-      
-      console.log(`Received status update request: orderId=${orderId}, status=${status}`);
-      
-      if (!["pending", "processing", "completed", "cancelled", "paid"].includes(status)) {
-        console.log(`Invalid status received: ${status}`);
-        return res.status(400).json({ message: "Invalid status" });
-      }
-      
-      const updatedOrder = await storage.updateOrderStatus(orderId, status);
-      
-      if (!updatedOrder) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-      
-      res.json(updatedOrder);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update order status" });
     }
   });
 
