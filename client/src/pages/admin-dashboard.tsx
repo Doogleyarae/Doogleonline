@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -424,24 +425,75 @@ export default function AdminDashboard() {
                               <div className="flex space-x-2">
                                 {order.status === "pending" || order.status === "paid" ? (
                                   <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => acceptOrderMutation.mutate(order.orderId)}
-                                      disabled={acceptOrderMutation.isPending}
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      <CheckCircle className="w-3 h-3 mr-1" />
-                                      Accept
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() => cancelOrderMutation.mutate(order.orderId)}
-                                      disabled={cancelOrderMutation.isPending}
-                                    >
-                                      <XCircle className="w-3 h-3 mr-1" />
-                                      Cancel
-                                    </Button>
+                                    {/* Accept Order Confirmation Dialog */}
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          disabled={acceptOrderMutation.isPending}
+                                          className="bg-green-600 hover:bg-green-700 text-white"
+                                        >
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Accept
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Accept Order</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to accept order {order.orderId}? This will mark the order as completed and cannot be undone.
+                                            <div className="mt-3 p-3 bg-gray-50 rounded">
+                                              <p><strong>Customer:</strong> {order.fullName}</p>
+                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                            </div>
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => acceptOrderMutation.mutate(order.orderId)}
+                                            className="bg-green-600 hover:bg-green-700"
+                                          >
+                                            Accept Order
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+
+                                    {/* Cancel Order Confirmation Dialog */}
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          disabled={cancelOrderMutation.isPending}
+                                        >
+                                          <XCircle className="w-3 h-3 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to cancel order {order.orderId}? This action cannot be undone and the customer will be notified.
+                                            <div className="mt-3 p-3 bg-gray-50 rounded">
+                                              <p><strong>Customer:</strong> {order.fullName}</p>
+                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                            </div>
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => cancelOrderMutation.mutate(order.orderId)}
+                                            className="bg-red-600 hover:bg-red-700"
+                                          >
+                                            Cancel Order
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
                                   </>
                                 ) : (
                                   <span className="text-gray-500 text-sm">No actions available</span>
