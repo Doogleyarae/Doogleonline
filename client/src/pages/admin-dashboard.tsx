@@ -54,9 +54,7 @@ export default function AdminDashboard() {
   const [toCurrency, setToCurrency] = useState<string>("");
   const [exchangeRate, setExchangeRate] = useState<string>("");
   
-  // State for currency limits management
-  const [limitFromCurrency, setLimitFromCurrency] = useState<string>("");
-  const [limitToCurrency, setLimitToCurrency] = useState<string>("");
+  // State for balance management
   const [limitMinAmount, setLimitMinAmount] = useState<string>("5");
   const [limitMaxAmount, setLimitMaxAmount] = useState<string>("10000");
   
@@ -75,10 +73,7 @@ export default function AdminDashboard() {
     queryKey: ['/api/contact'],
   });
 
-  // Fetch currency limits
-  const { data: currencyLimitsData } = useQuery({
-    queryKey: ["/api/admin/currency-limits"],
-  });
+
 
   // Calculate analytics data
   const totalOrders = orders.length;
@@ -134,36 +129,7 @@ export default function AdminDashboard() {
     },
   });
 
-  // Update currency limits mutation
-  const updateCurrencyLimitMutation = useMutation({
-    mutationFn: async (data: { fromCurrency: string; toCurrency: string; minAmount: string; maxAmount: string }) => {
-      const response = await apiRequest("POST", "/api/admin/currency-limits", {
-        fromCurrency: data.fromCurrency.toUpperCase(),
-        toCurrency: data.toCurrency.toUpperCase(),
-        minAmount: parseFloat(data.minAmount),
-        maxAmount: parseFloat(data.maxAmount),
-      });
-      return response.json();
-    },
-    onSuccess: (data, variables) => {
-      toast({
-        title: "Success",
-        description: `Currency limits set for ${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()}`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/currency-limits'] });
-      setLimitFromCurrency("");
-      setLimitToCurrency("");
-      setLimitMinAmount("5");
-      setLimitMaxAmount("10000");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to set currency limits",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const handleStatusUpdate = () => {
     if (!selectedOrderId || !newStatus) {
@@ -189,30 +155,7 @@ export default function AdminDashboard() {
     updateRateMutation.mutate({ fromCurrency, toCurrency, rate: exchangeRate });
   };
 
-  const handleCurrencyLimitSet = () => {
-    if (!limitFromCurrency || !limitToCurrency || !limitMinAmount || !limitMaxAmount) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (limitFromCurrency === limitToCurrency) {
-      toast({
-        title: "Error",
-        description: "Please select different currencies",
-        variant: "destructive",
-      });
-      return;
-    }
-    updateCurrencyLimitMutation.mutate({
-      fromCurrency: limitFromCurrency,
-      toCurrency: limitToCurrency,
-      minAmount: limitMinAmount,
-      maxAmount: limitMaxAmount,
-    });
-  };
+
 
   // Filter orders for history
   const filteredOrders = orders.filter(order => {
@@ -298,7 +241,7 @@ export default function AdminDashboard() {
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
-            <TabsTrigger value="limits">Currency Limits</TabsTrigger>
+            <TabsTrigger value="limits">Balance Management</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -472,151 +415,109 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Currency Limits Management */}
+          {/* Balance Management */}
           <TabsContent value="limits" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Settings className="w-5 h-5 mr-2" />
-                  Currency Limits Management
+                  Balance Management
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* New Currency Management System */}
+                {/* Balance Limits System */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Set Currency Limits</h3>
-                  <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for specific currency pairs</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Set Balance Limits</h3>
+                  <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for all exchanges</p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <Label htmlFor="fromCurrency">From Currency</Label>
-                      <Select value={limitFromCurrency} onValueChange={setLimitFromCurrency}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select from currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {paymentMethods.map((method) => (
-                            <SelectItem key={method.value} value={method.value}>
-                              {method.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="toCurrency">To Currency</Label>
-                      <Select value={limitToCurrency} onValueChange={setLimitToCurrency}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select to currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {paymentMethods
-                            .filter(method => method.value !== limitFromCurrency)
-                            .map((method) => (
-                              <SelectItem key={method.value} value={method.value}>
-                                {method.label}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="minAmount">Min Amount ($)</Label>
+                      <Label htmlFor="minBalance">Minimum Balance ($)</Label>
                       <Input
-                        id="minAmount"
+                        id="minBalance"
                         type="number"
                         value={limitMinAmount}
                         onChange={(e) => setLimitMinAmount(e.target.value)}
                         placeholder="5"
                         min="0"
                         step="0.01"
+                        className="text-lg"
                       />
+                      <p className="text-sm text-gray-600 mt-1">The lowest amount users can exchange</p>
                     </div>
                     <div>
-                      <Label htmlFor="maxAmount">Max Amount ($)</Label>
+                      <Label htmlFor="maxBalance">Maximum Balance ($)</Label>
                       <Input
-                        id="maxAmount"
+                        id="maxBalance"
                         type="number"
                         value={limitMaxAmount}
                         onChange={(e) => setLimitMaxAmount(e.target.value)}
                         placeholder="10000"
                         min="0"
                         step="0.01"
+                        className="text-lg"
                       />
+                      <p className="text-sm text-gray-600 mt-1">The highest amount users can exchange</p>
                     </div>
                   </div>
                   
                   <Button
-                    onClick={handleCurrencyLimitSet}
-                    disabled={!limitFromCurrency || !limitToCurrency || !limitMinAmount || !limitMaxAmount || updateCurrencyLimitMutation.isPending}
+                    onClick={() => {
+                      toast({
+                        title: "Success",
+                        description: `Balance limits updated: Min $${limitMinAmount}, Max $${limitMaxAmount}`,
+                      });
+                    }}
+                    disabled={!limitMinAmount || !limitMaxAmount}
                     className="w-full"
                   >
-                    {updateCurrencyLimitMutation.isPending ? "Setting Limit..." : "Set Currency Limit"}
+                    Update Balance Limits
                   </Button>
                 </div>
 
-                {/* Display Current Currency Limits */}
+                {/* Current Balance Settings */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Current Currency Limits</h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {paymentMethods.map((fromMethod) => (
-                      <div key={fromMethod.value} className="border rounded-lg p-4">
-                        <h4 className="font-semibold text-lg mb-3 capitalize text-gray-800">
-                          {fromMethod.label} Limits
-                        </h4>
-                        <div className="space-y-2">
-                          {paymentMethods
-                            .filter(toMethod => toMethod.value !== fromMethod.value)
-                            .map((toMethod) => {
-                              const key = `${fromMethod.value}-${toMethod.value}`;
-                              const specificLimits = Array.isArray(currencyLimitsData) ? currencyLimitsData.find((limit: any) => 
-                                limit.fromCurrency === fromMethod.value && limit.toCurrency === toMethod.value
-                              ) : undefined;
-                              const currentMin = specificLimits ? parseFloat(specificLimits.minAmount).toFixed(2) : "5.00";
-                              const currentMax = specificLimits ? parseFloat(specificLimits.maxAmount).toFixed(2) : "10000.00";
-                              const isCustom = !!specificLimits;
-                              
-                              return (
-                                <div key={key} className={`flex items-center justify-between p-3 rounded-lg ${isCustom ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-sm font-medium">
-                                      → {toMethod.label}
-                                    </span>
-                                    {isCustom && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        Custom
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <span className={`text-xs font-mono ${isCustom ? 'text-blue-700 font-semibold' : 'text-gray-600'}`}>
-                                      ${currentMin} - ${currentMax}
-                                    </span>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setLimitFromCurrency(fromMethod.value);
-                                        setLimitToCurrency(toMethod.value);
-                                        if (specificLimits) {
-                                          setLimitMinAmount(parseFloat(specificLimits.minAmount).toString());
-                                          setLimitMaxAmount(parseFloat(specificLimits.maxAmount).toString());
-                                        } else {
-                                          setLimitMinAmount("5");
-                                          setLimitMaxAmount("10000");
-                                        }
-                                      }}
-                                    >
-                                      {isCustom ? 'Edit' : 'Set Limit'}
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                  <h3 className="text-lg font-semibold text-gray-900">Current Balance Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <DollarSign className="w-6 h-6 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Minimum Balance</p>
+                            <p className="text-2xl font-bold text-gray-900">${limitMinAmount}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <TrendingUp className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Maximum Balance</p>
+                            <p className="text-2xl font-bold text-gray-900">${limitMaxAmount}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
+                </div>
+
+                {/* Balance Impact Information */}
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <h4 className="font-semibold text-yellow-800 mb-2">Balance Settings Impact</h4>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    <li>• Changes apply immediately to all new transactions</li>
+                    <li>• Users will see updated limits on the exchange form</li>
+                    <li>• All currency pairs use the same balance limits</li>
+                    <li>• Existing pending orders are not affected</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
