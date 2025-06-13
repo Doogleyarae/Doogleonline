@@ -1,10 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Copy, CreditCard, X, Clock, Timer, QrCode, Camera } from "lucide-react";
+import { CheckCircle, Copy, CreditCard, X, Clock, Timer } from "lucide-react";
 import { formatDate, formatCurrency, copyToClipboard } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -13,10 +13,6 @@ import type { Order } from "@shared/schema";
 export default function Confirmation() {
   const [order, setOrder] = useState<Order | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
-  const [showScanner, setShowScanner] = useState(false);
-  const [scannedData, setScannedData] = useState<string>("");
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,13 +47,6 @@ export default function Confirmation() {
       return () => clearInterval(interval);
     }
   }, [order?.status, processingStatus]);
-
-  // Cleanup camera on component unmount
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
 
   const formatCountdown = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -123,85 +112,6 @@ export default function Confirmation() {
   const handleCancelOrder = () => {
     if (order) {
       updateOrderStatusMutation.mutate({ orderId: order.orderId, status: "cancelled" });
-    }
-  };
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment' // Use back camera if available
-        } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setShowScanner(true);
-        
-        // Start scanning for QR codes
-        const interval = setInterval(() => {
-          scanForQRCode();
-        }, 1000);
-        
-        // Store interval for cleanup
-        videoRef.current.dataset.intervalId = interval.toString();
-      }
-    } catch (error) {
-      toast({
-        title: "Camera Error",
-        description: "Unable to access camera. Please check permissions.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-      
-      // Clear scanning interval
-      const intervalId = videoRef.current.dataset.intervalId;
-      if (intervalId) {
-        clearInterval(parseInt(intervalId));
-      }
-    }
-    setShowScanner(false);
-  };
-
-  const scanForQRCode = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) return;
-    
-    // Set canvas size to video size
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Draw video frame to canvas
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Get image data for QR code detection
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
-    // Simple QR detection placeholder - in production, use a QR library like jsqr
-    // For now, we'll provide manual input option
-  };
-
-  const handleManualInput = () => {
-    const input = prompt("Enter wallet address or payment information:");
-    if (input && input.trim()) {
-      setScannedData(input.trim());
-      toast({
-        title: "Payment Info Added",
-        description: "Payment information has been captured",
-      });
     }
   };
 
@@ -289,108 +199,6 @@ export default function Confirmation() {
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* QR Scanner Section */}
-          <Card className="bg-gray-50 border border-gray-200 mb-6">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 text-center">Payment Scanner</h3>
-              
-              {!showScanner && (
-                <div className="space-y-3">
-                  <p className="text-xs text-gray-600 text-center mb-3">
-                    Scan QR codes or enter payment information manually
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      onClick={startCamera}
-                      variant="outline"
-                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                    >
-                      <QrCode className="w-4 h-4 mr-2" />
-                      Scan QR
-                    </Button>
-                    <Button
-                      onClick={handleManualInput}
-                      variant="outline"
-                      className="border-green-300 text-green-700 hover:bg-green-50"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Manual Entry
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {showScanner && (
-                <div className="space-y-3">
-                  <div className="relative bg-black rounded-lg overflow-hidden">
-                    <video
-                      ref={videoRef}
-                      className="w-full h-64 object-cover"
-                      playsInline
-                      muted
-                    />
-                    <canvas
-                      ref={canvasRef}
-                      className="hidden"
-                    />
-                    <div className="absolute inset-0 border-2 border-blue-400 opacity-50 pointer-events-none">
-                      <div className="absolute top-4 left-4 w-6 h-6 border-l-2 border-t-2 border-blue-400"></div>
-                      <div className="absolute top-4 right-4 w-6 h-6 border-r-2 border-t-2 border-blue-400"></div>
-                      <div className="absolute bottom-4 left-4 w-6 h-6 border-l-2 border-b-2 border-blue-400"></div>
-                      <div className="absolute bottom-4 right-4 w-6 h-6 border-r-2 border-b-2 border-blue-400"></div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={stopCamera}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Close Scanner
-                    </Button>
-                    <Button
-                      onClick={handleManualInput}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Manual Entry
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-600 text-center">
-                    Position QR code within the frame to scan payment information
-                  </p>
-                </div>
-              )}
-
-              {scannedData && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-                  <h4 className="text-sm font-semibold text-green-900 mb-2">Scanned Information:</h4>
-                  <p className="text-sm font-mono text-green-800 break-all">{scannedData}</p>
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => copyToClipboard(scannedData)}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Copy className="w-3 h-3 mr-1" />
-                      Copy
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setScannedData("")}
-                      className="text-green-700 border-green-300"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
