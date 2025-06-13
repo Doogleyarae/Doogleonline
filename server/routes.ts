@@ -207,7 +207,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { orderId } = req.params;
       const { status } = req.body;
       
+      console.log(`Received status update request: orderId=${orderId}, status=${status}`);
+      
       if (!["pending", "processing", "completed", "cancelled", "paid"].includes(status)) {
+        console.log(`Invalid status received: ${status}`);
         return res.status(400).json({ message: "Invalid status" });
       }
       
