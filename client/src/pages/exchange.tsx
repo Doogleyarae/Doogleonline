@@ -70,7 +70,10 @@ export default function Exchange() {
   const [sendMethod, setSendMethod] = useState("trc20");
   const [receiveMethod, setReceiveMethod] = useState("moneygo");
   const [sendAmount, setSendAmount] = useState("100");
+  const [receiveAmount, setReceiveAmount] = useState("");
   const [formKey, setFormKey] = useState(0);
+  const [isUpdatingSendAmount, setIsUpdatingSendAmount] = useState(false);
+  const [isUpdatingReceiveAmount, setIsUpdatingReceiveAmount] = useState(false);
 
   // Fetch currency-specific limits for the selected pair
   const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
@@ -107,8 +110,13 @@ export default function Exchange() {
   useEffect(() => {
     form.setValue("sendMethod", sendMethod);
     form.setValue("receiveMethod", receiveMethod);
-    form.setValue("sendAmount", sendAmount);
-  }, [sendMethod, receiveMethod, sendAmount, form]);
+    if (!isUpdatingSendAmount) {
+      form.setValue("sendAmount", sendAmount);
+    }
+    if (!isUpdatingReceiveAmount) {
+      form.setValue("receiveAmount", receiveAmount);
+    }
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, form, isUpdatingSendAmount, isUpdatingReceiveAmount]);
 
   // Fetch exchange rate when methods change
   const { data: rateData } = useQuery<ExchangeRateResponse>({
@@ -116,18 +124,43 @@ export default function Exchange() {
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
   });
 
+  // Update exchange rate when rate data changes
   useEffect(() => {
-    if (rateData && sendAmount) {
+    if (rateData) {
       const rate = rateData.rate;
-      const amount = parseFloat(sendAmount) || 0;
-      const convertedAmount = (amount * rate).toFixed(2);
-      
-      form.setValue("receiveAmount", convertedAmount);
-      form.setValue("exchangeRate", rate.toString());
       setExchangeRate(rate);
+      form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
     }
-  }, [rateData, sendAmount, sendMethod, receiveMethod, form]);
+  }, [rateData, sendMethod, receiveMethod, form]);
+
+  // Calculate receive amount when send amount changes
+  useEffect(() => {
+    if (exchangeRate > 0 && sendAmount && !isUpdatingReceiveAmount) {
+      const amount = parseFloat(sendAmount) || 0;
+      if (amount > 0) {
+        const convertedAmount = (amount * exchangeRate).toFixed(2);
+        setIsUpdatingSendAmount(true);
+        setReceiveAmount(convertedAmount);
+        form.setValue("receiveAmount", convertedAmount);
+        setTimeout(() => setIsUpdatingSendAmount(false), 100);
+      }
+    }
+  }, [sendAmount, exchangeRate, form, isUpdatingReceiveAmount]);
+
+  // Calculate send amount when receive amount changes
+  useEffect(() => {
+    if (exchangeRate > 0 && receiveAmount && !isUpdatingSendAmount) {
+      const amount = parseFloat(receiveAmount) || 0;
+      if (amount > 0) {
+        const convertedAmount = (amount / exchangeRate).toFixed(2);
+        setIsUpdatingReceiveAmount(true);
+        setSendAmount(convertedAmount);
+        form.setValue("sendAmount", convertedAmount);
+        setTimeout(() => setIsUpdatingReceiveAmount(false), 100);
+      }
+    }
+  }, [receiveAmount, exchangeRate, form, isUpdatingSendAmount]);
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: ExchangeFormData) => {
@@ -205,7 +238,10 @@ export default function Exchange() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Send Method</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            setSendMethod(value);
+                          }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select payment method" />
@@ -238,6 +274,10 @@ export default function Exchange() {
                               min="5"
                               max="10000"
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setSendAmount(e.target.value);
+                              }}
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
@@ -268,7 +308,10 @@ export default function Exchange() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Receive Method</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            setReceiveMethod(value);
+                          }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select payment method" />
@@ -297,14 +340,17 @@ export default function Exchange() {
                             <Input
                               type="number"
                               placeholder="0.00"
-                              readOnly
-                              className="bg-gray-50"
+                              step="0.01"
                               {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setReceiveAmount(e.target.value);
+                              }}
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: ${currentMinAmount.toFixed(2)}</span>
-                            <span>Max: ${currentMaxAmount.toLocaleString()}</span>
+                            <span>Min: ${(currentMinAmount * exchangeRate).toFixed(2)}</span>
+                            <span>Max: ${(currentMaxAmount * exchangeRate).toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
