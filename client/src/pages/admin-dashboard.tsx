@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,13 +55,26 @@ export default function AdminDashboard() {
   const [exchangeRate, setExchangeRate] = useState<string>("");
   
   // State for balance management
-  const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>(() => {
-    const defaultLimits: Record<string, { min: string; max: string }> = {};
-    paymentMethods.forEach(method => {
-      defaultLimits[method.value] = { min: "5", max: "10000" };
-    });
-    return defaultLimits;
+  const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>({});
+
+  // Fetch current currency limits from backend
+  const { data: backendLimits } = useQuery({
+    queryKey: ["/api/admin/balance-limits"],
   });
+
+  // Update local state when backend data is loaded
+  useEffect(() => {
+    if (backendLimits) {
+      const formattedLimits: Record<string, { min: string; max: string }> = {};
+      Object.entries(backendLimits as Record<string, { min: number; max: number }>).forEach(([key, value]) => {
+        formattedLimits[key] = {
+          min: value.min.toString(),
+          max: value.max.toString()
+        };
+      });
+      setCurrencyLimits(formattedLimits);
+    }
+  }, [backendLimits]);
   
   // State for order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -497,6 +510,9 @@ export default function AdminDashboard() {
                               });
                               
                               if (response.ok) {
+                                // Invalidate the cache to refresh the data
+                                queryClient.invalidateQueries({ queryKey: ["/api/admin/balance-limits"] });
+                                
                                 toast({
                                   title: "Success",
                                   description: `${method.label} limits updated: Min $${min}, Max $${max}`,

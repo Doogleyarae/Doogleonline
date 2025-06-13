@@ -23,6 +23,20 @@ let currencyLimits: Record<string, { min: number; max: number }> = {
   usdc: { min: 5, max: 10000 }
 };
 
+// Function to get currency limits with fallback
+function getCurrencyLimits(currency: string): { min: number; max: number } {
+  const normalized = currency.toLowerCase();
+  return currencyLimits[normalized] || { min: 5, max: 10000 };
+}
+
+// Function to update currency limits
+function updateCurrencyLimits(currency: string, min: number, max: number): void {
+  const normalized = currency.toLowerCase();
+  currencyLimits[normalized] = { min, max };
+  console.log(`Updated ${currency} limits: min=${min}, max=${max}`);
+  console.log('Current limits:', currencyLimits);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get exchange rate
@@ -211,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/currency-limits/:currency", async (req, res) => {
     try {
       const { currency } = req.params;
-      const limits = currencyLimits[currency.toLowerCase()] || { min: 5, max: 10000 };
+      const limits = getCurrencyLimits(currency);
       
       res.json({
         minAmount: limits.min,
@@ -227,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/currency-limits/:from/:to", async (req, res) => {
     try {
       const { from, to } = req.params;
-      const fromLimits = currencyLimits[from.toLowerCase()] || { min: 5, max: 10000 };
+      const fromLimits = getCurrencyLimits(from);
       
       res.json({
         minAmount: fromLimits.min,
@@ -241,6 +255,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+
+  // Get all currency limits (admin only)
+  app.get("/api/admin/balance-limits", async (req, res) => {
+    try {
+      res.json(currencyLimits);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get currency limits" });
+    }
+  });
 
   // Update individual currency limits (admin only)
   app.post("/api/admin/balance-limits", async (req, res) => {
@@ -258,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid amount values" });
       }
       
-      currencyLimits[currency.toLowerCase()] = { min, max };
+      updateCurrencyLimits(currency, min, max);
       
       res.json({
         currency: currency.toUpperCase(),
