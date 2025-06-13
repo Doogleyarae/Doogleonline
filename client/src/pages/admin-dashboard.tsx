@@ -485,13 +485,32 @@ export default function AdminDashboard() {
                         </div>
                         
                         <Button
-                          onClick={() => {
+                          onClick={async () => {
                             const min = currencyLimits[method.value]?.min || "5";
                             const max = currencyLimits[method.value]?.max || "10000";
-                            toast({
-                              title: "Success",
-                              description: `${method.label} limits updated: Min $${min}, Max $${max}`,
-                            });
+                            
+                            try {
+                              const response = await apiRequest("POST", "/api/admin/balance-limits", {
+                                currency: method.value,
+                                minAmount: parseFloat(min),
+                                maxAmount: parseFloat(max),
+                              });
+                              
+                              if (response.ok) {
+                                toast({
+                                  title: "Success",
+                                  description: `${method.label} limits updated: Min $${min}, Max $${max}`,
+                                });
+                              } else {
+                                throw new Error("Failed to update limits");
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to update currency limits",
+                                variant: "destructive",
+                              });
+                            }
                           }}
                           size="sm"
                           className="w-full"
