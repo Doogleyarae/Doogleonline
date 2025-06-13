@@ -55,8 +55,13 @@ export default function AdminDashboard() {
   const [exchangeRate, setExchangeRate] = useState<string>("");
   
   // State for balance management
-  const [limitMinAmount, setLimitMinAmount] = useState<string>("5");
-  const [limitMaxAmount, setLimitMaxAmount] = useState<string>("10000");
+  const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>(() => {
+    const defaultLimits: Record<string, { min: string; max: string }> = {};
+    paymentMethods.forEach(method => {
+      defaultLimits[method.value] = { min: "5", max: "10000" };
+    });
+    return defaultLimits;
+  });
   
   // State for order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -425,87 +430,111 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Balance Limits System */}
+                {/* Currency Balance Management */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Set Balance Limits</h3>
-                  <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for all exchanges</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Currency Balance Management</h3>
+                  <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for each currency</p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <Label htmlFor="minBalance">Minimum Balance ($)</Label>
-                      <Input
-                        id="minBalance"
-                        type="number"
-                        value={limitMinAmount}
-                        onChange={(e) => setLimitMinAmount(e.target.value)}
-                        placeholder="5"
-                        min="0"
-                        step="0.01"
-                        className="text-lg"
-                      />
-                      <p className="text-sm text-gray-600 mt-1">The lowest amount users can exchange</p>
-                    </div>
-                    <div>
-                      <Label htmlFor="maxBalance">Maximum Balance ($)</Label>
-                      <Input
-                        id="maxBalance"
-                        type="number"
-                        value={limitMaxAmount}
-                        onChange={(e) => setLimitMaxAmount(e.target.value)}
-                        placeholder="10000"
-                        min="0"
-                        step="0.01"
-                        className="text-lg"
-                      />
-                      <p className="text-sm text-gray-600 mt-1">The highest amount users can exchange</p>
-                    </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {paymentMethods.map((method) => (
+                      <div key={method.value} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-lg mb-4 flex items-center">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <DollarSign className="w-4 h-4 text-blue-600" />
+                          </div>
+                          {method.label}
+                        </h4>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <Label htmlFor={`min-${method.value}`}>Min Amount ($)</Label>
+                            <Input
+                              id={`min-${method.value}`}
+                              type="number"
+                              value={currencyLimits[method.value]?.min || "5"}
+                              onChange={(e) => setCurrencyLimits(prev => ({
+                                ...prev,
+                                [method.value]: {
+                                  ...prev[method.value],
+                                  min: e.target.value
+                                }
+                              }))}
+                              placeholder="5"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`max-${method.value}`}>Max Amount ($)</Label>
+                            <Input
+                              id={`max-${method.value}`}
+                              type="number"
+                              value={currencyLimits[method.value]?.max || "10000"}
+                              onChange={(e) => setCurrencyLimits(prev => ({
+                                ...prev,
+                                [method.value]: {
+                                  ...prev[method.value],
+                                  max: e.target.value
+                                }
+                              }))}
+                              placeholder="10000"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                        
+                        <Button
+                          onClick={() => {
+                            const min = currencyLimits[method.value]?.min || "5";
+                            const max = currencyLimits[method.value]?.max || "10000";
+                            toast({
+                              title: "Success",
+                              description: `${method.label} limits updated: Min $${min}, Max $${max}`,
+                            });
+                          }}
+                          size="sm"
+                          className="w-full"
+                        >
+                          Update {method.label} Limits
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <Button
-                    onClick={() => {
-                      toast({
-                        title: "Success",
-                        description: `Balance limits updated: Min $${limitMinAmount}, Max $${limitMaxAmount}`,
-                      });
-                    }}
-                    disabled={!limitMinAmount || !limitMaxAmount}
-                    className="w-full"
-                  >
-                    Update Balance Limits
-                  </Button>
                 </div>
 
-                {/* Current Balance Settings */}
+                {/* Current Settings Overview */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Current Balance Settings</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center">
-                          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                            <DollarSign className="w-6 h-6 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Minimum Balance</p>
-                            <p className="text-2xl font-bold text-gray-900">${limitMinAmount}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center">
-                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                            <TrendingUp className="w-6 h-6 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Maximum Balance</p>
-                            <p className="text-2xl font-bold text-gray-900">${limitMaxAmount}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <h3 className="text-lg font-semibold text-gray-900">Current Settings Overview</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse border border-gray-300">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Currency</th>
+                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Min Amount</th>
+                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Max Amount</th>
+                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paymentMethods.map((method) => {
+                          const min = currencyLimits[method.value]?.min || "5";
+                          const max = currencyLimits[method.value]?.max || "10000";
+                          return (
+                            <tr key={method.value} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 px-4 py-2 font-medium">{method.label}</td>
+                              <td className="border border-gray-300 px-4 py-2">${min}</td>
+                              <td className="border border-gray-300 px-4 py-2">${max}</td>
+                              <td className="border border-gray-300 px-4 py-2">
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                  Active
+                                </Badge>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
@@ -513,9 +542,9 @@ export default function AdminDashboard() {
                 <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                   <h4 className="font-semibold text-yellow-800 mb-2">Balance Settings Impact</h4>
                   <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• Changes apply immediately to all new transactions</li>
+                    <li>• Changes apply immediately to new transactions</li>
                     <li>• Users will see updated limits on the exchange form</li>
-                    <li>• All currency pairs use the same balance limits</li>
+                    <li>• Each currency has its own individual limits</li>
                     <li>• Existing pending orders are not affected</li>
                   </ul>
                 </div>
