@@ -198,25 +198,49 @@ export default function Exchange() {
   // Handle amount calculations with prevention of loops
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
-    if (!calculatingFromReceive && exchangeRate > 0 && value) {
+    
+    // Auto-calculate receive amount when send amount changes
+    if (!calculatingFromReceive && exchangeRate > 0) {
       setCalculatingFromSend(true);
-      const amount = parseFloat(value) || 0;
-      const convertedAmount = (amount * exchangeRate).toFixed(2);
-      setReceiveAmount(convertedAmount);
-      form.setValue("receiveAmount", convertedAmount);
-      setTimeout(() => setCalculatingFromSend(false), 50);
+      
+      if (value && value !== "") {
+        const amount = parseFloat(value) || 0;
+        if (amount >= 0) {
+          const convertedAmount = (amount * exchangeRate).toFixed(2);
+          setReceiveAmount(convertedAmount);
+          form.setValue("receiveAmount", convertedAmount);
+        }
+      } else {
+        // Clear receive amount when send amount is empty
+        setReceiveAmount("");
+        form.setValue("receiveAmount", "");
+      }
+      
+      setTimeout(() => setCalculatingFromSend(false), 10);
     }
   };
 
   const handleReceiveAmountChange = (value: string) => {
     setReceiveAmount(value);
-    if (!calculatingFromSend && exchangeRate > 0 && value) {
+    
+    // Auto-calculate send amount when receive amount changes
+    if (!calculatingFromSend && exchangeRate > 0) {
       setCalculatingFromReceive(true);
-      const amount = parseFloat(value) || 0;
-      const convertedAmount = (amount / exchangeRate).toFixed(2);
-      setSendAmount(convertedAmount);
-      form.setValue("sendAmount", convertedAmount);
-      setTimeout(() => setCalculatingFromReceive(false), 50);
+      
+      if (value && value !== "") {
+        const amount = parseFloat(value) || 0;
+        if (amount >= 0) {
+          const convertedAmount = (amount / exchangeRate).toFixed(2);
+          setSendAmount(convertedAmount);
+          form.setValue("sendAmount", convertedAmount);
+        }
+      } else {
+        // Clear send amount when receive amount is empty
+        setSendAmount("");
+        form.setValue("sendAmount", "");
+      }
+      
+      setTimeout(() => setCalculatingFromReceive(false), 10);
     }
   };
 
