@@ -43,26 +43,44 @@ const paymentMethods = [
 ];
 
 const createExchangeFormSchema = (
-  minSendAmount: number = 5, 
-  maxSendAmount: number = 10000,
-  minReceiveAmount: number = 5,
-  maxReceiveAmount: number = 10000
+  minSendAmount: number = 25, 
+  maxSendAmount: number = 7500,
+  minReceiveAmount: number = 24.50,
+  maxReceiveAmount: number = 7350
 ) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
   receiveMethod: z.string().min(1, "Please select a receive method"),
-  sendAmount: z.string().min(1, "Amount is required").refine(
+  sendAmount: z.string().refine(
     (val) => {
+      if (!val || val === "") return true; // Allow empty during typing
       const amount = parseFloat(val);
+      if (isNaN(amount)) return false;
       return amount >= minSendAmount && amount <= maxSendAmount;
     },
-    `Send amount must be between ${minSendAmount.toFixed(2)} and ${maxSendAmount.toFixed(2)}`
-  ),
-  receiveAmount: z.string().min(1, "Amount is required").refine(
     (val) => {
+      if (!val || val === "") return { message: "Amount is required" };
       const amount = parseFloat(val);
+      if (isNaN(amount)) return { message: "Please enter a valid number" };
+      if (amount < minSendAmount) return { message: `Minimum send amount is $${minSendAmount.toFixed(2)}.` };
+      if (amount > maxSendAmount) return { message: `Maximum send amount is $${maxSendAmount.toLocaleString()}.` };
+      return { message: "Invalid amount" };
+    }
+  ),
+  receiveAmount: z.string().refine(
+    (val) => {
+      if (!val || val === "") return true; // Allow empty during typing
+      const amount = parseFloat(val);
+      if (isNaN(amount)) return false;
       return amount >= minReceiveAmount && amount <= maxReceiveAmount;
     },
-    `Receive amount must be between ${minReceiveAmount.toFixed(2)} and ${maxReceiveAmount.toFixed(2)}`
+    (val) => {
+      if (!val || val === "") return { message: "Amount is required" };
+      const amount = parseFloat(val);
+      if (isNaN(amount)) return { message: "Please enter a valid number" };
+      if (amount < minReceiveAmount) return { message: `Minimum receive amount is $${minReceiveAmount.toFixed(2)}.` };
+      if (amount > maxReceiveAmount) return { message: `Maximum receive amount is $${maxReceiveAmount.toLocaleString()}.` };
+      return { message: "Invalid amount" };
+    }
   ),
   exchangeRate: z.string(),
   fullName: z.string().min(1, "Full name is required"),
