@@ -105,10 +105,10 @@ export default function Exchange() {
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
   const [dynamicLimits, setDynamicLimits] = useState({
-    minSendAmount: 5,
-    maxSendAmount: 10000,
-    minReceiveAmount: 5,
-    maxReceiveAmount: 10000,
+    minSendAmount: 25,
+    maxSendAmount: 7500,
+    minReceiveAmount: 24.50,
+    maxReceiveAmount: 7350,
   });
 
   // Initialize form data memory for auto-save functionality
@@ -151,19 +151,12 @@ export default function Exchange() {
   // Calculate dynamic limits when exchange rate or currency limits change
   useEffect(() => {
     if (currencyLimits && exchangeRate > 0) {
-      const baseLimits = {
-        minAmount: currencyLimits.minAmount,
-        maxAmount: currencyLimits.maxAmount,
-      };
-
-      // Calculate dynamic limits based on exchange rate
-      // Send limits: base limits from database
-      // Receive limits: calculated from send limits using exchange rate
+      // Fixed limits as specified
       const newLimits = {
-        minSendAmount: baseLimits.minAmount,
-        maxSendAmount: baseLimits.maxAmount,
-        minReceiveAmount: baseLimits.minAmount * exchangeRate,
-        maxReceiveAmount: baseLimits.maxAmount * exchangeRate,
+        minSendAmount: 25,
+        maxSendAmount: 7500,
+        minReceiveAmount: 24.50,
+        maxReceiveAmount: 7350,
       };
 
       setDynamicLimits(newLimits);
