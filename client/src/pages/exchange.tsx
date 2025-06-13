@@ -81,7 +81,7 @@ export default function Exchange() {
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
   const [sendMethod, setSendMethod] = useState("trc20");
   const [receiveMethod, setReceiveMethod] = useState("moneygo");
-  const [sendAmount, setSendAmount] = useState("100");
+  const [sendAmount, setSendAmount] = useState("1");
   const [receiveAmount, setReceiveAmount] = useState("");
   const [formKey, setFormKey] = useState(0);
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
