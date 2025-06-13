@@ -13,7 +13,7 @@ export const orders = pgTable("orders", {
   sendAmount: decimal("send_amount", { precision: 10, scale: 2 }).notNull(),
   receiveAmount: decimal("receive_amount", { precision: 10, scale: 2 }).notNull(),
   exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
-  status: text("status").notNull().default("pending"), // pending, processing, completed, cancelled
+  status: text("status").notNull().default("pending"), // pending, processing, completed, cancelled, paid
   paymentWallet: text("payment_wallet").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Copy } from "lucide-react";
+import { CheckCircle, Copy, CreditCard, X, Clock } from "lucide-react";
 import { formatDate, formatCurrency, copyToClipboard } from "@/lib/utils";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 
 export default function Confirmation() {
@@ -18,6 +20,37 @@ export default function Confirmation() {
       setOrder(JSON.parse(storedOrder));
     }
   }, []);
+
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update order status");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (updatedOrder) => {
+      setOrder(updatedOrder);
+      sessionStorage.setItem("currentOrder", JSON.stringify(updatedOrder));
+      toast({
+        title: "Order Updated",
+        description: `Order status changed to ${updatedOrder.status}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update order status",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCopyWallet = async () => {
     if (order?.paymentWallet) {
@@ -34,6 +67,35 @@ export default function Confirmation() {
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const handleMarkAsPaid = () => {
+    if (order) {
+      updateOrderStatusMutation.mutate({ orderId: order.orderId, status: "paid" });
+    }
+  };
+
+  const handleCancelOrder = () => {
+    if (order) {
+      updateOrderStatusMutation.mutate({ orderId: order.orderId, status: "cancelled" });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+      case "paid":
+        return <Badge variant="secondary" className="bg-green-100 text-green-800"><CreditCard className="w-3 h-3 mr-1" />Paid</Badge>;
+      case "cancelled":
+        return <Badge variant="secondary" className="bg-red-100 text-red-800"><X className="w-3 h-3 mr-1" />Cancelled</Badge>;
+      case "processing":
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800"><Clock className="w-3 h-3 mr-1" />Processing</Badge>;
+      case "completed":
+        return <Badge variant="secondary" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
@@ -83,9 +145,7 @@ export default function Confirmation() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Status:</span>
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                    Pending
-                  </Badge>
+                  {getStatusBadge(order.status)}
                 </div>
               </div>
             </CardContent>
@@ -108,6 +168,33 @@ export default function Confirmation() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Order Status Actions */}
+          {order.status === "pending" && (
+            <Card className="bg-gray-50 border border-gray-200 mb-6">
+              <CardContent className="p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 text-center">Order Status</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={handleMarkAsPaid}
+                    disabled={updateOrderStatusMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Mark as Paid
+                  </Button>
+                  <Button
+                    onClick={handleCancelOrder}
+                    disabled={updateOrderStatusMutation.isPending}
+                    variant="destructive"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel Order
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="space-y-3">
             <Link href="/track">
