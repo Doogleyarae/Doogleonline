@@ -97,10 +97,56 @@ export default function Exchange() {
   const { toast } = useToast();
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
-  const [sendMethod, setSendMethod] = useState("trc20");
-  const [receiveMethod, setReceiveMethod] = useState("moneygo");
-  const [sendAmount, setSendAmount] = useState("1");
-  const [receiveAmount, setReceiveAmount] = useState("");
+  // Load persisted exchange state from localStorage
+  const loadPersistedExchangeState = () => {
+    try {
+      const saved = localStorage.getItem('exchangeFormState');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          sendMethod: parsed.sendMethod || "trc20",
+          receiveMethod: parsed.receiveMethod || "moneygo",
+          sendAmount: parsed.sendAmount || "1",
+          receiveAmount: parsed.receiveAmount || ""
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to load persisted exchange state:', error);
+    }
+    return {
+      sendMethod: "trc20",
+      receiveMethod: "moneygo", 
+      sendAmount: "1",
+      receiveAmount: ""
+    };
+  };
+
+  const persistedState = loadPersistedExchangeState();
+  const [sendMethod, setSendMethod] = useState(persistedState.sendMethod);
+  const [receiveMethod, setReceiveMethod] = useState(persistedState.receiveMethod);
+  const [sendAmount, setSendAmount] = useState(persistedState.sendAmount);
+  const [receiveAmount, setReceiveAmount] = useState(persistedState.receiveAmount);
+
+  // Save exchange state to localStorage whenever values change
+  const saveExchangeState = (updates: Partial<{
+    sendMethod: string;
+    receiveMethod: string;
+    sendAmount: string;
+    receiveAmount: string;
+  }>) => {
+    try {
+      const currentState = {
+        sendMethod,
+        receiveMethod,
+        sendAmount,
+        receiveAmount,
+        ...updates
+      };
+      localStorage.setItem('exchangeFormState', JSON.stringify(currentState));
+    } catch (error) {
+      console.warn('Failed to save exchange state:', error);
+    }
+  };
   const [formKey, setFormKey] = useState(0);
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
@@ -172,6 +218,16 @@ export default function Exchange() {
     form.setValue("receiveAmount", receiveAmount);
   }, [sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
 
+  // Save state whenever any exchange value changes
+  useEffect(() => {
+    saveExchangeState({
+      sendMethod,
+      receiveMethod,
+      sendAmount,
+      receiveAmount
+    });
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
+
   // Restore saved data when component mounts or saved data changes
   useEffect(() => {
     if (isReminded && hasSavedData) {
@@ -209,6 +265,7 @@ export default function Exchange() {
   // Handle amount calculations with prevention of loops
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
+    saveExchangeState({ sendAmount: value });
     
     // Auto-calculate receive amount when send amount changes
     if (!calculatingFromReceive && exchangeRate > 0) {
@@ -220,11 +277,13 @@ export default function Exchange() {
           const convertedAmount = (amount * exchangeRate).toFixed(2);
           setReceiveAmount(convertedAmount);
           form.setValue("receiveAmount", convertedAmount);
+          saveExchangeState({ sendAmount: value, receiveAmount: convertedAmount });
         }
       } else {
         // Clear receive amount when send amount is empty
         setReceiveAmount("");
         form.setValue("receiveAmount", "");
+        saveExchangeState({ sendAmount: value, receiveAmount: "" });
       }
       
       setTimeout(() => setCalculatingFromSend(false), 10);
@@ -233,6 +292,7 @@ export default function Exchange() {
 
   const handleReceiveAmountChange = (value: string) => {
     setReceiveAmount(value);
+    saveExchangeState({ receiveAmount: value });
     
     // Auto-calculate send amount when receive amount changes
     if (!calculatingFromSend && exchangeRate > 0) {
@@ -244,11 +304,13 @@ export default function Exchange() {
           const convertedAmount = (amount / exchangeRate).toFixed(2);
           setSendAmount(convertedAmount);
           form.setValue("sendAmount", convertedAmount);
+          saveExchangeState({ receiveAmount: value, sendAmount: convertedAmount });
         }
       } else {
         // Clear send amount when receive amount is empty
         setSendAmount("");
         form.setValue("sendAmount", "");
+        saveExchangeState({ receiveAmount: value, sendAmount: "" });
       }
       
       setTimeout(() => setCalculatingFromReceive(false), 10);
@@ -392,6 +454,7 @@ export default function Exchange() {
                           <Select onValueChange={(value) => {
                             field.onChange(value);
                             setSendMethod(value);
+                            saveExchangeState({ sendMethod: value });
                           }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -462,6 +525,7 @@ export default function Exchange() {
                           <Select onValueChange={(value) => {
                             field.onChange(value);
                             setReceiveMethod(value);
+                            saveExchangeState({ receiveMethod: value });
                           }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
