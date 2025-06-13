@@ -47,6 +47,13 @@ export default function Home() {
       <div className="bg-gradient-to-r from-primary to-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
+            <div className="flex justify-center mb-8">
+              <img 
+                src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
+                alt="Doogle Online"
+                className="h-24 w-24 rounded-full border-4 border-white shadow-lg"
+              />
+            </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Fast & Secure<br />
               <span className="text-yellow-300">Currency Exchange</span>

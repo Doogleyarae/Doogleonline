@@ -27,7 +27,14 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link href="/">
-              <h1 className="text-2xl font-bold text-primary">DoogleOnline</h1>
+              <div className="flex items-center space-x-2">
+                <img 
+                  src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
+                  alt="Doogle Online"
+                  className="h-10 w-10 rounded-full"
+                />
+                <h1 className="text-xl font-bold text-primary">Doogle Online</h1>
+              </div>
             </Link>
           </div>
           
@@ -59,7 +66,15 @@ export default function Navigation() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
-                <div className="flex flex-col space-y-1 mt-6">
+                <div className="flex items-center space-x-2 mb-6 px-3">
+                  <img 
+                    src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
+                    alt="Doogle Online"
+                    className="h-8 w-8 rounded-full"
+                  />
+                  <span className="font-bold text-primary">Doogle Online</span>
+                </div>
+                <div className="flex flex-col space-y-1">
                   {navigationItems.map((item) => (
                     <Link key={item.href} href={item.href}>
                       <span 

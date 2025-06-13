@@ -4,7 +4,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">DoogleOnline</h3>
+            <div className="flex items-center space-x-3 mb-4">
+              <img 
+                src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
+                alt="Doogle Online"
+                className="h-12 w-12 rounded-full"
+              />
+              <h3 className="text-xl font-bold">Doogle Online</h3>
+            </div>
             <p className="text-gray-400">Fast, secure, and reliable currency exchange platform for all your needs.</p>
           </div>
           <div>
