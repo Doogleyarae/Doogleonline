@@ -29,17 +29,27 @@ interface CurrencyLimitsResponse {
   to: string;
 }
 
+// Import currency logos
+import zaadLogo from "@assets/zaad_1749853582330.png";
+import evcLogo from "@assets/evc plus_1749853582322.png";
+import edahabLogo from "@assets/edahab_1749853582320.png";
+import golisLogo from "@assets/golis_1749853582323.png";
+import premierLogo from "@assets/premier bank_1749853582326.png";
+import trc20Logo from "@assets/trc20_1749853582327.png";
+import peb20Logo from "@assets/peb20_1749853582325.png";
+import trxLogo from "@assets/trx_1749853582329.png";
+
 const paymentMethods = [
-  { value: "zaad", label: "Zaad" },
-  { value: "sahal", label: "Sahal" },
-  { value: "evc", label: "EVC Plus" },
-  { value: "edahab", label: "eDahab" },
-  { value: "premier", label: "Premier Bank" },
-  { value: "moneygo", label: "MoneyGo" },
-  { value: "trx", label: "TRX" },
-  { value: "trc20", label: "TRC20" },
-  { value: "peb20", label: "PEB20" },
-  { value: "usdc", label: "USDC" },
+  { value: "zaad", label: "Zaad", logo: zaadLogo },
+  { value: "sahal", label: "Sahal", logo: golisLogo },
+  { value: "evc", label: "EVC Plus", logo: evcLogo },
+  { value: "edahab", label: "eDahab", logo: edahabLogo },
+  { value: "premier", label: "Premier Bank", logo: premierLogo },
+  { value: "moneygo", label: "MoneyGo", logo: null },
+  { value: "trx", label: "TRX", logo: trxLogo },
+  { value: "trc20", label: "TRC20", logo: trc20Logo },
+  { value: "peb20", label: "PEB20", logo: peb20Logo },
+  { value: "usdc", label: "USDC", logo: null },
 ];
 
 const createExchangeFormSchema = (
@@ -464,7 +474,16 @@ export default function Exchange() {
                             <SelectContent>
                               {paymentMethods.map((method) => (
                                 <SelectItem key={method.value} value={method.value}>
-                                  {method.label}
+                                  <div className="flex items-center space-x-2">
+                                    {method.logo && (
+                                      <img 
+                                        src={method.logo} 
+                                        alt={method.label} 
+                                        className="w-5 h-5 object-contain"
+                                      />
+                                    )}
+                                    <span>{method.label}</span>
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -535,7 +554,16 @@ export default function Exchange() {
                             <SelectContent>
                               {paymentMethods.map((method) => (
                                 <SelectItem key={method.value} value={method.value}>
-                                  {method.label}
+                                  <div className="flex items-center space-x-2">
+                                    {method.logo && (
+                                      <img 
+                                        src={method.logo} 
+                                        alt={method.label} 
+                                        className="w-5 h-5 object-contain"
+                                      />
+                                    )}
+                                    <span>{method.label}</span>
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>
