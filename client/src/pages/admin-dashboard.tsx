@@ -49,6 +49,67 @@ export default function AdminDashboard() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [newStatus, setNewStatus] = useState<string>("");
   
+  // Quick order action mutations
+  const acceptOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "completed" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to accept order");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: "Order Accepted",
+        description: "Order has been marked as completed",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to accept order",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "cancelled" }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to cancel order");
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
+      toast({
+        title: "Order Cancelled",
+        description: "Order has been cancelled",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to cancel order",
+        variant: "destructive",
+      });
+    },
+  });
+  
   // State for exchange rate management
   const [fromCurrency, setFromCurrency] = useState<string>("");
   const [toCurrency, setToCurrency] = useState<string>("");
@@ -321,7 +382,10 @@ export default function AdminDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle>All Orders</CardTitle>
+                <CardTitle>Order Management</CardTitle>
+                <p className="text-sm text-gray-600">
+                  Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.
+                </p>
               </CardHeader>
               <CardContent>
                 {ordersLoading ? (
@@ -337,6 +401,7 @@ export default function AdminDashboard() {
                           <TableHead>To</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Date</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -355,6 +420,34 @@ export default function AdminDashboard() {
                               </Badge>
                             </TableCell>
                             <TableCell>{formatDate(order.createdAt)}</TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                {order.status === "pending" || order.status === "paid" ? (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => acceptOrderMutation.mutate(order.orderId)}
+                                      disabled={acceptOrderMutation.isPending}
+                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Accept
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => cancelOrderMutation.mutate(order.orderId)}
+                                      disabled={cancelOrderMutation.isPending}
+                                    >
+                                      <XCircle className="w-3 h-3 mr-1" />
+                                      Cancel
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-500 text-sm">No actions available</span>
+                                )}
+                              </div>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
