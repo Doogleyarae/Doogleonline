@@ -112,6 +112,7 @@ Changelog:
 - June 14, 2025. Implemented comprehensive balance and limit management with real-time admin control over currency min/max settings and balance-constrained transaction limits
 - June 14, 2025. Added comprehensive admin-controlled min/max limit enforcement with real-time validation on both client and server sides, preventing form submission and order creation outside admin-configured boundaries
 - June 14, 2025. Fixed exchange rate system with comprehensive coverage for all 9 currency pairs including MoneyGo to Premier Bank at 0.93 rate, all mobile money and cryptocurrency bidirectional rates now functional
+- June 14, 2025. Completed fully functional admin exchange rate system with immediate real-time updates affecting live calculations, bidirectional rate support, comprehensive cache invalidation, and WebSocket notifications for instant UI updates
 
 ## User Preferences
 
