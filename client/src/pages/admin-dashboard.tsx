@@ -272,42 +272,60 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-8">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-2">
-            <TabsList className="grid w-full grid-cols-6 bg-slate-50">
-              <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <TabsList className="grid w-full grid-cols-6 bg-slate-50 gap-2 p-2">
+              <TabsTrigger 
+                value="orders" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-3 rounded-lg transition-all duration-200"
+              >
                 <div className="flex items-center space-x-2">
                   <Settings className="w-4 h-4" />
-                  <span>Orders</span>
+                  <span className="font-medium">Orders</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="rates" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger 
+                value="rates" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-3 rounded-lg transition-all duration-200"
+              >
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-4 h-4" />
-                  <span>Exchange Rates</span>
+                  <span className="font-medium">Exchange Rates</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="limits" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger 
+                value="limits" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-3 rounded-lg transition-all duration-200"
+              >
                 <div className="flex items-center space-x-2">
                   <DollarSign className="w-4 h-4" />
-                  <span>Balance Management</span>
+                  <span className="font-medium">Balance Management</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="wallets" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger 
+                value="wallets" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-3 rounded-lg transition-all duration-200"
+              >
                 <div className="flex items-center space-x-2">
                   <Settings className="w-4 h-4" />
-                  <span>Wallets</span>
+                  <span className="font-medium">Wallets</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="messages" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger 
+                value="messages" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-3 rounded-lg transition-all duration-200"
+              >
                 <div className="flex items-center space-x-2">
                   <MessageSquare className="w-4 h-4" />
-                  <span>Messages</span>
+                  <span className="font-medium">Messages</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger 
+                value="analytics" 
+                className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-3 rounded-lg transition-all duration-200"
+              >
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-4 h-4" />
-                  <span>Analytics</span>
+                  <span className="font-medium">Analytics</span>
                 </div>
               </TabsTrigger>
             </TabsList>
