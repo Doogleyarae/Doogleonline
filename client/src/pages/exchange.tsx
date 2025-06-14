@@ -182,25 +182,33 @@ export default function Exchange() {
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    refetchInterval: 3000, // Refresh every 3 seconds for real-time admin updates
+    refetchInterval: 1000, // Refresh every 1 second for immediate admin updates
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // Fetch admin-configured limits for the receive currency
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    refetchInterval: 3000, // Refresh every 3 seconds for real-time admin updates
+    refetchInterval: 1000, // Refresh every 1 second for immediate admin updates
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // Fetch live wallet addresses from admin dashboard
   const { data: walletAddresses } = useQuery<Record<string, string>>({
     queryKey: ["/api/admin/wallet-addresses"],
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // Fetch current balances to enforce balance-based limits
   const { data: balances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
+    refetchInterval: 1000, // Refresh every 1 second for immediate updates
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const form = useForm<ExchangeFormData>({
@@ -293,11 +301,12 @@ export default function Exchange() {
   }, [isReminded, savedData, hasSavedData, form]);
 
   // Fetch exchange rate when methods change with frequent refresh for admin updates
-  const { data: rateData } = useQuery<ExchangeRateResponse>({
+  const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    refetchInterval: 2000, // Refresh every 2 seconds for immediate admin rate updates
+    refetchInterval: 1000, // Refresh every 1 second for immediate admin rate updates
     staleTime: 0, // Always consider data stale to get latest rates
+    gcTime: 0, // Don't cache for garbage collection
   });
 
   // Update exchange rate and calculate initial receive amount
@@ -308,16 +317,24 @@ export default function Exchange() {
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
-      // Calculate initial receive amount based on current send amount
-      if (sendAmount) {
-        const amount = parseFloat(sendAmount) || 0;
+      // Force recalculation of receive amount whenever rate changes
+      if (sendAmount && parseFloat(sendAmount) > 0) {
+        const amount = parseFloat(sendAmount);
         const converted = amount * rate;
         const convertedAmount = formatAmount(converted);
         setReceiveAmount(convertedAmount);
         form.setValue("receiveAmount", convertedAmount);
+        saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
       }
     }
   }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
+
+  // Force refresh exchange rate when methods change
+  useEffect(() => {
+    if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
+      refetchRate();
+    }
+  }, [sendMethod, receiveMethod, refetchRate]);
 
   // Handle amount calculations with prevention of loops
   const handleSendAmountChange = (value: string) => {

@@ -60,12 +60,20 @@ async function updateCurrencyLimits(currency: string, min: number, max: number):
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Get exchange rate with bidirectional support
+  // Get exchange rate with bidirectional support and no-cache headers
   app.get("/api/exchange-rate/:from/:to", async (req, res) => {
     try {
       const { from, to } = req.params;
       const fromCurrency = from.toLowerCase();
       const toCurrency = to.toLowerCase();
+      
+      // Set aggressive no-cache headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
       
       // First try to get direct rate from database
       let dbRate = await storage.getExchangeRate(fromCurrency, toCurrency);
@@ -75,7 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rate: parseFloat(dbRate.rate), 
           from: from.toUpperCase(), 
           to: to.toUpperCase(),
-          lastUpdated: dbRate.updatedAt 
+          lastUpdated: dbRate.updatedAt,
+          timestamp: Date.now() // Add timestamp to prevent client caching
         });
       }
       
@@ -88,7 +97,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           from: from.toUpperCase(), 
           to: to.toUpperCase(),
           lastUpdated: reverseRate.updatedAt,
-          calculated: true // Indicates this was calculated from reverse rate
+          calculated: true, // Indicates this was calculated from reverse rate
+          timestamp: Date.now()
         });
       }
       
@@ -97,7 +107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rate: DEFAULT_EXCHANGE_RATE, 
         from: from.toUpperCase(), 
         to: to.toUpperCase(),
-        fallback: true // Indicates this is a fallback rate
+        fallback: true, // Indicates this is a fallback rate
+        timestamp: Date.now()
       });
     } catch (error) {
       console.error('Exchange rate fetch error:', error);
