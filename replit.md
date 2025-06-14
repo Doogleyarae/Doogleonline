@@ -121,6 +121,7 @@ Changelog:
 - June 14, 2025. Fixed real-time minimum amount synchronization across all currencies with WebSocket notifications, ensuring admin currency limit updates immediately reflect in exchange form calculations for all payment methods including Zaad, Sahal, EVC Plus, TRC20, and mobile money services
 - June 14, 2025. Simplified minimum limit calculation to use admin-configured values directly (like maximum limits), eliminating complex dynamic formulas that prevented real-time updates, ensuring minimum limits work exactly like maximum limits with immediate synchronization
 - June 14, 2025. Fixed maximum amount display issue on exchange page by removing complex dynamic calculation overrides, ensuring exchange form always shows and enforces exact admin-configured max amounts without mathematical formulas overriding database values
+- June 14, 2025. Fixed critical minimum amount and exchange rate persistence issues by implementing WebSocket real-time notifications, aggressive cache invalidation, and direct database value usage, ensuring admin updates immediately reflect on exchange form without cache interference
 
 ## User Preferences
 
