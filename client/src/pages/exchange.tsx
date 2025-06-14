@@ -357,7 +357,7 @@ export default function Exchange() {
     gcTime: 0, // Don't cache for garbage collection
   });
 
-  // Update exchange rate and calculate initial receive amount
+  // Update exchange rate and recalculate amounts in both directions
   useEffect(() => {
     if (rateData) {
       const rate = rateData.rate;
@@ -365,14 +365,26 @@ export default function Exchange() {
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
-      // Force recalculation of receive amount whenever rate changes
-      if (sendAmount && parseFloat(sendAmount) > 0) {
-        const amount = parseFloat(sendAmount);
-        const converted = amount * rate;
+      // Determine which field has focus/priority for recalculation
+      const currentSendAmount = form.getValues("sendAmount");
+      const currentReceiveAmount = form.getValues("receiveAmount");
+      
+      // If both fields have values, prioritize the receive amount for recalculation
+      if (currentReceiveAmount && parseFloat(currentReceiveAmount) > 0) {
+        const amount = parseFloat(currentReceiveAmount);
+        const converted = amount / rate; // Send = Receive ÷ Rate
+        const convertedAmount = formatAmount(converted);
+        setSendAmount(convertedAmount);
+        form.setValue("sendAmount", convertedAmount);
+        saveExchangeState({ sendAmount: convertedAmount, receiveAmount: currentReceiveAmount });
+      } else if (currentSendAmount && parseFloat(currentSendAmount) > 0) {
+        // Fall back to calculating receive from send if no receive amount
+        const amount = parseFloat(currentSendAmount);
+        const converted = amount * rate; // Receive = Send × Rate
         const convertedAmount = formatAmount(converted);
         setReceiveAmount(convertedAmount);
         form.setValue("receiveAmount", convertedAmount);
-        saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
+        saveExchangeState({ sendAmount: currentSendAmount, receiveAmount: convertedAmount });
       }
       
       // Trigger validation to update max amount limits based on new rate
@@ -380,7 +392,7 @@ export default function Exchange() {
         form.trigger(['sendAmount', 'receiveAmount']);
       }, 100);
     }
-  }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
+  }, [rateData, sendMethod, receiveMethod, form]);
 
   // Force refresh exchange rate when methods change
   useEffect(() => {
@@ -413,16 +425,28 @@ export default function Exchange() {
           if ((fromCurrency === sendMethod && toCurrency === receiveMethod) ||
               (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
             
+            console.log(`Exchange rate updated via WebSocket for ${fromCurrency}/${toCurrency}`);
+            
             // Force immediate refresh of exchange rate data
             queryClient.invalidateQueries({ 
               queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
             });
             refetchRate();
             
-            // Force recalculation of dynamic limits
+            // Trigger bidirectional recalculation after rate refresh
             setTimeout(() => {
+              const currentReceiveAmount = form.getValues("receiveAmount");
+              const currentSendAmount = form.getValues("sendAmount");
+              
+              // Prioritize receive amount calculation if available
+              if (currentReceiveAmount && parseFloat(currentReceiveAmount) > 0) {
+                handleReceiveAmountChange(currentReceiveAmount);
+              } else if (currentSendAmount && parseFloat(currentSendAmount) > 0) {
+                handleSendAmountChange(currentSendAmount);
+              }
+              
               form.trigger(['sendAmount', 'receiveAmount']);
-            }, 200);
+            }, 300);
           }
         }
         
@@ -481,26 +505,25 @@ export default function Exchange() {
     saveExchangeState({ sendAmount: value });
     
     // Auto-calculate receive amount when send amount changes
-    if (!calculatingFromReceive && exchangeRate > 0) {
-      setCalculatingFromSend(true);
-      
-      if (value && value !== "") {
-        const amount = parseFloat(value) || 0;
-        if (amount >= 0) {
+    if (exchangeRate > 0) {
+      if (value && value !== "" && value !== "0") {
+        const amount = parseFloat(value);
+        if (amount > 0) {
+          // Formula: Receive = Send × Rate
           const converted = amount * exchangeRate;
           const convertedAmount = formatAmount(converted);
           setReceiveAmount(convertedAmount);
           form.setValue("receiveAmount", convertedAmount);
           saveExchangeState({ sendAmount: value, receiveAmount: convertedAmount });
+          
+          console.log(`Send Amount Changed: ${value} → Receive Amount: ${convertedAmount} (Rate: ${exchangeRate})`);
         }
       } else {
-        // Clear receive amount when send amount is empty
+        // Clear receive amount when send amount is empty or zero
         setReceiveAmount("");
         form.setValue("receiveAmount", "");
         saveExchangeState({ sendAmount: value, receiveAmount: "" });
       }
-      
-      setTimeout(() => setCalculatingFromSend(false), 10);
     }
   };
 
@@ -509,26 +532,25 @@ export default function Exchange() {
     saveExchangeState({ receiveAmount: value });
     
     // Auto-calculate send amount when receive amount changes
-    if (!calculatingFromSend && exchangeRate > 0) {
-      setCalculatingFromReceive(true);
-      
-      if (value && value !== "") {
-        const amount = parseFloat(value) || 0;
-        if (amount >= 0) {
+    if (exchangeRate > 0) {
+      if (value && value !== "" && value !== "0") {
+        const amount = parseFloat(value);
+        if (amount > 0) {
+          // Formula: Send = Receive ÷ Rate
           const converted = amount / exchangeRate;
           const convertedAmount = formatAmount(converted);
           setSendAmount(convertedAmount);
           form.setValue("sendAmount", convertedAmount);
           saveExchangeState({ receiveAmount: value, sendAmount: convertedAmount });
+          
+          console.log(`Receive Amount Changed: ${value} → Send Amount: ${convertedAmount} (Rate: ${exchangeRate})`);
         }
       } else {
-        // Clear send amount when receive amount is empty
+        // Clear send amount when receive amount is empty or zero
         setSendAmount("");
         form.setValue("sendAmount", "");
         saveExchangeState({ receiveAmount: value, sendAmount: "" });
       }
-      
-      setTimeout(() => setCalculatingFromReceive(false), 10);
     }
   };
 
