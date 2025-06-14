@@ -114,6 +114,7 @@ Changelog:
 - June 14, 2025. Fixed exchange rate system with comprehensive coverage for all 9 currency pairs including MoneyGo to Premier Bank at 0.93 rate, all mobile money and cryptocurrency bidirectional rates now functional
 - June 14, 2025. Completed fully functional admin exchange rate system with immediate real-time updates affecting live calculations, bidirectional rate support, comprehensive cache invalidation, and WebSocket notifications for instant UI updates
 - June 14, 2025. Enhanced dynamic max amount calculation with formula: Max Send = Max Receive / Exchange Rate, ensuring immediate recalculation when admin updates exchange rates, with WebSocket real-time synchronization for instant UI updates across all currency pairs
+- June 14, 2025. Fixed max send calculation logic to prioritize dynamic calculation (Max Receive ÷ Rate) over static admin send limits, allowing proper calculation like 33,455 ÷ 0.95 = 35,215.79, with visual indicators showing the calculation formula and real-time enforcement preventing form submission when limits are exceeded
 
 ## User Preferences
 

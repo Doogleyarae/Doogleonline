@@ -256,24 +256,22 @@ export default function Exchange() {
       const balanceConstrainedMaxReceive = Math.min(adminMaxReceive, receiveBalance);
       
       // Dynamic Max Send Calculation: Max Send = Max Receive / Exchange Rate
-      // This ensures when admin updates exchange rate, max send amount recalculates immediately
-      const dynamicMaxSendFromRate = balanceConstrainedMaxReceive / exchangeRate;
+      // Priority: Use the calculated value from max receive and rate, not static admin send limit
       const dynamicMaxSendFromAdminReceive = adminMaxReceive / exchangeRate;
+      const dynamicMaxSendFromBalance = balanceConstrainedMaxReceive / exchangeRate;
       
-      // Apply the most restrictive max send limit among:
-      // 1. Admin-configured max send limit
-      // 2. Dynamic limit based on balance-constrained max receive / rate
-      // 3. Dynamic limit based on admin max receive / rate
+      // Use the dynamic calculation as primary limit (Max Receive ÷ Rate)
+      // Only constrain by balance if it's lower than the calculated value
       const effectiveMaxSend = Math.min(
-        adminMaxSend,
-        dynamicMaxSendFromRate,
-        dynamicMaxSendFromAdminReceive
+        dynamicMaxSendFromAdminReceive,  // Primary: Max Receive ÷ Rate  
+        dynamicMaxSendFromBalance        // Secondary: Balance constraint
       );
+      // Note: Removed adminMaxSend constraint to allow dynamic calculation to take precedence
       
       const effectiveMinSend = adminMinSend; // Always enforce admin minimum
       
-      // Calculate receive limits based on send limits and admin-controlled exchange rate
-      const effectiveMinReceive = Math.max(adminMinReceive, effectiveMinSend * exchangeRate);
+      // Calculate receive limits - use admin max receive as primary limit  
+      const effectiveMinReceive = adminMinReceive;
       const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
       const newLimits = {
@@ -685,11 +683,17 @@ export default function Exchange() {
                         <div className="text-blue-600">
                           ${dynamicLimits.minSendAmount.toFixed(2)} - ${dynamicLimits.maxSendAmount.toLocaleString()}
                         </div>
+                        <div className="text-xs text-blue-500 mt-1">
+                          Max = ${dynamicLimits.maxReceiveAmount.toLocaleString()} ÷ {exchangeRate}
+                        </div>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Receive Limits:</span>
                         <div className="text-blue-600">
                           ${dynamicLimits.minReceiveAmount.toFixed(2)} - ${dynamicLimits.maxReceiveAmount.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-blue-500 mt-1">
+                          Admin configured max
                         </div>
                       </div>
                     </div>
