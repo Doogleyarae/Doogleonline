@@ -83,53 +83,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       
-      // Get currency-specific limits and exchange rate for this pair
-      const currencyLimit = await storage.getCurrencyLimit(validatedData.sendMethod, validatedData.receiveMethod);
+      // Get admin-configured limits for both currencies and exchange rate
+      const sendLimits = await getCurrencyLimits(validatedData.sendMethod);
+      const receiveLimits = await getCurrencyLimits(validatedData.receiveMethod);
       const exchangeRateData = await storage.getExchangeRate(validatedData.sendMethod, validatedData.receiveMethod);
       
       if (!exchangeRateData) {
         return res.status(400).json({ message: "Exchange rate not available for this currency pair" });
       }
       
-      // Use currency-specific limits if available, otherwise use global defaults
-      const baseLimits = {
-        minAmount: currencyLimit ? parseFloat(currencyLimit.minAmount) : 5,
-        maxAmount: currencyLimit ? parseFloat(currencyLimit.maxAmount) : 10000,
-      };
-      
       const exchangeRate = parseFloat(exchangeRateData.rate);
-      
-      // Calculate dynamic limits based on exchange rate
-      const dynamicLimits = {
-        minSendAmount: baseLimits.minAmount,
-        maxSendAmount: baseLimits.maxAmount,
-        minReceiveAmount: baseLimits.minAmount * exchangeRate,
-        maxReceiveAmount: baseLimits.maxAmount * exchangeRate,
-      };
-      
-      // Validate send amount
       const sendAmount = parseFloat(validatedData.sendAmount);
-      if (sendAmount < dynamicLimits.minSendAmount) {
+      const receiveAmount = parseFloat(validatedData.receiveAmount);
+      
+      // Enforce admin-configured send currency limits
+      if (sendAmount < sendLimits.min) {
         return res.status(400).json({ 
-          message: `Minimum send amount is ${dynamicLimits.minSendAmount.toFixed(2)}` 
-        });
-      }
-      if (sendAmount > dynamicLimits.maxSendAmount) {
-        return res.status(400).json({ 
-          message: `Maximum send amount is ${dynamicLimits.maxSendAmount.toFixed(2)}` 
+          message: `Send amount $${sendAmount} is below minimum limit of $${sendLimits.min} for ${validatedData.sendMethod.toUpperCase()}` 
         });
       }
       
-      // Validate receive amount
-      const receiveAmount = parseFloat(validatedData.receiveAmount);
-      if (receiveAmount < dynamicLimits.minReceiveAmount) {
+      if (sendAmount > sendLimits.max) {
         return res.status(400).json({ 
-          message: `Minimum receive amount is ${dynamicLimits.minReceiveAmount.toFixed(2)}` 
+          message: `Send amount $${sendAmount} exceeds maximum limit of $${sendLimits.max} for ${validatedData.sendMethod.toUpperCase()}` 
         });
       }
-      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+      
+      // Enforce admin-configured receive currency limits
+      if (receiveAmount < receiveLimits.min) {
         return res.status(400).json({ 
-          message: `Maximum receive amount is ${dynamicLimits.maxReceiveAmount.toFixed(2)}` 
+          message: `Receive amount $${receiveAmount} is below minimum limit of $${receiveLimits.min} for ${validatedData.receiveMethod.toUpperCase()}` 
+        });
+      }
+      
+      if (receiveAmount > receiveLimits.max) {
+        return res.status(400).json({ 
+          message: `Receive amount $${receiveAmount} exceeds maximum limit of $${receiveLimits.max} for ${validatedData.receiveMethod.toUpperCase()}` 
+        });
+      }
+      
+      // Check available balance for receive currency (cannot exceed what we have)
+      const currentBalance = await storage.getBalance(validatedData.receiveMethod);
+      const availableBalance = currentBalance ? parseFloat(currentBalance.amount) : 0;
+      
+      if (receiveAmount > availableBalance) {
+        return res.status(400).json({ 
+          message: `Insufficient balance for ${validatedData.receiveMethod.toUpperCase()}. Available: $${availableBalance}, Required: $${receiveAmount}` 
         });
       }
       

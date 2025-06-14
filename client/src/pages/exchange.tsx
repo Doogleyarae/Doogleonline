@@ -178,10 +178,18 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  // Fetch currency-specific limits for the selected pair
-  const { data: currencyLimits } = useQuery<CurrencyLimitsResponse>({
-    queryKey: [`/api/currency-limits/${sendMethod}/${receiveMethod}`],
-    enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
+  // Fetch admin-configured limits for the send currency
+  const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
+    queryKey: [`/api/currency-limits/${sendMethod}`],
+    enabled: !!sendMethod,
+    refetchInterval: 3000, // Refresh every 3 seconds for real-time admin updates
+  });
+
+  // Fetch admin-configured limits for the receive currency
+  const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
+    queryKey: [`/api/currency-limits/${receiveMethod}`],
+    enabled: !!receiveMethod,
+    refetchInterval: 3000, // Refresh every 3 seconds for real-time admin updates
   });
 
   // Fetch live wallet addresses from admin dashboard
@@ -218,35 +226,43 @@ export default function Exchange() {
 
   // Calculate dynamic limits when exchange rate, currency limits, or balances change
   useEffect(() => {
-    if (currencyLimits && exchangeRate > 0 && balances) {
-      // Get admin-configured limits from the currency limits response
-      const adminMinSend = currencyLimits.minAmount || 25;
-      const adminMaxSend = currencyLimits.maxAmount || 7500;
+    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances) {
+      // Get admin-configured limits for send currency (directly from individual currency endpoints)
+      const adminMinSend = sendCurrencyLimits.minAmount;
+      const adminMaxSend = sendCurrencyLimits.maxAmount;
+      
+      // Get admin-configured limits for receive currency
+      const adminMinReceive = receiveCurrencyLimits.minAmount;
+      const adminMaxReceive = receiveCurrencyLimits.maxAmount;
       
       // Get available balance for receive currency to limit max outgoing amount
       const receiveBalance = balances[receiveMethod?.toUpperCase()] || 0;
       
-      // Calculate balance-constrained max receive amount
-      const balanceConstrainedMaxReceive = receiveBalance;
+      // Calculate balance-constrained max receive amount (cannot exceed available balance)
+      const balanceConstrainedMaxReceive = Math.min(adminMaxReceive, receiveBalance);
       
-      // Calculate corresponding send limits based on exchange rate
+      // Calculate corresponding send limits based on exchange rate and receive constraints
       const balanceConstrainedMaxSend = balanceConstrainedMaxReceive / exchangeRate;
       
-      // Apply the most restrictive limits (admin limits vs balance constraints)
+      // Apply the most restrictive limits (admin send limits vs balance-constrained limits)
       const effectiveMaxSend = Math.min(adminMaxSend, balanceConstrainedMaxSend);
-      const effectiveMaxReceive = Math.min(adminMaxSend * exchangeRate, balanceConstrainedMaxReceive);
+      const effectiveMinSend = adminMinSend; // Always enforce admin minimum
+      
+      // Calculate receive limits based on send limits and exchange rate
+      const effectiveMinReceive = Math.max(adminMinReceive, effectiveMinSend * exchangeRate);
+      const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
       const newLimits = {
-        minSendAmount: adminMinSend,
-        maxSendAmount: Math.max(adminMinSend, effectiveMaxSend), // Ensure max is not less than min
-        minReceiveAmount: adminMinSend * exchangeRate,
-        maxReceiveAmount: Math.max(adminMinSend * exchangeRate, effectiveMaxReceive),
+        minSendAmount: effectiveMinSend,
+        maxSendAmount: Math.max(effectiveMinSend, effectiveMaxSend), // Ensure max >= min
+        minReceiveAmount: effectiveMinReceive,
+        maxReceiveAmount: Math.max(effectiveMinReceive, effectiveMaxReceive), // Ensure max >= min
       };
 
       setDynamicLimits(newLimits);
       setFormKey(prev => prev + 1); // Force form re-render with new limits
     }
-  }, [currencyLimits, exchangeRate, balances, receiveMethod]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
 
   // Update form values when state changes
   useEffect(() => {
@@ -464,7 +480,7 @@ export default function Exchange() {
                   <span className="text-sm font-medium text-blue-800">Current Rate:</span>
                   <span className="text-lg font-bold text-blue-900">{rateDisplay}</span>
                 </div>
-                {currencyLimits && exchangeRate > 0 && balances && (
+                {sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances && (
                   <div className="mt-3 pt-3 border-t border-blue-200">
                     <div className="grid grid-cols-2 gap-4 text-xs mb-3">
                       <div>
@@ -488,9 +504,9 @@ export default function Exchange() {
                         </div>
                       </div>
                       <div>
-                        <span className="text-blue-700 font-medium">Admin Config:</span>
+                        <span className="text-blue-700 font-medium">Admin Limits:</span>
                         <div className="text-blue-600">
-                          Min: ${currencyLimits.minAmount} | Max: ${currencyLimits.maxAmount.toLocaleString()}
+                          Send: ${sendCurrencyLimits.minAmount}-${sendCurrencyLimits.maxAmount.toLocaleString()} | Receive: ${receiveCurrencyLimits.minAmount}-${receiveCurrencyLimits.maxAmount.toLocaleString()}
                         </div>
                       </div>
                     </div>
