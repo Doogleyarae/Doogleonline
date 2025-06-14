@@ -128,6 +128,7 @@ export default function AdminDashboard() {
     'notification_api': ''
   });
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [recentlyUpdated, setRecentlyUpdated] = useState<string>('');
   
   // Fetch wallet addresses
   const { data: walletData } = useQuery({
@@ -272,28 +273,45 @@ export default function AdminDashboard() {
   // Wallet management mutations
   const updateWalletMutation = useMutation({
     mutationFn: async ({ method, address }: { method: string; address: string }) => {
+      console.log('Sending wallet update request:', { method, address });
       const response = await apiRequest('POST', '/api/admin/wallet-addresses', { method, address });
-      return await response.json();
+      const data = await response.json();
+      console.log('Wallet update response:', data);
+      return data;
     },
     onSuccess: (data: any, variables: { method: string; address: string }) => {
+      console.log('Wallet update successful:', data, variables);
+      
+      // Invalidate and refetch data
       queryClient.invalidateQueries({ queryKey: ['/api/admin/wallet-addresses'] });
+      
+      // Update timestamp
       setLastUpdated(data?.lastUpdated || new Date().toISOString());
-      // Update local state immediately
+      
+      // Set recently updated for visual feedback
+      setRecentlyUpdated(variables.method);
+      setTimeout(() => setRecentlyUpdated(''), 3000); // Clear after 3 seconds
+      
+      // Update local state immediately for responsive UI
       setWalletAddresses(prev => ({
         ...prev,
         [variables.method]: variables.address
       }));
+      
+      // Show success notification
       toast({
-        title: "Wallet Updated",
-        description: `${variables.method.toUpperCase()} wallet address updated successfully`,
+        title: "✓ Wallet Updated Successfully",
+        description: `${variables.method.toUpperCase()} address: ${variables.address.substring(0, 20)}${variables.address.length > 20 ? '...' : ''}`,
+        duration: 4000,
       });
     },
     onError: (error: any) => {
-      console.error('Wallet update error:', error);
+      console.error('Wallet update failed:', error);
       toast({
-        title: "Update Failed",
-        description: "Failed to update wallet address",
+        title: "❌ Update Failed",
+        description: error.message || "Failed to update wallet address",
         variant: "destructive",
+        duration: 5000,
       });
     },
   });
@@ -910,9 +928,16 @@ export default function AdminDashboard() {
                     Object.entries(walletAddresses).map(([method, address]) => {
                       const methodLabel = paymentMethods.find(p => p.value === method)?.label || method.toUpperCase();
                       return (
-                        <div key={method} className="space-y-2">
-                          <Label htmlFor={`wallet-${method}`} className="text-sm font-semibold">
+                        <div key={method} className={`space-y-2 p-3 rounded-lg transition-all duration-300 ${
+                          recentlyUpdated === method ? 'bg-green-50 border border-green-200' : 'bg-transparent'
+                        }`}>
+                          <Label htmlFor={`wallet-${method}`} className="text-sm font-semibold flex items-center gap-2">
                             {methodLabel}
+                            {recentlyUpdated === method && (
+                              <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                                ✓ Updated
+                              </span>
+                            )}
                           </Label>
                           <div className="flex gap-2">
                             <Input
@@ -923,20 +948,43 @@ export default function AdminDashboard() {
                                 [method]: e.target.value
                               }))}
                               placeholder={`Enter ${methodLabel} wallet/account`}
-                              className="flex-1"
+                              className={`flex-1 transition-all duration-200 ${
+                                recentlyUpdated === method ? 'border-green-300 focus:border-green-500' : ''
+                              }`}
                             />
                             <Button
                               onClick={() => handleWalletUpdate(method, address)}
                               disabled={updateWalletMutation.isPending}
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-700"
+                              className={`transition-all duration-200 ${
+                                updateWalletMutation.isPending 
+                                  ? "bg-gray-400 cursor-not-allowed" 
+                                  : recentlyUpdated === method
+                                  ? "bg-green-600 hover:bg-green-700"
+                                  : "bg-blue-600 hover:bg-blue-700"
+                              }`}
                             >
-                              {updateWalletMutation.isPending ? "Saving..." : "Save"}
+                              {updateWalletMutation.isPending ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                  Saving...
+                                </div>
+                              ) : recentlyUpdated === method ? (
+                                "✓ Saved"
+                              ) : (
+                                "Save"
+                              )}
                             </Button>
                           </div>
                           <p className="text-xs text-gray-500">
                             Current: {address || 'Not configured'}
                           </p>
+                          {recentlyUpdated === method && (
+                            <div className="flex items-center gap-2 text-sm text-green-700">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              Successfully saved to database
+                            </div>
+                          )}
                         </div>
                       );
                     })
