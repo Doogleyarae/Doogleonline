@@ -215,11 +215,11 @@ export default function Exchange() {
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
   const [dynamicLimits, setDynamicLimits] = useState({
-    minSendAmount: 0,
-    maxSendAmount: 999999,
-    minReceiveAmount: 0,
-    maxReceiveAmount: 999999,
-  }); // Start with safe defaults, will be overridden by real data
+    minSendAmount: 1,
+    maxSendAmount: 1, // Start with restrictive limits to force waiting for real data
+    minReceiveAmount: 1,
+    maxReceiveAmount: 1,
+  }); // Start with restrictive defaults, will be overridden by real database data
 
   // Initialize form data memory for auto-save functionality
   const { 
@@ -275,12 +275,20 @@ export default function Exchange() {
 
   // Create a dynamic form resolver that always uses current limits
   const getDynamicResolver = useCallback(() => {
-    return zodResolver(createExchangeFormSchema(
-      dynamicLimits.minSendAmount, 
-      dynamicLimits.maxSendAmount,
-      dynamicLimits.minReceiveAmount,
-      dynamicLimits.maxReceiveAmount
-    ));
+    // Only use database limits if they've been loaded (not the restrictive defaults)
+    const hasRealLimits = dynamicLimits.maxSendAmount > 1 && dynamicLimits.maxReceiveAmount > 1;
+    
+    if (hasRealLimits) {
+      return zodResolver(createExchangeFormSchema(
+        dynamicLimits.minSendAmount, 
+        dynamicLimits.maxSendAmount,
+        dynamicLimits.minReceiveAmount,
+        dynamicLimits.maxReceiveAmount
+      ));
+    } else {
+      // Use permissive defaults while waiting for real database limits
+      return zodResolver(createExchangeFormSchema(1, 999999, 1, 999999));
+    }
   }, [dynamicLimits]);
 
   const form = useForm<ExchangeFormData>({
@@ -320,7 +328,7 @@ export default function Exchange() {
       setDynamicLimits(newLimits);
       setFormKey(prev => prev + 1); // Force form re-render with new limits
       
-      console.log(`Limits updated from database: Send(${adminMinSend}-${adminMaxSend}), Receive(${adminMinReceive}-${adminMaxReceive})`);
+      console.log(`Limits updated from database: Send ${sendMethod.toUpperCase()}(${adminMinSend}-${adminMaxSend}), Receive ${receiveMethod.toUpperCase()}(${adminMinReceive}-${adminMaxReceive})`);
       
       // Force immediate form validation with new limits
       setTimeout(() => {
