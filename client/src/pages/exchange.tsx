@@ -354,9 +354,12 @@ export default function Exchange() {
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    refetchInterval: 1000, // Refresh every 1 second for immediate admin rate updates
+    refetchInterval: 500, // Faster refresh - every 500ms for immediate admin rate updates
     staleTime: 0, // Always consider data stale to get latest rates
     gcTime: 0, // Don't cache for garbage collection
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnReconnect: true, // Refetch when reconnecting
   });
 
   // Update exchange rate and calculate initial receive amount
@@ -383,6 +386,16 @@ export default function Exchange() {
       }, 100);
     }
   }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
+
+  // Force fresh exchange rate data on component mount and method changes
+  useEffect(() => {
+    if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
+      // Invalidate existing cache to force fresh data fetch
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
+      });
+    }
+  }, [sendMethod, receiveMethod, queryClient]);
 
   // Force refresh exchange rate when methods change
   useEffect(() => {

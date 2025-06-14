@@ -118,6 +118,7 @@ Changelog:
 - June 14, 2025. Implemented dynamic minimum amount calculations using formulas: Min Send = max(admin min send, admin min receive ÷ rate) and Min Receive = max(admin min receive, calculated min send × rate), ensuring proper bidirectional minimum enforcement with visual calculation indicators
 - June 14, 2025. Fixed accessibility warnings by adding required DialogTitle and DialogDescription elements to CommandDialog component, ensuring proper screen reader support while maintaining visual design
 - June 14, 2025. Simplified Transaction Limits Management in admin dashboard to show only minimum amount controls, removing maximum amount fields per user request for cleaner interface focusing on minimum limits only
+- June 14, 2025. Fixed exchange rate persistence issue where exchange form showed old rates after admin updates. Implemented aggressive cache removal (removeQueries) instead of invalidation, added forced refetch, and enhanced query refresh intervals to ensure exchange form always displays latest admin-saved rates without requiring page refresh
 
 ## User Preferences
 

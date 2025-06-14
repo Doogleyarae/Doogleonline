@@ -252,16 +252,24 @@ export default function AdminDashboard() {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      // Invalidate all exchange rate caches immediately
-      queryClient.invalidateQueries({ 
+      // Force complete cache removal for immediate fresh data
+      queryClient.removeQueries({ 
         queryKey: [`/api/exchange-rate/${variables.fromCurrency}/${variables.toCurrency}`] 
       });
-      queryClient.invalidateQueries({ 
+      queryClient.removeQueries({ 
         queryKey: [`/api/exchange-rate/${variables.toCurrency}/${variables.fromCurrency}`] 
       });
       
-      // Invalidate all exchange rate patterns to force refresh
-      queryClient.invalidateQueries({ 
+      // Remove all exchange rate queries from cache entirely
+      queryClient.removeQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === 'string' && key.includes('/api/exchange-rate/');
+        }
+      });
+      
+      // Force immediate refetch of all exchange rate data
+      queryClient.refetchQueries({ 
         predicate: (query) => {
           const key = query.queryKey[0];
           return typeof key === 'string' && key.includes('/api/exchange-rate/');
