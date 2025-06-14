@@ -182,30 +182,34 @@ export default function Exchange() {
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    refetchInterval: 30000, // Refresh every 30 seconds instead of 1 second
-    staleTime: 20000, // Consider data fresh for 20 seconds
+    refetchInterval: false, // Disable automatic polling
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: Infinity, // Consider data fresh indefinitely
   });
 
   // Fetch admin-configured limits for the receive currency
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    refetchInterval: 30000, // Refresh every 30 seconds instead of 1 second
-    staleTime: 20000, // Consider data fresh for 20 seconds
+    refetchInterval: false, // Disable automatic polling
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: Infinity, // Consider data fresh indefinitely
   });
 
   // Fetch live wallet addresses from admin dashboard
   const { data: walletAddresses } = useQuery<Record<string, string>>({
     queryKey: ["/api/admin/wallet-addresses"],
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: false, // Disable automatic polling
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: Infinity, // Consider data fresh indefinitely
   });
 
   // Fetch current balances to enforce balance-based limits
   const { data: balances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    refetchInterval: 60000, // Refresh every 60 seconds instead of 1 second
-    staleTime: 45000, // Consider data fresh for 45 seconds
+    refetchInterval: false, // Disable automatic polling
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: Infinity, // Consider data fresh indefinitely
   });
 
   // Create a dynamic form resolver that always uses current limits
@@ -345,12 +349,13 @@ export default function Exchange() {
     }
   }, [isReminded, savedData, hasSavedData, form]);
 
-  // Fetch exchange rate when methods change with moderate refresh for admin updates
+  // Fetch exchange rate when methods change 
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    refetchInterval: 30000, // Refresh every 30 seconds instead of 1 second
-    staleTime: 20000, // Consider data fresh for 20 seconds
+    refetchInterval: false, // Disable automatic polling
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: Infinity, // Consider data fresh indefinitely
   });
 
   // Update exchange rate and calculate initial receive amount
