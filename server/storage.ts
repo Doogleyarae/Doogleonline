@@ -32,6 +32,12 @@ export interface IStorage {
   getWalletAddress(method: string): Promise<WalletAddress | undefined>;
   getAllWalletAddresses(): Promise<WalletAddress[]>;
   updateWalletAddress(wallet: InsertWalletAddress): Promise<WalletAddress>;
+  
+  // Balance methods
+  getBalance(currency: string): Promise<Balance | undefined>;
+  getAllBalances(): Promise<Balance[]>;
+  updateBalance(balance: InsertBalance): Promise<Balance>;
+  deductBalance(currency: string, amount: number): Promise<Balance | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {

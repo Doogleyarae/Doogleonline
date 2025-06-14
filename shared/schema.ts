@@ -113,3 +113,19 @@ export const insertWalletAddressSchema = createInsertSchema(walletAddresses).omi
 
 export type InsertWalletAddress = z.infer<typeof insertWalletAddressSchema>;
 export type WalletAddress = typeof walletAddresses.$inferSelect;
+
+// Balance management schema for tracking currency balances
+export const balances = pgTable("balances", {
+  id: serial("id").primaryKey(),
+  currency: text("currency").notNull().unique(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull().default("0"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertBalanceSchema = createInsertSchema(balances).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertBalance = z.infer<typeof insertBalanceSchema>;
+export type Balance = typeof balances.$inferSelect;
