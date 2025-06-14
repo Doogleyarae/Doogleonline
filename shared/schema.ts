@@ -31,7 +31,6 @@ export const contactMessages = pgTable("contact_messages", {
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
   orderId: true,
-  paymentWallet: true,
   createdAt: true,
   updatedAt: true,
 });

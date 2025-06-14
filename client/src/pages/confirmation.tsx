@@ -91,9 +91,12 @@ export default function Confirmation() {
   });
 
   const handleCopyWallet = async () => {
-    if (order?.paymentWallet) {
+    // Use live wallet address from admin dashboard, fallback to order wallet
+    const currentWallet = walletAddresses?.[order?.receiveMethod || ''] || order?.paymentWallet;
+    
+    if (currentWallet) {
       try {
-        await copyToClipboard(order.paymentWallet);
+        await copyToClipboard(currentWallet);
         toast({
           title: "Copied!",
           description: "Wallet address copied to clipboard",
