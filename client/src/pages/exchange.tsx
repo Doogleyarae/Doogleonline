@@ -272,7 +272,7 @@ export default function Exchange() {
       if (sendAmount) {
         const amount = parseFloat(sendAmount) || 0;
         const converted = amount * rate;
-        const convertedAmount = converted % 1 === 0 ? converted.toString() : converted.toFixed(2).replace(/\.?0+$/, '');
+        const convertedAmount = formatAmount(converted);
         setReceiveAmount(convertedAmount);
         form.setValue("receiveAmount", convertedAmount);
       }
@@ -292,7 +292,7 @@ export default function Exchange() {
         const amount = parseFloat(value) || 0;
         if (amount >= 0) {
           const converted = amount * exchangeRate;
-          const convertedAmount = converted % 1 === 0 ? converted.toString() : converted.toFixed(2).replace(/\.?0+$/, '');
+          const convertedAmount = formatAmount(converted);
           setReceiveAmount(convertedAmount);
           form.setValue("receiveAmount", convertedAmount);
           saveExchangeState({ sendAmount: value, receiveAmount: convertedAmount });
@@ -320,7 +320,7 @@ export default function Exchange() {
         const amount = parseFloat(value) || 0;
         if (amount >= 0) {
           const converted = amount / exchangeRate;
-          const convertedAmount = converted % 1 === 0 ? converted.toString() : converted.toFixed(2).replace(/\.?0+$/, '');
+          const convertedAmount = formatAmount(converted);
           setSendAmount(convertedAmount);
           form.setValue("sendAmount", convertedAmount);
           saveExchangeState({ receiveAmount: value, sendAmount: convertedAmount });
