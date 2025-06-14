@@ -52,7 +52,7 @@ export class WebSocketManager {
     }
   }
 
-  private broadcast(message: WSMessage) {
+  broadcast(message: WSMessage) {
     const messageStr = JSON.stringify(message);
     const deadClients: WebSocket[] = [];
     
