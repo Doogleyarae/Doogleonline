@@ -333,6 +333,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update individual currency limits (admin only)
+  app.post("/api/admin/currency-limits/:currency", async (req, res) => {
+    try {
+      const { currency } = req.params;
+      const { minAmount, maxAmount } = req.body;
+      
+      if (!minAmount || !maxAmount || parseFloat(minAmount) < 0 || parseFloat(maxAmount) < 0) {
+        return res.status(400).json({ message: "Valid min and max amounts are required" });
+      }
+      
+      if (parseFloat(minAmount) >= parseFloat(maxAmount)) {
+        return res.status(400).json({ message: "Minimum amount must be less than maximum amount" });
+      }
+      
+      await updateCurrencyLimits(currency, parseFloat(minAmount), parseFloat(maxAmount));
+      
+      res.json({
+        currency: currency.toUpperCase(),
+        minAmount: parseFloat(minAmount),
+        maxAmount: parseFloat(maxAmount),
+        message: "Currency limits updated successfully"
+      });
+    } catch (error) {
+      console.error('Currency limit update error:', error);
+      res.status(500).json({ message: "Failed to update currency limits" });
+    }
+  });
+
   // Get currency limits for specific pair (legacy endpoint)
   app.get("/api/currency-limits/:from/:to", async (req, res) => {
     try {

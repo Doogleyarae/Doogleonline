@@ -876,26 +876,28 @@ export default function AdminDashboard() {
                             const max = currencyLimits[method.value]?.max || "10000";
                             
                             try {
-                              const response = await apiRequest("POST", "/api/admin/balance-limits", {
-                                currency: method.value,
-                                minAmount: parseFloat(min),
-                                maxAmount: parseFloat(max),
+                              const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
+                                minAmount: min,
+                                maxAmount: max,
                               });
                               
                               if (response.ok) {
-                                // Invalidate the cache to refresh the data
+                                // Invalidate multiple caches to refresh the data everywhere
                                 queryClient.invalidateQueries({ queryKey: ["/api/admin/balance-limits"] });
+                                queryClient.invalidateQueries({ queryKey: ["/api/currency-limits"] });
+                                queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
                                 
                                 toast({
-                                  title: "Success",
-                                  description: `${method.label} limits updated: Min $${min}, Max $${max}`,
+                                  title: "✓ Limits Updated",
+                                  description: `${method.label}: Min $${min} | Max $${parseFloat(max).toLocaleString()}`,
+                                  duration: 4000,
                                 });
                               } else {
                                 throw new Error("Failed to update limits");
                               }
                             } catch (error) {
                               toast({
-                                title: "Error",
+                                title: "❌ Update Failed",
                                 description: "Failed to update currency limits",
                                 variant: "destructive",
                               });
