@@ -281,6 +281,8 @@ export default function Exchange() {
         maxReceiveAmount: Math.max(effectiveMinReceive, effectiveMaxReceive), // Ensure max >= min
       };
 
+      console.log(`Dynamic limits recalculated: Max Send = ${newLimits.maxSendAmount.toFixed(2)} (${adminMaxReceive} ÷ ${exchangeRate})`);
+      
       setDynamicLimits(newLimits);
       setFormKey(prev => prev + 1); // Force form re-render with new limits
       
@@ -412,6 +414,7 @@ export default function Exchange() {
               (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
             
             console.log(`Exchange rate updated from WebSocket: ${rate} for ${fromCurrency}/${toCurrency}`);
+            console.log(`Recalculating with new rate: 1 ${fromCurrency} = ${rate} ${toCurrency}`);
             
             // Force immediate refresh of all related data
             queryClient.invalidateQueries({ 
