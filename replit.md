@@ -115,6 +115,7 @@ Changelog:
 - June 14, 2025. Completed fully functional admin exchange rate system with immediate real-time updates affecting live calculations, bidirectional rate support, comprehensive cache invalidation, and WebSocket notifications for instant UI updates
 - June 14, 2025. Enhanced dynamic max amount calculation with formula: Max Send = Max Receive / Exchange Rate, ensuring immediate recalculation when admin updates exchange rates, with WebSocket real-time synchronization for instant UI updates across all currency pairs
 - June 14, 2025. Fixed max send calculation logic to prioritize dynamic calculation (Max Receive ÷ Rate) over static admin send limits, allowing proper calculation like 33,455 ÷ 0.95 = 35,215.79, with visual indicators showing the calculation formula and real-time enforcement preventing form submission when limits are exceeded
+- June 14, 2025. Implemented dynamic minimum amount calculations using formulas: Min Send = max(admin min send, admin min receive ÷ rate) and Min Receive = max(admin min receive, calculated min send × rate), ensuring proper bidirectional minimum enforcement with visual calculation indicators
 
 ## User Preferences
 

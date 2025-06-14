@@ -268,10 +268,14 @@ export default function Exchange() {
       );
       // Note: Removed adminMaxSend constraint to allow dynamic calculation to take precedence
       
-      const effectiveMinSend = adminMinSend; // Always enforce admin minimum
+      // Dynamic Min Send Calculation: Similar to max, but for minimums
+      // Min Send should be the larger of: admin min send OR (admin min receive / rate)
+      const dynamicMinSendFromAdminReceive = adminMinReceive / exchangeRate;
+      const effectiveMinSend = Math.max(adminMinSend, dynamicMinSendFromAdminReceive);
       
-      // Calculate receive limits - use admin max receive as primary limit  
-      const effectiveMinReceive = adminMinReceive;
+      // Dynamic Min Receive Calculation: Min Receive = Min Send * Exchange Rate  
+      const dynamicMinReceiveFromSend = effectiveMinSend * exchangeRate;
+      const effectiveMinReceive = Math.max(adminMinReceive, dynamicMinReceiveFromSend);
       const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
       const newLimits = {
@@ -686,6 +690,9 @@ export default function Exchange() {
                         <div className="text-xs text-blue-500 mt-1">
                           Max = ${dynamicLimits.maxReceiveAmount.toLocaleString()} ÷ {exchangeRate}
                         </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Min = max(admin min, ${dynamicLimits.minReceiveAmount.toFixed(2)} ÷ {exchangeRate})
+                        </div>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Receive Limits:</span>
@@ -694,6 +701,9 @@ export default function Exchange() {
                         </div>
                         <div className="text-xs text-blue-500 mt-1">
                           Admin configured max
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Min = max(admin min, ${dynamicLimits.minSendAmount.toFixed(2)} × {exchangeRate})
                         </div>
                       </div>
                     </div>
