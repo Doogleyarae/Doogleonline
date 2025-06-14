@@ -264,26 +264,14 @@ export default function Exchange() {
       // Calculate balance-constrained max receive amount (cannot exceed available balance)
       const balanceConstrainedMaxReceive = Math.min(adminMaxReceive, receiveBalance);
       
-      // Dynamic Max Send Calculation: Max Send = Max Receive / Exchange Rate
-      // Priority: Use the calculated value from max receive and rate, not static admin send limit
-      const dynamicMaxSendFromAdminReceive = adminMaxReceive / exchangeRate;
-      const dynamicMaxSendFromBalance = balanceConstrainedMaxReceive / exchangeRate;
+      // CRITICAL FIX: Use admin-configured max amounts directly
+      // The exchange form must always show the latest admin-set max values
+      const effectiveMaxSend = adminMaxSend;
+      const effectiveMaxReceive = adminMaxReceive;
       
-      // Use the dynamic calculation as primary limit (Max Receive ÷ Rate)
-      // Only constrain by balance if it's lower than the calculated value
-      const effectiveMaxSend = Math.min(
-        dynamicMaxSendFromAdminReceive,  // Primary: Max Receive ÷ Rate  
-        dynamicMaxSendFromBalance        // Secondary: Balance constraint
-      );
-      // Note: Removed adminMaxSend constraint to allow dynamic calculation to take precedence
-      
-      // Direct Min Send: Use admin-configured minimum directly (like max limits)
-      // This ensures admin updates immediately reflect in the exchange form
+      // Use admin-configured minimum amounts directly
       const effectiveMinSend = adminMinSend;
-      
-      // Direct Min Receive: Use admin-configured minimum directly
       const effectiveMinReceive = adminMinReceive;
-      const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
       const newLimits = {
         minSendAmount: effectiveMinSend,
