@@ -160,10 +160,7 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/balance-limits"],
   });
 
-  // Fetch current balances from backend
-  const { data: balanceData } = useQuery({
-    queryKey: ["/api/admin/balances"],
-  });
+
 
   // Update local state when wallet data is loaded
   useEffect(() => {
