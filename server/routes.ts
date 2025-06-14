@@ -450,6 +450,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all balances (admin only)
+  app.get("/api/admin/balances", async (req, res) => {
+    try {
+      const balances = await storage.getAllBalances();
+      const balanceMap = balances.reduce((acc, balance) => {
+        acc[balance.currency.toUpperCase()] = parseFloat(balance.amount);
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Initialize default balances for currencies not in database
+      const defaultCurrencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20'];
+      defaultCurrencies.forEach(currency => {
+        if (!(currency.toUpperCase() in balanceMap)) {
+          balanceMap[currency.toUpperCase()] = 0;
+        }
+      });
+      
+      res.json(balanceMap);
+    } catch (error) {
+      console.error("Balance fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch balances" });
+    }
+  });
+
+  // Update balance (admin only)
+  app.post("/api/admin/balances", async (req, res) => {
+    try {
+      const { currency, amount } = req.body;
+      
+      if (!currency || amount === undefined) {
+        return res.status(400).json({ message: "Currency and amount are required" });
+      }
+      
+      const balance = await storage.updateBalance({ 
+        currency: currency.toLowerCase(), 
+        amount: amount.toString() 
+      });
+      
+      res.json({
+        currency: balance.currency.toUpperCase(),
+        amount: parseFloat(balance.amount),
+        lastUpdated: balance.updatedAt,
+        message: "Balance updated successfully"
+      });
+    } catch (error) {
+      console.error("Balance update error:", error);
+      res.status(500).json({ message: "Failed to update balance" });
+    }
+  });
+
   // Get API endpoints (admin only)
   app.get("/api/admin/api-endpoints", async (req, res) => {
     try {

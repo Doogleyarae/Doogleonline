@@ -129,6 +129,8 @@ export default function AdminDashboard() {
   });
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [recentlyUpdated, setRecentlyUpdated] = useState<string>('');
+  const [balances, setBalances] = useState<Record<string, number>>({});
+  const [recentlyUpdatedBalance, setRecentlyUpdatedBalance] = useState<string>('');
   
   // Fetch wallet addresses
   const { data: walletData } = useQuery({
@@ -143,6 +145,11 @@ export default function AdminDashboard() {
   // Fetch current currency limits from backend
   const { data: backendLimits } = useQuery({
     queryKey: ["/api/admin/balance-limits"],
+  });
+
+  // Fetch current balances from backend
+  const { data: balanceData } = useQuery({
+    queryKey: ["/api/admin/balances"],
   });
 
   // Update local state when wallet data is loaded
@@ -172,6 +179,13 @@ export default function AdminDashboard() {
       setCurrencyLimits(formattedLimits);
     }
   }, [backendLimits]);
+
+  // Update local state when balance data is loaded
+  useEffect(() => {
+    if (balanceData && typeof balanceData === 'object') {
+      setBalances(balanceData as Record<string, number>);
+    }
+  }, [balanceData]);
   
   // State for order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -344,6 +358,31 @@ export default function AdminDashboard() {
     },
   });
 
+  // Balance update mutation
+  const updateBalanceMutation = useMutation({
+    mutationFn: async ({ currency, amount }: { currency: string; amount: number }) => {
+      const response = await apiRequest("POST", "/api/admin/balances", { currency, amount });
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+      setRecentlyUpdatedBalance(data.currency.toLowerCase());
+      setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
+      toast({
+        title: "Balance Updated",
+        description: `${data.currency} balance updated to ${data.amount}`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Balance update error:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update balance",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleWalletUpdate = (method: string, address: string) => {
     if (!address.trim()) {
       toast({
@@ -367,6 +406,18 @@ export default function AdminDashboard() {
       return;
     }
     updateApiEndpointMutation.mutate({ endpoint, url });
+  };
+
+  const handleBalanceUpdate = (currency: string, amount: number) => {
+    if (amount < 0) {
+      toast({
+        title: "Error",
+        description: "Balance cannot be negative",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateBalanceMutation.mutate({ currency, amount });
   };
 
 
