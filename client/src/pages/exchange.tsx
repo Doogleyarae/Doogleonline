@@ -430,12 +430,25 @@ export default function Exchange() {
         
         // Handle currency limit updates
         if (message.type === 'currency_limit_update') {
+          const { currency } = message.data;
+          
+          // Invalidate currency limits for affected currencies
           queryClient.invalidateQueries({ 
             queryKey: [`/api/currency-limits/${sendMethod}`] 
           });
           queryClient.invalidateQueries({ 
             queryKey: [`/api/currency-limits/${receiveMethod}`] 
           });
+          
+          // Force immediate recalculation if this currency matches current selection
+          if (currency.toLowerCase() === sendMethod.toLowerCase() || 
+              currency.toLowerCase() === receiveMethod.toLowerCase()) {
+            
+            // Force refetch of currency limits
+            setTimeout(() => {
+              form.trigger(['sendAmount', 'receiveAmount']);
+            }, 200);
+          }
         }
         
         // Handle balance updates

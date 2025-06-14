@@ -404,6 +404,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await updateCurrencyLimits(currency, parseFloat(minAmount), parseFloat(maxAmount));
       
+      // Broadcast currency limit update via WebSocket
+      wsManager.broadcast({
+        type: 'currency_limit_update',
+        data: {
+          currency: currency.toUpperCase(),
+          minAmount: parseFloat(minAmount),
+          maxAmount: parseFloat(maxAmount)
+        },
+        timestamp: new Date().toISOString()
+      });
+      
       res.json({
         currency: currency.toUpperCase(),
         minAmount: parseFloat(minAmount),
