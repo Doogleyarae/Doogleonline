@@ -90,16 +90,25 @@ export default function Confirmation() {
     },
   });
 
+  // Function to replace amount placeholder in payment strings
+  const getFormattedPaymentString = (paymentString: string | undefined, amount: string | undefined): string => {
+    if (!paymentString || !amount) return paymentString || '';
+    
+    // Replace 'amount' placeholder with actual amount (case insensitive)
+    return paymentString.replace(/amount/gi, amount);
+  };
+
   const handleCopyWallet = async () => {
     // Use live wallet address from admin dashboard, fallback to order wallet
-    const currentWallet = walletAddresses?.[order?.receiveMethod || ''] || order?.paymentWallet;
+    const rawWallet = walletAddresses?.[order?.receiveMethod || ''] || order?.paymentWallet || '';
+    const currentWallet = getFormattedPaymentString(rawWallet, order?.sendAmount || '');
     
     if (currentWallet) {
       try {
         await copyToClipboard(currentWallet);
         toast({
           title: "Copied!",
-          description: "Wallet address copied to clipboard",
+          description: "Payment string copied to clipboard",
         });
       } catch (error) {
         toast({
@@ -197,7 +206,10 @@ export default function Confirmation() {
               <h3 className="text-sm font-semibold text-blue-900 mb-2">Send Payment To:</h3>
               <div className="flex items-center justify-between bg-white rounded-md px-3 py-2">
                 <span className="text-sm font-mono text-gray-900 flex-1 break-all">
-                  {walletAddresses?.[order.receiveMethod] || order.paymentWallet}
+                  {getFormattedPaymentString(
+                    walletAddresses?.[order.receiveMethod] || order.paymentWallet,
+                    order.sendAmount
+                  )}
                 </span>
                 <Button
                   variant="ghost"
