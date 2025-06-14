@@ -268,10 +268,14 @@ export default function Exchange() {
       );
       // Note: Removed adminMaxSend constraint to allow dynamic calculation to take precedence
       
-      const effectiveMinSend = adminMinSend; // Always enforce admin minimum
+      // Dynamic Min Send Calculation: Similar to max, but for minimums
+      // Min Send should be the larger of: admin min send OR (admin min receive / rate)
+      const dynamicMinSendFromAdminReceive = adminMinReceive / exchangeRate;
+      const effectiveMinSend = Math.max(adminMinSend, dynamicMinSendFromAdminReceive);
       
-      // Calculate receive limits - use admin max receive as primary limit  
-      const effectiveMinReceive = adminMinReceive;
+      // Dynamic Min Receive Calculation: Min Receive = Min Send * Exchange Rate  
+      const dynamicMinReceiveFromSend = effectiveMinSend * exchangeRate;
+      const effectiveMinReceive = Math.max(adminMinReceive, dynamicMinReceiveFromSend);
       const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
       const newLimits = {
@@ -281,8 +285,6 @@ export default function Exchange() {
         maxReceiveAmount: Math.max(effectiveMinReceive, effectiveMaxReceive), // Ensure max >= min
       };
 
-      console.log(`Dynamic limits recalculated: Max Send = ${newLimits.maxSendAmount.toFixed(2)} (${adminMaxReceive} ÷ ${exchangeRate})`);
-      
       setDynamicLimits(newLimits);
       setFormKey(prev => prev + 1); // Force form re-render with new limits
       
@@ -318,7 +320,7 @@ export default function Exchange() {
         form.trigger(['sendAmount', 'receiveAmount']);
       }, 100);
     }
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form, formKey]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form]);
 
   // Update form values when state changes
   useEffect(() => {
@@ -407,34 +409,22 @@ export default function Exchange() {
         
         // Handle exchange rate updates from admin dashboard
         if (message.type === 'exchange_rate_update') {
-          const { fromCurrency, toCurrency, rate } = message.data;
+          const { fromCurrency, toCurrency } = message.data;
           
           // Check if this rate update affects current currency pair
           if ((fromCurrency === sendMethod && toCurrency === receiveMethod) ||
               (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
             
-            console.log(`Exchange rate updated from WebSocket: ${rate} for ${fromCurrency}/${toCurrency}`);
-            console.log(`Recalculating with new rate: 1 ${fromCurrency} = ${rate} ${toCurrency}`);
-            
-            // Force immediate refresh of all related data
+            // Force immediate refresh of exchange rate data
             queryClient.invalidateQueries({ 
               queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
             });
-            queryClient.invalidateQueries({ 
-              queryKey: [`/api/currency-limits/${sendMethod}`] 
-            });
-            queryClient.invalidateQueries({ 
-              queryKey: [`/api/currency-limits/${receiveMethod}`] 
-            });
-            queryClient.invalidateQueries({ 
-              queryKey: [`/api/admin/balances`] 
-            });
-            
-            // Force form key increment to trigger complete recalculation
-            setFormKey(prev => prev + 1);
-            
-            // Refetch rate data immediately
             refetchRate();
+            
+            // Force recalculation of dynamic limits
+            setTimeout(() => {
+              form.trigger(['sendAmount', 'receiveAmount']);
+            }, 200);
           }
         }
         
@@ -446,8 +436,6 @@ export default function Exchange() {
           queryClient.invalidateQueries({ 
             queryKey: [`/api/currency-limits/${receiveMethod}`] 
           });
-          // Force form recalculation
-          setFormKey(prev => prev + 1);
         }
         
         // Handle balance updates
@@ -702,6 +690,9 @@ export default function Exchange() {
                         <div className="text-xs text-blue-500 mt-1">
                           Max = ${dynamicLimits.maxReceiveAmount.toLocaleString()} ÷ {exchangeRate}
                         </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Min = max(admin min, ${dynamicLimits.minReceiveAmount.toFixed(2)} ÷ {exchangeRate})
+                        </div>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Receive Limits:</span>
@@ -710,6 +701,9 @@ export default function Exchange() {
                         </div>
                         <div className="text-xs text-blue-500 mt-1">
                           Admin configured max
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Min = max(admin min, ${dynamicLimits.minSendAmount.toFixed(2)} × {exchangeRate})
                         </div>
                       </div>
                     </div>
