@@ -239,24 +239,52 @@ export default function AdminDashboard() {
     },
   });
 
-  // Update exchange rate mutation
+  // Update exchange rate mutation with real-time cache invalidation
   const updateRateMutation = useMutation({
     mutationFn: async (data: { fromCurrency: string; toCurrency: string; rate: string }) => {
       const response = await apiRequest("POST", "/api/admin/exchange-rates", data);
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Exchange rate updated successfully",
+    onSuccess: (data, variables) => {
+      // Invalidate all exchange rate caches immediately
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/exchange-rate/${variables.fromCurrency}/${variables.toCurrency}`] 
       });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/exchange-rate/${variables.toCurrency}/${variables.fromCurrency}`] 
+      });
+      
+      // Invalidate all exchange rate patterns to force refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === 'string' && key.includes('/api/exchange-rate/');
+        }
+      });
+      
+      // Also invalidate currency limits since max amounts depend on rates
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === 'string' && key.includes('/api/currency-limits/');
+        }
+      });
+      
+      // Invalidate balances to ensure all calculations are updated
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+      
+      toast({
+        title: "Exchange Rate Updated",
+        description: `Rate for ${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} set to ${variables.rate}. All calculations updated instantly.`,
+      });
+      
       setFromCurrency("");
       setToCurrency("");
       setExchangeRate("");
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
+        title: "Update Failed",
         description: error.message || "Failed to update exchange rate",
         variant: "destructive",
       });

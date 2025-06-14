@@ -227,7 +227,7 @@ export default function Exchange() {
   // Calculate dynamic limits when exchange rate, currency limits, or balances change
   useEffect(() => {
     if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances) {
-      // Get admin-configured limits for send currency (directly from individual currency endpoints)
+      // Get admin-configured limits for send currency
       const adminMinSend = sendCurrencyLimits.minAmount;
       const adminMaxSend = sendCurrencyLimits.maxAmount;
       
@@ -241,14 +241,14 @@ export default function Exchange() {
       // Calculate balance-constrained max receive amount (cannot exceed available balance)
       const balanceConstrainedMaxReceive = Math.min(adminMaxReceive, receiveBalance);
       
-      // Calculate corresponding send limits based on exchange rate and receive constraints
+      // Calculate corresponding send limits based on admin-controlled exchange rate and receive constraints
       const balanceConstrainedMaxSend = balanceConstrainedMaxReceive / exchangeRate;
       
       // Apply the most restrictive limits (admin send limits vs balance-constrained limits)
       const effectiveMaxSend = Math.min(adminMaxSend, balanceConstrainedMaxSend);
       const effectiveMinSend = adminMinSend; // Always enforce admin minimum
       
-      // Calculate receive limits based on send limits and exchange rate
+      // Calculate receive limits based on send limits and admin-controlled exchange rate
       const effectiveMinReceive = Math.max(adminMinReceive, effectiveMinSend * exchangeRate);
       const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
@@ -292,10 +292,12 @@ export default function Exchange() {
     }
   }, [isReminded, savedData, hasSavedData, form]);
 
-  // Fetch exchange rate when methods change
+  // Fetch exchange rate when methods change with frequent refresh for admin updates
   const { data: rateData } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
+    refetchInterval: 2000, // Refresh every 2 seconds for immediate admin rate updates
+    staleTime: 0, // Always consider data stale to get latest rates
   });
 
   // Update exchange rate and calculate initial receive amount

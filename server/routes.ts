@@ -60,20 +60,47 @@ async function updateCurrencyLimits(currency: string, min: number, max: number):
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Get exchange rate
+  // Get exchange rate with bidirectional support
   app.get("/api/exchange-rate/:from/:to", async (req, res) => {
     try {
       const { from, to } = req.params;
+      const fromCurrency = from.toLowerCase();
+      const toCurrency = to.toLowerCase();
       
-      // First try to get from database
-      const dbRate = await storage.getExchangeRate(from, to);
+      // First try to get direct rate from database
+      let dbRate = await storage.getExchangeRate(fromCurrency, toCurrency);
+      
       if (dbRate) {
-        return res.json({ rate: parseFloat(dbRate.rate), from: from.toUpperCase(), to: to.toUpperCase() });
+        return res.json({ 
+          rate: parseFloat(dbRate.rate), 
+          from: from.toUpperCase(), 
+          to: to.toUpperCase(),
+          lastUpdated: dbRate.updatedAt 
+        });
       }
       
-      // Fallback to default 1:1 rate
-      res.json({ rate: DEFAULT_EXCHANGE_RATE, from: from.toUpperCase(), to: to.toUpperCase() });
+      // Try reverse rate and calculate inverse
+      const reverseRate = await storage.getExchangeRate(toCurrency, fromCurrency);
+      if (reverseRate) {
+        const inverseRate = 1 / parseFloat(reverseRate.rate);
+        return res.json({ 
+          rate: parseFloat(inverseRate.toFixed(6)), 
+          from: from.toUpperCase(), 
+          to: to.toUpperCase(),
+          lastUpdated: reverseRate.updatedAt,
+          calculated: true // Indicates this was calculated from reverse rate
+        });
+      }
+      
+      // Fallback to default 1:1 rate only if no admin rate exists
+      res.json({ 
+        rate: DEFAULT_EXCHANGE_RATE, 
+        from: from.toUpperCase(), 
+        to: to.toUpperCase(),
+        fallback: true // Indicates this is a fallback rate
+      });
     } catch (error) {
+      console.error('Exchange rate fetch error:', error);
       res.status(500).json({ message: "Failed to get exchange rate" });
     }
   });
