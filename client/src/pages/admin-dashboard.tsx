@@ -111,10 +111,16 @@ export default function AdminDashboard() {
     },
   });
   
-  // State for exchange rate management
-  const [fromCurrency, setFromCurrency] = useState<string>("");
-  const [toCurrency, setToCurrency] = useState<string>("");
-  const [exchangeRate, setExchangeRate] = useState<string>("");
+  // State for exchange rate management with persistence
+  const [fromCurrency, setFromCurrency] = useState<string>(() => {
+    return localStorage.getItem('admin_fromCurrency') || "";
+  });
+  const [toCurrency, setToCurrency] = useState<string>(() => {
+    return localStorage.getItem('admin_toCurrency') || "";
+  });
+  const [exchangeRate, setExchangeRate] = useState<string>(() => {
+    return localStorage.getItem('admin_exchangeRate') || "";
+  });
   
   // Fetch all current exchange rates for display
   const { data: allExchangeRates = [] } = useQuery<any[]>({
@@ -195,6 +201,19 @@ export default function AdminDashboard() {
       setCurrencyLimits(formattedLimits);
     }
   }, [backendLimits]);
+
+  // Save exchange rate form values to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('admin_fromCurrency', fromCurrency);
+  }, [fromCurrency]);
+
+  useEffect(() => {
+    localStorage.setItem('admin_toCurrency', toCurrency);
+  }, [toCurrency]);
+
+  useEffect(() => {
+    localStorage.setItem('admin_exchangeRate', exchangeRate);
+  }, [exchangeRate]);
 
 
   
@@ -284,9 +303,8 @@ export default function AdminDashboard() {
         description: `Rate for ${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} set to ${variables.rate}. All calculations updated instantly.`,
       });
       
-      setFromCurrency("");
-      setToCurrency("");
-      setExchangeRate("");
+      // Don't clear the form - keep the current values so user can see what they just updated
+      // This also helps when refreshing the page or navigating back
     },
     onError: (error: any) => {
       toast({
@@ -884,24 +902,47 @@ export default function AdminDashboard() {
                     />
                   </div>
                   
-                  <div className="flex items-end">
+                  <div className="flex items-end gap-2">
                     <Button 
                       onClick={handleRateUpdate} 
                       disabled={updateRateMutation.isPending}
-                      className="w-full"
+                      className="flex-1"
                     >
                       {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setFromCurrency("");
+                        setToCurrency("");
+                        setExchangeRate("");
+                      }}
+                      variant="outline"
+                      disabled={updateRateMutation.isPending}
+                      className="px-3"
+                    >
+                      Clear
                     </Button>
                   </div>
                 </div>
                 
                 {fromCurrency && toCurrency && exchangeRate && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-sm text-green-800">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
                       <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
                     </p>
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="text-xs text-blue-600 mt-1">
                       This rate will immediately affect max amount calculations and all new transactions
+                    </p>
+                  </div>
+                )}
+                
+                {updateRateMutation.isSuccess && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-800 font-semibold">
+                      ✓ Exchange rate successfully saved to database and applied to all calculations
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Your changes are now permanent and will persist across page refreshes
                     </p>
                   </div>
                 )}
