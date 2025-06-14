@@ -111,22 +111,15 @@ export default function AdminDashboard() {
     },
   });
   
-  // State for exchange rate management with persistence
-  const [fromCurrency, setFromCurrency] = useState<string>(() => {
-    return localStorage.getItem('admin_fromCurrency') || "";
-  });
-  const [toCurrency, setToCurrency] = useState<string>(() => {
-    return localStorage.getItem('admin_toCurrency') || "";
-  });
-  const [exchangeRate, setExchangeRate] = useState<string>(() => {
-    return localStorage.getItem('admin_exchangeRate') || "";
-  });
+  // State for exchange rate management
+  const [fromCurrency, setFromCurrency] = useState<string>("");
+  const [toCurrency, setToCurrency] = useState<string>("");
+  const [exchangeRate, setExchangeRate] = useState<string>("");
   
   // Fetch all current exchange rates for display
   const { data: allExchangeRates = [] } = useQuery<any[]>({
     queryKey: ["/api/admin/exchange-rates"],
-    refetchInterval: 30000, // Refresh every 30 seconds instead of 3 seconds
-    staleTime: 20000, // Consider data fresh for 20 seconds
+    refetchInterval: 3000, // Refresh every 3 seconds to show latest rates
   });
   
   // State for balance management
@@ -153,8 +146,7 @@ export default function AdminDashboard() {
   // Fetch current balances
   const { data: currentBalances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    refetchInterval: 60000, // Refresh every 60 seconds instead of 5 seconds
-    staleTime: 45000, // Consider data fresh for 45 seconds
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
   // Sync balance data with local state
@@ -203,19 +195,6 @@ export default function AdminDashboard() {
       setCurrencyLimits(formattedLimits);
     }
   }, [backendLimits]);
-
-  // Save exchange rate form values to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('admin_fromCurrency', fromCurrency);
-  }, [fromCurrency]);
-
-  useEffect(() => {
-    localStorage.setItem('admin_toCurrency', toCurrency);
-  }, [toCurrency]);
-
-  useEffect(() => {
-    localStorage.setItem('admin_exchangeRate', exchangeRate);
-  }, [exchangeRate]);
 
 
   
@@ -273,16 +252,24 @@ export default function AdminDashboard() {
       return response.json();
     },
     onSuccess: (data, variables) => {
-      // Invalidate all exchange rate caches immediately
-      queryClient.invalidateQueries({ 
+      // Force complete cache removal for immediate fresh data
+      queryClient.removeQueries({ 
         queryKey: [`/api/exchange-rate/${variables.fromCurrency}/${variables.toCurrency}`] 
       });
-      queryClient.invalidateQueries({ 
+      queryClient.removeQueries({ 
         queryKey: [`/api/exchange-rate/${variables.toCurrency}/${variables.fromCurrency}`] 
       });
       
-      // Invalidate all exchange rate patterns to force refresh
-      queryClient.invalidateQueries({ 
+      // Remove all exchange rate queries from cache entirely
+      queryClient.removeQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0];
+          return typeof key === 'string' && key.includes('/api/exchange-rate/');
+        }
+      });
+      
+      // Force immediate refetch of all exchange rate data
+      queryClient.refetchQueries({ 
         predicate: (query) => {
           const key = query.queryKey[0];
           return typeof key === 'string' && key.includes('/api/exchange-rate/');
@@ -305,8 +292,9 @@ export default function AdminDashboard() {
         description: `Rate for ${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} set to ${variables.rate}. All calculations updated instantly.`,
       });
       
-      // Don't clear the form - keep the current values so user can see what they just updated
-      // This also helps when refreshing the page or navigating back
+      setFromCurrency("");
+      setToCurrency("");
+      setExchangeRate("");
     },
     onError: (error: any) => {
       toast({
@@ -904,47 +892,24 @@ export default function AdminDashboard() {
                     />
                   </div>
                   
-                  <div className="flex items-end gap-2">
+                  <div className="flex items-end">
                     <Button 
                       onClick={handleRateUpdate} 
                       disabled={updateRateMutation.isPending}
-                      className="flex-1"
+                      className="w-full"
                     >
                       {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        setFromCurrency("");
-                        setToCurrency("");
-                        setExchangeRate("");
-                      }}
-                      variant="outline"
-                      disabled={updateRateMutation.isPending}
-                      className="px-3"
-                    >
-                      Clear
                     </Button>
                   </div>
                 </div>
                 
                 {fromCurrency && toCurrency && exchangeRate && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-800">
                       <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
                     </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      This rate will immediately affect max amount calculations and all new transactions
-                    </p>
-                  </div>
-                )}
-                
-                {updateRateMutation.isSuccess && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-sm text-green-800 font-semibold">
-                      ✓ Exchange rate successfully saved to database and applied to all calculations
-                    </p>
                     <p className="text-xs text-green-600 mt-1">
-                      Your changes are now permanent and will persist across page refreshes
+                      This rate will immediately affect max amount calculations and all new transactions
                     </p>
                   </div>
                 )}
@@ -1044,8 +1009,8 @@ export default function AdminDashboard() {
 
                 {/* Transaction Limits Management */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Transaction Limits Management</h3>
-                  <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for each currency</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Minimum Transaction Limits</h3>
+                  <p className="text-blue-700 mb-6">Set minimum transaction amounts for each currency</p>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {paymentMethods.map((method) => (
@@ -1057,43 +1022,23 @@ export default function AdminDashboard() {
                           {method.label}
                         </h4>
                         
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <Label htmlFor={`min-${method.value}`}>Min Amount ($)</Label>
-                            <Input
-                              id={`min-${method.value}`}
-                              type="number"
-                              value={currencyLimits[method.value]?.min || "5"}
-                              onChange={(e) => setCurrencyLimits(prev => ({
-                                ...prev,
-                                [method.value]: {
-                                  ...prev[method.value],
-                                  min: e.target.value
-                                }
-                              }))}
-                              placeholder="5"
-                              min="0"
-                              step="0.01"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`max-${method.value}`}>Max Amount ($)</Label>
-                            <Input
-                              id={`max-${method.value}`}
-                              type="number"
-                              value={currencyLimits[method.value]?.max || "10000"}
-                              onChange={(e) => setCurrencyLimits(prev => ({
-                                ...prev,
-                                [method.value]: {
-                                  ...prev[method.value],
-                                  max: e.target.value
-                                }
-                              }))}
-                              placeholder="10000"
-                              min="0"
-                              step="0.01"
-                            />
-                          </div>
+                        <div className="mb-4">
+                          <Label htmlFor={`min-${method.value}`}>Min Amount ($)</Label>
+                          <Input
+                            id={`min-${method.value}`}
+                            type="number"
+                            value={currencyLimits[method.value]?.min || "5"}
+                            onChange={(e) => setCurrencyLimits(prev => ({
+                              ...prev,
+                              [method.value]: {
+                                ...prev[method.value],
+                                min: e.target.value
+                              }
+                            }))}
+                            placeholder="5"
+                            min="0"
+                            step="0.01"
+                          />
                         </div>
                         
                         <Button
@@ -1114,17 +1059,17 @@ export default function AdminDashboard() {
                                 queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
                                 
                                 toast({
-                                  title: "✓ Limits Updated",
-                                  description: `${method.label}: Min $${min} | Max $${parseFloat(max).toLocaleString()}`,
+                                  title: "✓ Minimum Updated",
+                                  description: `${method.label}: Min $${min}`,
                                   duration: 4000,
                                 });
                               } else {
-                                throw new Error("Failed to update limits");
+                                throw new Error("Failed to update minimum limit");
                               }
                             } catch (error) {
                               toast({
                                 title: "❌ Update Failed",
-                                description: "Failed to update currency limits",
+                                description: "Failed to update minimum limit",
                                 variant: "destructive",
                               });
                             }
@@ -1132,7 +1077,7 @@ export default function AdminDashboard() {
                           size="sm"
                           className="w-full"
                         >
-                          Update {method.label} Limits
+                          Update {method.label} Minimum
                         </Button>
                       </div>
                     ))}

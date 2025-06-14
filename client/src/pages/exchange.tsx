@@ -178,38 +178,50 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  // Fetch admin-configured limits for the send currency
+  // Fetch admin-configured limits for the send currency - NEVER CACHE
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${sendMethod}`],
+    queryKey: [`/api/currency-limits/${sendMethod}`, Date.now()], // Force unique query every time
     enabled: !!sendMethod,
-    refetchInterval: false, // Disable automatic polling
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    staleTime: Infinity, // Consider data fresh indefinitely
+    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
-  // Fetch admin-configured limits for the receive currency
+  // Fetch admin-configured limits for the receive currency - NEVER CACHE
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${receiveMethod}`],
+    queryKey: [`/api/currency-limits/${receiveMethod}`, Date.now()], // Force unique query every time
     enabled: !!receiveMethod,
-    refetchInterval: false, // Disable automatic polling
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    staleTime: Infinity, // Consider data fresh indefinitely
+    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
-  // Fetch live wallet addresses from admin dashboard
+  // Fetch live wallet addresses from admin dashboard - NEVER CACHE
   const { data: walletAddresses } = useQuery<Record<string, string>>({
-    queryKey: ["/api/admin/wallet-addresses"],
-    refetchInterval: false, // Disable automatic polling
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    staleTime: Infinity, // Consider data fresh indefinitely
+    queryKey: ["/api/admin/wallet-addresses", Date.now()],
+    refetchInterval: 500,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
-  // Fetch current balances to enforce balance-based limits
+  // Fetch current balances to enforce balance-based limits - NEVER CACHE
   const { data: balances } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances"],
-    refetchInterval: false, // Disable automatic polling
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    staleTime: Infinity, // Consider data fresh indefinitely
+    queryKey: ["/api/admin/balances", Date.now()],
+    refetchInterval: 500,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
   // Create a dynamic form resolver that always uses current limits
@@ -269,10 +281,14 @@ export default function Exchange() {
       );
       // Note: Removed adminMaxSend constraint to allow dynamic calculation to take precedence
       
-      const effectiveMinSend = adminMinSend; // Always enforce admin minimum
+      // Dynamic Min Send Calculation: Similar to max, but for minimums
+      // Min Send should be the larger of: admin min send OR (admin min receive / rate)
+      const dynamicMinSendFromAdminReceive = adminMinReceive / exchangeRate;
+      const effectiveMinSend = Math.max(adminMinSend, dynamicMinSendFromAdminReceive);
       
-      // Calculate receive limits - use admin max receive as primary limit  
-      const effectiveMinReceive = adminMinReceive;
+      // Dynamic Min Receive Calculation: Min Receive = Min Send * Exchange Rate  
+      const dynamicMinReceiveFromSend = effectiveMinSend * exchangeRate;
+      const effectiveMinReceive = Math.max(adminMinReceive, dynamicMinReceiveFromSend);
       const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
       const newLimits = {
@@ -282,8 +298,6 @@ export default function Exchange() {
         maxReceiveAmount: Math.max(effectiveMinReceive, effectiveMaxReceive), // Ensure max >= min
       };
 
-      console.log(`Dynamic limits recalculated: Max Send = ${newLimits.maxSendAmount.toFixed(2)} (${adminMaxReceive} ÷ ${exchangeRate})`);
-      
       setDynamicLimits(newLimits);
       setFormKey(prev => prev + 1); // Force form re-render with new limits
       
@@ -319,7 +333,7 @@ export default function Exchange() {
         form.trigger(['sendAmount', 'receiveAmount']);
       }, 100);
     }
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form, formKey]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form]);
 
   // Update form values when state changes
   useEffect(() => {
@@ -349,13 +363,16 @@ export default function Exchange() {
     }
   }, [isReminded, savedData, hasSavedData, form]);
 
-  // Fetch exchange rate when methods change 
+  // Fetch exchange rate when methods change - NEVER CACHE
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`, Date.now()], // Force unique query every time
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    refetchInterval: false, // Disable automatic polling
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    staleTime: Infinity, // Consider data fresh indefinitely
+    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
   // Update exchange rate and calculate initial receive amount
@@ -383,6 +400,16 @@ export default function Exchange() {
     }
   }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
 
+  // Force fresh exchange rate data on component mount and method changes
+  useEffect(() => {
+    if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
+      // Invalidate existing cache to force fresh data fetch
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
+      });
+    }
+  }, [sendMethod, receiveMethod, queryClient]);
+
   // Force refresh exchange rate when methods change
   useEffect(() => {
     if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
@@ -408,34 +435,22 @@ export default function Exchange() {
         
         // Handle exchange rate updates from admin dashboard
         if (message.type === 'exchange_rate_update') {
-          const { fromCurrency, toCurrency, rate } = message.data;
+          const { fromCurrency, toCurrency } = message.data;
           
           // Check if this rate update affects current currency pair
           if ((fromCurrency === sendMethod && toCurrency === receiveMethod) ||
               (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
             
-            console.log(`Exchange rate updated from WebSocket: ${rate} for ${fromCurrency}/${toCurrency}`);
-            console.log(`Recalculating with new rate: 1 ${fromCurrency} = ${rate} ${toCurrency}`);
-            
-            // Force immediate refresh of all related data
+            // Force immediate refresh of exchange rate data
             queryClient.invalidateQueries({ 
               queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
             });
-            queryClient.invalidateQueries({ 
-              queryKey: [`/api/currency-limits/${sendMethod}`] 
-            });
-            queryClient.invalidateQueries({ 
-              queryKey: [`/api/currency-limits/${receiveMethod}`] 
-            });
-            queryClient.invalidateQueries({ 
-              queryKey: [`/api/admin/balances`] 
-            });
-            
-            // Force form key increment to trigger complete recalculation
-            setFormKey(prev => prev + 1);
-            
-            // Refetch rate data immediately
             refetchRate();
+            
+            // Force recalculation of dynamic limits
+            setTimeout(() => {
+              form.trigger(['sendAmount', 'receiveAmount']);
+            }, 200);
           }
         }
         
@@ -447,8 +462,6 @@ export default function Exchange() {
           queryClient.invalidateQueries({ 
             queryKey: [`/api/currency-limits/${receiveMethod}`] 
           });
-          // Force form recalculation
-          setFormKey(prev => prev + 1);
         }
         
         // Handle balance updates
@@ -703,6 +716,9 @@ export default function Exchange() {
                         <div className="text-xs text-blue-500 mt-1">
                           Max = ${dynamicLimits.maxReceiveAmount.toLocaleString()} ÷ {exchangeRate}
                         </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Min = max(admin min, ${dynamicLimits.minReceiveAmount.toFixed(2)} ÷ {exchangeRate})
+                        </div>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Receive Limits:</span>
@@ -711,6 +727,9 @@ export default function Exchange() {
                         </div>
                         <div className="text-xs text-blue-500 mt-1">
                           Admin configured max
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Min = max(admin min, ${dynamicLimits.minSendAmount.toFixed(2)} × {exchangeRate})
                         </div>
                       </div>
                     </div>

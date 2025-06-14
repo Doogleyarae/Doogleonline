@@ -115,8 +115,11 @@ Changelog:
 - June 14, 2025. Completed fully functional admin exchange rate system with immediate real-time updates affecting live calculations, bidirectional rate support, comprehensive cache invalidation, and WebSocket notifications for instant UI updates
 - June 14, 2025. Enhanced dynamic max amount calculation with formula: Max Send = Max Receive / Exchange Rate, ensuring immediate recalculation when admin updates exchange rates, with WebSocket real-time synchronization for instant UI updates across all currency pairs
 - June 14, 2025. Fixed max send calculation logic to prioritize dynamic calculation (Max Receive ÷ Rate) over static admin send limits, allowing proper calculation like 33,455 ÷ 0.95 = 35,215.79, with visual indicators showing the calculation formula and real-time enforcement preventing form submission when limits are exceeded
-- June 14, 2025. Fixed exchange rate persistence - rates no longer revert when refreshing page, added localStorage form memory and Clear button for admin control
-- June 14, 2025. Eliminated screen flickering by reducing excessive API polling from 1-3 seconds to 30-60 seconds intervals across all components
+- June 14, 2025. Implemented dynamic minimum amount calculations using formulas: Min Send = max(admin min send, admin min receive ÷ rate) and Min Receive = max(admin min receive, calculated min send × rate), ensuring proper bidirectional minimum enforcement with visual calculation indicators
+- June 14, 2025. Fixed accessibility warnings by adding required DialogTitle and DialogDescription elements to CommandDialog component, ensuring proper screen reader support while maintaining visual design
+- June 14, 2025. Simplified Transaction Limits Management in admin dashboard to show only minimum amount controls, removing maximum amount fields per user request for cleaner interface focusing on minimum limits only
+- June 14, 2025. Fixed exchange rate persistence issue where exchange form showed old rates after admin updates. Implemented aggressive cache removal (removeQueries) instead of invalidation, added forced refetch, and enhanced query refresh intervals to ensure exchange form always displays latest admin-saved rates without requiring page refresh
+- June 14, 2025. Implemented comprehensive no-cache solution with client-side forced unique queries using Date.now() timestamps and server-side aggressive cache-busting headers for all admin-controlled endpoints (exchange rates, currency limits, balances, wallet addresses) to ensure exchange form NEVER shows old data after admin updates
 
 ## User Preferences
 
