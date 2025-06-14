@@ -375,14 +375,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get individual currency limits (new balance management system)
   app.get("/api/currency-limits/:currency", async (req, res) => {
     try {
-      // Add aggressive no-cache headers to prevent any caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store'
-      });
-      
       const { currency } = req.params;
       const limits = await getCurrencyLimits(currency);
       
@@ -491,14 +483,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get wallet addresses (admin only)
   app.get("/api/admin/wallet-addresses", async (req, res) => {
     try {
-      // Add aggressive no-cache headers to prevent any caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store'
-      });
-      
       const walletData = await storage.getAllWalletAddresses();
       
       // Create a map of method -> address
@@ -552,14 +536,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all balances (admin only)
   app.get("/api/admin/balances", async (req, res) => {
     try {
-      // Add aggressive no-cache headers to prevent any caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store'
-      });
-      
       const balances = await storage.getAllBalances();
       const balanceMap = balances.reduce((acc, balance) => {
         acc[balance.currency.toUpperCase()] = parseFloat(balance.amount);
