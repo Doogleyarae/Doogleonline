@@ -106,6 +106,9 @@ DoogleOnline is a modern, full-stack currency exchange platform that enables use
 
 Changelog:
 - June 13, 2025. Initial setup
+- June 14, 2025. Complete admin dashboard integration with live exchange rates, balance management, and dynamic wallet addresses
+- June 14, 2025. Implemented unified amount formatting system removing unnecessary decimal places
+- June 14, 2025. Added balance tracking with automatic deduction on order creation
 
 ## User Preferences
 
