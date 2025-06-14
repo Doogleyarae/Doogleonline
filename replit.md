@@ -117,6 +117,7 @@ Changelog:
 - June 14, 2025. Fixed max send calculation logic to prioritize dynamic calculation (Max Receive ÷ Rate) over static admin send limits, allowing proper calculation like 33,455 ÷ 0.95 = 35,215.79, with visual indicators showing the calculation formula and real-time enforcement preventing form submission when limits are exceeded
 - June 14, 2025. Implemented dynamic minimum amount calculations using formulas: Min Send = max(admin min send, admin min receive ÷ rate) and Min Receive = max(admin min receive, calculated min send × rate), ensuring proper bidirectional minimum enforcement with visual calculation indicators
 - June 14, 2025. Fixed accessibility warnings by adding required DialogTitle and DialogDescription elements to CommandDialog component, ensuring proper screen reader support while maintaining visual design
+- June 14, 2025. Simplified Transaction Limits Management in admin dashboard to show only minimum amount controls, removing maximum amount fields per user request for cleaner interface focusing on minimum limits only
 
 ## User Preferences
 
