@@ -316,7 +316,7 @@ export default function Exchange() {
         form.trigger(['sendAmount', 'receiveAmount']);
       }, 100);
     }
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form, formKey]);
 
   // Update form values when state changes
   useEffect(() => {
@@ -405,22 +405,33 @@ export default function Exchange() {
         
         // Handle exchange rate updates from admin dashboard
         if (message.type === 'exchange_rate_update') {
-          const { fromCurrency, toCurrency } = message.data;
+          const { fromCurrency, toCurrency, rate } = message.data;
           
           // Check if this rate update affects current currency pair
           if ((fromCurrency === sendMethod && toCurrency === receiveMethod) ||
               (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
             
-            // Force immediate refresh of exchange rate data
+            console.log(`Exchange rate updated from WebSocket: ${rate} for ${fromCurrency}/${toCurrency}`);
+            
+            // Force immediate refresh of all related data
             queryClient.invalidateQueries({ 
               queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
             });
-            refetchRate();
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/currency-limits/${sendMethod}`] 
+            });
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/currency-limits/${receiveMethod}`] 
+            });
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/admin/balances`] 
+            });
             
-            // Force recalculation of dynamic limits
-            setTimeout(() => {
-              form.trigger(['sendAmount', 'receiveAmount']);
-            }, 200);
+            // Force form key increment to trigger complete recalculation
+            setFormKey(prev => prev + 1);
+            
+            // Refetch rate data immediately
+            refetchRate();
           }
         }
         
@@ -432,6 +443,8 @@ export default function Exchange() {
           queryClient.invalidateQueries({ 
             queryKey: [`/api/currency-limits/${receiveMethod}`] 
           });
+          // Force form recalculation
+          setFormKey(prev => prev + 1);
         }
         
         // Handle balance updates
