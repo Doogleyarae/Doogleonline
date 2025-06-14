@@ -122,17 +122,27 @@ export default function Exchange() {
             message.type === 'exchange_rate_update' || 
             message.type === 'balance_update') {
           
-          console.log('Received admin update:', message.type, message.data);
+          console.log('Received admin update via WebSocket:', message.type, message.data);
           
           // Force immediate cache invalidation and data refresh
           queryClient.invalidateQueries({ queryKey: ['/api/currency-limits'] });
           queryClient.invalidateQueries({ queryKey: ['/api/exchange-rate'] });
           queryClient.invalidateQueries({ queryKey: ['/api/admin/balances'] });
           
-          // Trigger immediate refetch of current data
+          // Trigger immediate refetch of current exchange rate to force recalculation
           setTimeout(() => {
-            queryClient.refetchQueries({ queryKey: ['/api/currency-limits'] });
-            queryClient.refetchQueries({ queryKey: ['/api/exchange-rate'] });
+            queryClient.refetchQueries({ 
+              predicate: (query) => {
+                const key = query.queryKey[0];
+                return typeof key === 'string' && key.includes('/api/exchange-rate/');
+              }
+            });
+            queryClient.refetchQueries({ 
+              predicate: (query) => {
+                const key = query.queryKey[0];
+                return typeof key === 'string' && key.includes('/api/currency-limits/');
+              }
+            });
             queryClient.refetchQueries({ queryKey: ['/api/admin/balances'] });
           }, 100);
         }
@@ -391,7 +401,7 @@ export default function Exchange() {
     retry: 3, // Ensure we get the data
   });
 
-  // CRITICAL FIX: Update exchange rate immediately and persist it
+  // CRITICAL FIX: Update exchange rate and force recalculation immediately
   useEffect(() => {
     if (rateData) {
       const rate = rateData.rate;
@@ -401,26 +411,29 @@ export default function Exchange() {
       
       console.log(`Exchange rate updated from database: ${rate} for ${sendMethod}/${receiveMethod}`);
       
-      // Determine which field has focus/priority for recalculation
+      // FORCE RECALCULATION: Always recalculate amounts when rate changes
       const currentSendAmount = form.getValues("sendAmount");
       const currentReceiveAmount = form.getValues("receiveAmount");
       
-      // If both fields have values, prioritize the receive amount for recalculation
-      if (currentReceiveAmount && parseFloat(currentReceiveAmount) > 0) {
-        const amount = parseFloat(currentReceiveAmount);
-        const converted = amount / rate; // Send = Receive ÷ Rate
-        const convertedAmount = formatAmount(converted);
-        setSendAmount(convertedAmount);
-        form.setValue("sendAmount", convertedAmount);
-        saveExchangeState({ sendAmount: convertedAmount, receiveAmount: currentReceiveAmount });
-      } else if (currentSendAmount && parseFloat(currentSendAmount) > 0) {
-        // Fall back to calculating receive from send if no receive amount
+      // If user has a send amount, recalculate receive amount with new rate
+      if (currentSendAmount && parseFloat(currentSendAmount) > 0) {
         const amount = parseFloat(currentSendAmount);
         const converted = amount * rate; // Receive = Send × Rate
         const convertedAmount = formatAmount(converted);
         setReceiveAmount(convertedAmount);
         form.setValue("receiveAmount", convertedAmount);
         saveExchangeState({ sendAmount: currentSendAmount, receiveAmount: convertedAmount });
+        console.log(`Recalculated with new rate: ${currentSendAmount} ${sendMethod.toUpperCase()} = ${convertedAmount} ${receiveMethod.toUpperCase()}`);
+      } 
+      // If user has a receive amount, recalculate send amount with new rate
+      else if (currentReceiveAmount && parseFloat(currentReceiveAmount) > 0) {
+        const amount = parseFloat(currentReceiveAmount);
+        const converted = amount / rate; // Send = Receive ÷ Rate
+        const convertedAmount = formatAmount(converted);
+        setSendAmount(convertedAmount);
+        form.setValue("sendAmount", convertedAmount);
+        saveExchangeState({ sendAmount: convertedAmount, receiveAmount: currentReceiveAmount });
+        console.log(`Recalculated with new rate: ${convertedAmount} ${sendMethod.toUpperCase()} = ${currentReceiveAmount} ${receiveMethod.toUpperCase()}`);
       }
       
       // Trigger validation to update max amount limits based on new rate
