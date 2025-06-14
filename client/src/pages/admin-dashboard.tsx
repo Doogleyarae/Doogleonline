@@ -116,6 +116,12 @@ export default function AdminDashboard() {
   const [toCurrency, setToCurrency] = useState<string>("");
   const [exchangeRate, setExchangeRate] = useState<string>("");
   
+  // Fetch all current exchange rates for display
+  const { data: allExchangeRates = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/exchange-rates"],
+    refetchInterval: 3000, // Refresh every 3 seconds to show latest rates
+  });
+  
   // State for balance management
   const [currencyLimits, setCurrencyLimits] = useState<Record<string, { min: string; max: string }>>({});
   
@@ -773,12 +779,65 @@ export default function AdminDashboard() {
 
           {/* Exchange Rates Management */}
           <TabsContent value="rates" className="space-y-6">
+            {/* Current Exchange Rates Display */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <TrendingUp className="w-5 h-5 mr-2" />
+                  Current Exchange Rates
+                </CardTitle>
+                <p className="text-sm text-gray-600">Live rates affecting all transaction calculations</p>
+              </CardHeader>
+              <CardContent>
+                {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allExchangeRates.map((rate: any) => (
+                      <div key={`${rate.fromCurrency}-${rate.toCurrency}`} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-semibold text-sm">
+                              {rate.fromCurrency.toUpperCase()} → {rate.toCurrency.toUpperCase()}
+                            </p>
+                            <p className="text-lg font-bold text-blue-900">
+                              {parseFloat(rate.rate).toFixed(6)}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              Updated: {new Date(rate.updatedAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setFromCurrency(rate.fromCurrency);
+                              setToCurrency(rate.toCurrency);
+                              setExchangeRate(rate.rate);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>No exchange rates configured</p>
+                    <p className="text-sm">Use the form below to set your first rate</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Rate Update Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
                   Update Exchange Rate
                 </CardTitle>
+                <p className="text-sm text-gray-600">Changes apply immediately to all live calculations</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -835,6 +894,17 @@ export default function AdminDashboard() {
                     </Button>
                   </div>
                 </div>
+                
+                {fromCurrency && toCurrency && exchangeRate && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-800">
+                      <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      This rate will immediately affect max amount calculations and all new transactions
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

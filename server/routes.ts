@@ -324,6 +324,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertExchangeRateSchema.parse(req.body);
       const rate = await storage.updateExchangeRate(validatedData);
       
+      // Notify all connected clients about the rate update via WebSocket
+      wsManager.notifyStatusChange(
+        `Exchange rate updated: ${validatedData.fromCurrency.toUpperCase()} → ${validatedData.toCurrency.toUpperCase()} = ${validatedData.rate}`,
+        'info'
+      );
+      
       res.json(rate);
     } catch (error) {
       if (error instanceof z.ZodError) {
