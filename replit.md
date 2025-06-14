@@ -120,6 +120,7 @@ Changelog:
 - June 14, 2025. Simplified Transaction Limits Management in admin dashboard to show only minimum amount controls, removing maximum amount fields per user request for cleaner interface focusing on minimum limits only
 - June 14, 2025. Fixed exchange rate persistence issue where exchange form showed old rates after admin updates. Implemented aggressive cache removal (removeQueries) instead of invalidation, added forced refetch, and enhanced query refresh intervals to ensure exchange form always displays latest admin-saved rates without requiring page refresh
 - June 14, 2025. Implemented comprehensive no-cache solution with client-side forced unique queries using Date.now() timestamps and server-side aggressive cache-busting headers for all admin-controlled endpoints (exchange rates, currency limits, balances, wallet addresses) to ensure exchange form NEVER shows old data after admin updates
+- June 14, 2025. Fixed critical performance issue by optimizing API caching strategy - replaced excessive 500ms refetch intervals with 30-minute stale times, disabled automatic refetching, and removed circular dependencies that caused constant re-renders and API calls
 
 ## User Preferences
 
