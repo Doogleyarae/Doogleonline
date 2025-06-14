@@ -268,14 +268,12 @@ export default function Exchange() {
       );
       // Note: Removed adminMaxSend constraint to allow dynamic calculation to take precedence
       
-      // Dynamic Min Send Calculation: Similar to max, but for minimums
-      // Min Send should be the larger of: admin min send OR (admin min receive / rate)
-      const dynamicMinSendFromAdminReceive = adminMinReceive / exchangeRate;
-      const effectiveMinSend = Math.max(adminMinSend, dynamicMinSendFromAdminReceive);
+      // Direct Min Send: Use admin-configured minimum directly (like max limits)
+      // This ensures admin updates immediately reflect in the exchange form
+      const effectiveMinSend = adminMinSend;
       
-      // Dynamic Min Receive Calculation: Min Receive = Min Send * Exchange Rate  
-      const dynamicMinReceiveFromSend = effectiveMinSend * exchangeRate;
-      const effectiveMinReceive = Math.max(adminMinReceive, dynamicMinReceiveFromSend);
+      // Direct Min Receive: Use admin-configured minimum directly
+      const effectiveMinReceive = adminMinReceive;
       const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
       
       const newLimits = {

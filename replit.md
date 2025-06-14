@@ -119,6 +119,7 @@ Changelog:
 - June 14, 2025. Fixed accessibility warnings by adding required DialogTitle and DialogDescription elements to CommandDialog component, ensuring proper screen reader support while maintaining visual design
 - June 14, 2025. Simplified Transaction Limits Management in admin dashboard to show only minimum amount controls, removing maximum amount fields per user request for cleaner interface focusing on minimum limits only
 - June 14, 2025. Fixed real-time minimum amount synchronization across all currencies with WebSocket notifications, ensuring admin currency limit updates immediately reflect in exchange form calculations for all payment methods including Zaad, Sahal, EVC Plus, TRC20, and mobile money services
+- June 14, 2025. Simplified minimum limit calculation to use admin-configured values directly (like maximum limits), eliminating complex dynamic formulas that prevented real-time updates, ensuring minimum limits work exactly like maximum limits with immediate synchronization
 
 ## User Preferences
 
