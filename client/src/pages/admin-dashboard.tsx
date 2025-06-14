@@ -137,6 +137,19 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/wallet-addresses"],
   });
 
+  // Fetch current balances
+  const { data: currentBalances } = useQuery<Record<string, number>>({
+    queryKey: ["/api/admin/balances"],
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+
+  // Sync balance data with local state
+  useEffect(() => {
+    if (currentBalances) {
+      setBalances(currentBalances);
+    }
+  }, [currentBalances]);
+
   // Fetch API endpoints
   const { data: apiData } = useQuery({
     queryKey: ["/api/admin/api-endpoints"],
@@ -816,9 +829,89 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Currency Balance Management */}
+                {/* Actual Currency Balance Management */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                  <h3 className="text-xl font-semibold text-green-900 mb-4">Currency Balance Management</h3>
+                  <p className="text-green-700 mb-6">Manage available balances for each currency - these control maximum outgoing amounts</p>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {paymentMethods.map((method) => (
+                      <div key={method.value} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-lg mb-4 flex items-center">
+                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <DollarSign className="w-4 h-4 text-green-600" />
+                          </div>
+                          {method.label}
+                        </h4>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor={`balance-${method.value}`}>Current Balance ($)</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                id={`balance-${method.value}`}
+                                type="number"
+                                value={balances[method.value.toUpperCase()] || 0}
+                                onChange={(e) => setBalances(prev => ({
+                                  ...prev,
+                                  [method.value.toUpperCase()]: parseFloat(e.target.value) || 0
+                                }))}
+                                placeholder="0"
+                                min="0"
+                                step="0.01"
+                                className="flex-1"
+                              />
+                              <Button
+                                onClick={async () => {
+                                  try {
+                                    const balance = balances[method.value.toUpperCase()] || 0;
+                                    const response = await apiRequest("POST", "/api/admin/balances", {
+                                      currency: method.value,
+                                      amount: balance,
+                                    });
+                                    
+                                    if (response.ok) {
+                                      queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                                      
+                                      setRecentlyUpdatedBalance(method.value);
+                                      setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
+                                      
+                                      toast({
+                                        title: "✓ Balance Updated",
+                                        description: `${method.label}: $${balance.toLocaleString()}`,
+                                        duration: 4000,
+                                      });
+                                    } else {
+                                      throw new Error("Failed to update balance");
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      title: "❌ Update Failed",
+                                      description: "Failed to update balance",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                size="sm"
+                                className={recentlyUpdatedBalance === method.value ? "bg-green-600" : ""}
+                              >
+                                {recentlyUpdatedBalance === method.value ? "✓" : "Update"}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                            Available for outgoing transactions. Orders cannot exceed this amount.
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Transaction Limits Management */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Currency Balance Management</h3>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Transaction Limits Management</h3>
                   <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for each currency</p>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
