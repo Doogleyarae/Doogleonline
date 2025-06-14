@@ -5,9 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Helper function to format amounts without unnecessary decimal places
+export function formatAmount(amount: number): string {
+  return amount % 1 === 0 ? amount.toString() : amount.toFixed(2).replace(/\.?0+$/, '');
+}
+
 export function formatCurrency(amount: string | number, currency: string): string {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return `${num.toFixed(2)} ${currency.toUpperCase()}`;
+  const formattedAmount = formatAmount(num);
+  
+  return `${formattedAmount} ${currency.toUpperCase()}`;
 }
 
 export function formatDate(date: Date | string): string {
