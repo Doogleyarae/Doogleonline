@@ -335,7 +335,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertExchangeRateSchema.parse(req.body);
       const rate = await storage.updateExchangeRate(validatedData);
       
-      // Notify all connected clients about the rate update via WebSocket
+      // Broadcast exchange rate update to all connected clients via WebSocket
+      wsManager.broadcast({
+        type: 'exchange_rate_update',
+        data: {
+          fromCurrency: validatedData.fromCurrency,
+          toCurrency: validatedData.toCurrency,
+          rate: validatedData.rate,
+          timestamp: Date.now()
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+      // Also send status notification
       wsManager.notifyStatusChange(
         `Exchange rate updated: ${validatedData.fromCurrency.toUpperCase()} → ${validatedData.toCurrency.toUpperCase()} = ${validatedData.rate}`,
         'info'
@@ -756,10 +768,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   
-  // Only initialize WebSocket server in production to avoid conflicts with Vite dev server
-  if (process.env.NODE_ENV === 'production') {
-    wsManager.initialize(httpServer);
-  }
+  // Initialize WebSocket server for real-time admin updates
+  wsManager.initialize(httpServer);
   
   return httpServer;
 }

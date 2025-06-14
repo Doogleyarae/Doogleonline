@@ -3,7 +3,7 @@ import type { Server } from 'http';
 import type { Order, ContactMessage } from '@shared/schema';
 
 interface WSMessage {
-  type: 'order_update' | 'new_order' | 'new_message' | 'status_change';
+  type: 'order_update' | 'new_order' | 'new_message' | 'status_change' | 'exchange_rate_update' | 'currency_limit_update' | 'balance_update';
   data: any;
   timestamp: string;
 }

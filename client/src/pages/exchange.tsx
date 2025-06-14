@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowUpCircle, ArrowDownCircle, User, Send, Bell, BellOff } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
@@ -334,6 +334,53 @@ export default function Exchange() {
     if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
       refetchRate();
     }
+  }, [sendMethod, receiveMethod, refetchRate]);
+
+  // WebSocket connection for real-time admin updates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+    
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        
+        // Handle exchange rate updates from admin dashboard
+        if (message.type === 'exchange_rate_update') {
+          // Force refresh of exchange rate data
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/admin/exchange-rates`] 
+          });
+          refetchRate();
+        }
+        
+        // Handle currency limit updates
+        if (message.type === 'currency_limit_update') {
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/currency-limits/${sendMethod}`] 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/currency-limits/${receiveMethod}`] 
+          });
+        }
+        
+        // Handle balance updates
+        if (message.type === 'balance_update') {
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/admin/balances`] 
+          });
+        }
+      } catch (error) {
+        console.error('WebSocket message parse error:', error);
+      }
+    };
+    
+    return () => {
+      ws.close();
+    };
   }, [sendMethod, receiveMethod, refetchRate]);
 
   // Handle amount calculations with prevention of loops
