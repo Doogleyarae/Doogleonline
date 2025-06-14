@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, currencyLimits, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -27,6 +27,11 @@ export interface IStorage {
   getCurrencyLimit(from: string, to: string): Promise<CurrencyLimit | undefined>;
   getAllCurrencyLimits(): Promise<CurrencyLimit[]>;
   updateCurrencyLimit(limit: InsertCurrencyLimit): Promise<CurrencyLimit>;
+  
+  // Wallet address methods
+  getWalletAddress(method: string): Promise<WalletAddress | undefined>;
+  getAllWalletAddresses(): Promise<WalletAddress[]>;
+  updateWalletAddress(wallet: InsertWalletAddress): Promise<WalletAddress>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -168,6 +173,37 @@ export class DatabaseStorage implements IStorage {
         .values(insertLimit)
         .returning();
       return limit;
+    }
+  }
+
+  async getWalletAddress(method: string): Promise<WalletAddress | undefined> {
+    const [wallet] = await db.select().from(walletAddresses).where(eq(walletAddresses.method, method));
+    return wallet || undefined;
+  }
+
+  async getAllWalletAddresses(): Promise<WalletAddress[]> {
+    return await db.select().from(walletAddresses);
+  }
+
+  async updateWalletAddress(insertWallet: InsertWalletAddress): Promise<WalletAddress> {
+    const existing = await this.getWalletAddress(insertWallet.method);
+    
+    if (existing) {
+      const [wallet] = await db
+        .update(walletAddresses)
+        .set({ 
+          address: insertWallet.address, 
+          updatedAt: new Date() 
+        })
+        .where(eq(walletAddresses.id, existing.id))
+        .returning();
+      return wallet;
+    } else {
+      const [wallet] = await db
+        .insert(walletAddresses)
+        .values(insertWallet)
+        .returning();
+      return wallet;
     }
   }
 }

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema } from "@shared/schema";
+import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema, insertWalletAddressSchema } from "@shared/schema";
 import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { orderProcessor } from "./orderProcessor";
@@ -397,8 +397,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get wallet addresses (admin only)
   app.get("/api/admin/wallet-addresses", async (req, res) => {
     try {
-      // Return current wallet addresses for all payment methods
-      const walletAddresses = {
+      const walletData = await storage.getAllWalletAddresses();
+      
+      // Create a map of method -> address
+      const walletMap: Record<string, string> = {};
+      
+      // Default addresses
+      const defaults = {
         zaad: "*880*637834431*amount#",
         sahal: "*883*905865292*amount#",
         evc: "*799*34996012*amount#",
@@ -410,7 +415,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         peb20: "0x5f3c72277de38d91e12f6f594ac8353c21d73c83"
       };
       
-      res.json(walletAddresses);
+      // Start with defaults
+      Object.assign(walletMap, defaults);
+      
+      // Override with database values
+      walletData.forEach(wallet => {
+        walletMap[wallet.method] = wallet.address;
+      });
+      
+      res.json(walletMap);
     } catch (error) {
       res.status(500).json({ message: "Failed to get wallet addresses" });
     }

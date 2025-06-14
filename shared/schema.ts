@@ -98,3 +98,19 @@ export const insertCurrencyLimitSchema = createInsertSchema(currencyLimits).omit
 
 export type InsertCurrencyLimit = z.infer<typeof insertCurrencyLimitSchema>;
 export type CurrencyLimit = typeof currencyLimits.$inferSelect;
+
+// Wallet addresses schema for admin management
+export const walletAddresses = pgTable("wallet_addresses", {
+  id: serial("id").primaryKey(),
+  method: text("method").notNull().unique(),
+  address: text("address").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertWalletAddressSchema = createInsertSchema(walletAddresses).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertWalletAddress = z.infer<typeof insertWalletAddressSchema>;
+export type WalletAddress = typeof walletAddresses.$inferSelect;
