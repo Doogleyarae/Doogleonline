@@ -189,6 +189,12 @@ export default function Exchange() {
     queryKey: ["/api/admin/wallet-addresses"],
   });
 
+  // Fetch current balances to enforce balance-based limits
+  const { data: balances } = useQuery<Record<string, number>>({
+    queryKey: ["/api/admin/balances"],
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
+  });
+
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(createExchangeFormSchema(
       dynamicLimits.minSendAmount, 
@@ -210,21 +216,37 @@ export default function Exchange() {
     },
   });
 
-  // Calculate dynamic limits when exchange rate or currency limits change
+  // Calculate dynamic limits when exchange rate, currency limits, or balances change
   useEffect(() => {
-    if (currencyLimits && exchangeRate > 0) {
-      // Fixed limits as specified
+    if (currencyLimits && exchangeRate > 0 && balances) {
+      // Get admin-configured limits from the currency limits response
+      const adminMinSend = currencyLimits.minAmount || 25;
+      const adminMaxSend = currencyLimits.maxAmount || 7500;
+      
+      // Get available balance for receive currency to limit max outgoing amount
+      const receiveBalance = balances[receiveMethod?.toUpperCase()] || 0;
+      
+      // Calculate balance-constrained max receive amount
+      const balanceConstrainedMaxReceive = receiveBalance;
+      
+      // Calculate corresponding send limits based on exchange rate
+      const balanceConstrainedMaxSend = balanceConstrainedMaxReceive / exchangeRate;
+      
+      // Apply the most restrictive limits (admin limits vs balance constraints)
+      const effectiveMaxSend = Math.min(adminMaxSend, balanceConstrainedMaxSend);
+      const effectiveMaxReceive = Math.min(adminMaxSend * exchangeRate, balanceConstrainedMaxReceive);
+      
       const newLimits = {
-        minSendAmount: 25,
-        maxSendAmount: 7500,
-        minReceiveAmount: 24.50,
-        maxReceiveAmount: 7350,
+        minSendAmount: adminMinSend,
+        maxSendAmount: Math.max(adminMinSend, effectiveMaxSend), // Ensure max is not less than min
+        minReceiveAmount: adminMinSend * exchangeRate,
+        maxReceiveAmount: Math.max(adminMinSend * exchangeRate, effectiveMaxReceive),
       };
 
       setDynamicLimits(newLimits);
       setFormKey(prev => prev + 1); // Force form re-render with new limits
     }
-  }, [currencyLimits, exchangeRate]);
+  }, [currencyLimits, exchangeRate, balances, receiveMethod]);
 
   // Update form values when state changes
   useEffect(() => {
@@ -442,9 +464,9 @@ export default function Exchange() {
                   <span className="text-sm font-medium text-blue-800">Current Rate:</span>
                   <span className="text-lg font-bold text-blue-900">{rateDisplay}</span>
                 </div>
-                {currencyLimits && exchangeRate > 0 && (
+                {currencyLimits && exchangeRate > 0 && balances && (
                   <div className="mt-3 pt-3 border-t border-blue-200">
-                    <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div className="grid grid-cols-2 gap-4 text-xs mb-3">
                       <div>
                         <span className="text-blue-700 font-medium">Send Limits:</span>
                         <div className="text-blue-600">
@@ -455,6 +477,20 @@ export default function Exchange() {
                         <span className="text-blue-700 font-medium">Receive Limits:</span>
                         <div className="text-blue-600">
                           ${dynamicLimits.minReceiveAmount.toFixed(2)} - ${dynamicLimits.maxReceiveAmount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-blue-200">
+                      <div>
+                        <span className="text-blue-700 font-medium">Available Balance:</span>
+                        <div className="text-blue-600">
+                          {receiveMethod?.toUpperCase()}: ${balances[receiveMethod?.toUpperCase()]?.toLocaleString() || '0'}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Admin Config:</span>
+                        <div className="text-blue-600">
+                          Min: ${currencyLimits.minAmount} | Max: ${currencyLimits.maxAmount.toLocaleString()}
                         </div>
                       </div>
                     </div>
