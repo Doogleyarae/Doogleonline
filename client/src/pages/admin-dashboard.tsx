@@ -1213,17 +1213,26 @@ export default function AdminDashboard() {
                             <span className="font-medium">Transaction Limit</span>
                           </div>
                           Available for outgoing transactions. Orders cannot exceed this amount.
-                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
+              </div>
+            </div>
 
-                {/* Transaction Limits Management */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Minimum Transaction Limits</h3>
-                  <p className="text-blue-700 mb-6">Set minimum transaction amounts for each currency</p>
+            {/* Transaction Limits Management */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-200 p-6">
+                <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                    <DollarSign className="w-4 h-4 text-white" />
+                  </div>
+                  Minimum Transaction Limits
+                </h3>
+                <p className="text-slate-600 mt-1">Set minimum transaction amounts for each currency pair</p>
+              </div>
+              <div className="p-6">
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {paymentMethods.map((method) => (
