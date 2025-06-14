@@ -190,12 +190,7 @@ export default function AdminDashboard() {
     }
   }, [backendLimits]);
 
-  // Update local state when balance data is loaded
-  useEffect(() => {
-    if (balanceData && typeof balanceData === 'object') {
-      setBalances(balanceData as Record<string, number>);
-    }
-  }, [balanceData]);
+
   
   // State for order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
