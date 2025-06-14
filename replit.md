@@ -110,6 +110,7 @@ Changelog:
 - June 14, 2025. Implemented unified amount formatting system removing unnecessary decimal places
 - June 14, 2025. Added balance tracking with automatic deduction on order creation
 - June 14, 2025. Implemented comprehensive balance and limit management with real-time admin control over currency min/max settings and balance-constrained transaction limits
+- June 14, 2025. Added comprehensive admin-controlled min/max limit enforcement with real-time validation on both client and server sides, preventing form submission and order creation outside admin-configured boundaries
 
 ## User Preferences
 
