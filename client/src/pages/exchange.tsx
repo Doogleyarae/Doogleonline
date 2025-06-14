@@ -178,50 +178,42 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  // Fetch admin-configured limits for the send currency - NEVER CACHE
+  // Fetch admin-configured limits for the send currency
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${sendMethod}`, Date.now()], // Force unique query every time
+    queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    refetchOnReconnect: 'always',
+    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
+    gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnWindowFocus: false, // Disable automatic refetching
+    refetchOnReconnect: false,
   });
 
-  // Fetch admin-configured limits for the receive currency - NEVER CACHE
+  // Fetch admin-configured limits for the receive currency
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${receiveMethod}`, Date.now()], // Force unique query every time
+    queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    refetchOnReconnect: 'always',
+    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
+    gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnWindowFocus: false, // Disable automatic refetching
+    refetchOnReconnect: false,
   });
 
-  // Fetch live wallet addresses from admin dashboard - NEVER CACHE
+  // Fetch live wallet addresses from admin dashboard
   const { data: walletAddresses } = useQuery<Record<string, string>>({
-    queryKey: ["/api/admin/wallet-addresses", Date.now()],
-    refetchInterval: 500,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    refetchOnReconnect: 'always',
+    queryKey: ["/api/admin/wallet-addresses"],
+    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
+    gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnWindowFocus: false, // Disable automatic refetching
+    refetchOnReconnect: false,
   });
 
-  // Fetch current balances to enforce balance-based limits - NEVER CACHE
+  // Fetch current balances to enforce balance-based limits
   const { data: balances } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances", Date.now()],
-    refetchInterval: 500,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    refetchOnReconnect: 'always',
+    queryKey: ["/api/admin/balances"],
+    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
+    gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnWindowFocus: false, // Disable automatic refetching
+    refetchOnReconnect: false,
   });
 
   // Create a dynamic form resolver that always uses current limits
@@ -299,49 +291,9 @@ export default function Exchange() {
       };
 
       setDynamicLimits(newLimits);
-      setFormKey(prev => prev + 1); // Force form re-render with new limits
-      
-      // Force re-validation with updated resolver
-      const currentSendAmount = form.getValues('sendAmount');
-      const currentReceiveAmount = form.getValues('receiveAmount');
-      
-      // Clear existing errors and prepare for re-validation
-      form.clearErrors();
-      
-      // Re-validate current amounts against new limits
-      setTimeout(() => {
-        if (currentSendAmount) {
-          const amount = parseFloat(currentSendAmount);
-          if (amount > newLimits.maxSendAmount) {
-            form.setError('sendAmount', {
-              type: 'manual',
-              message: `Maximum send amount is $${newLimits.maxSendAmount.toLocaleString()}.`
-            });
-          }
-        }
-        
-        if (currentReceiveAmount) {
-          const amount = parseFloat(currentReceiveAmount);
-          if (amount > newLimits.maxReceiveAmount) {
-            form.setError('receiveAmount', {
-              type: 'manual',
-              message: `Maximum receive amount is $${newLimits.maxReceiveAmount.toLocaleString()}.`
-            });
-          }
-        }
-        
-        form.trigger(['sendAmount', 'receiveAmount']);
-      }, 100);
+      console.log(`Dynamic limits recalculated: Max Send = ${effectiveMaxSend.toFixed(2)} (${adminMaxReceive} ÷ ${exchangeRate})`);
     }
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form]);
-
-  // Update form values when state changes
-  useEffect(() => {
-    form.setValue("sendMethod", sendMethod);
-    form.setValue("receiveMethod", receiveMethod);
-    form.setValue("sendAmount", sendAmount);
-    form.setValue("receiveAmount", receiveAmount);
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
 
   // Save state whenever any exchange value changes
   useEffect(() => {
@@ -353,26 +305,14 @@ export default function Exchange() {
     });
   }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
 
-  // Restore saved data when component mounts or saved data changes
-  useEffect(() => {
-    if (isReminded && hasSavedData) {
-      form.setValue("fullName", savedData.fullName || "");
-      form.setValue("phoneNumber", savedData.phoneNumber || "");
-      form.setValue("walletAddress", savedData.walletAddress || "");
-      form.setValue("rememberDetails", true);
-    }
-  }, [isReminded, savedData, hasSavedData, form]);
-
-  // Fetch exchange rate when methods change - NEVER CACHE
+  // Fetch exchange rate when methods change
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`, Date.now()], // Force unique query every time
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    refetchOnReconnect: 'always',
+    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
+    gcTime: 60 * 60 * 1000, // 1 hour
+    refetchOnWindowFocus: false, // Disable automatic refetching
+    refetchOnReconnect: false,
   });
 
   // Update exchange rate and calculate initial receive amount
@@ -400,22 +340,12 @@ export default function Exchange() {
     }
   }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
 
-  // Force fresh exchange rate data on component mount and method changes
-  useEffect(() => {
-    if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
-      // Invalidate existing cache to force fresh data fetch
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
-      });
-    }
-  }, [sendMethod, receiveMethod, queryClient]);
-
-  // Force refresh exchange rate when methods change
+  // Force refresh exchange rate when methods change (once per change)
   useEffect(() => {
     if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
       refetchRate();
     }
-  }, [sendMethod, receiveMethod, refetchRate]);
+  }, [sendMethod, receiveMethod]);
 
   // WebSocket connection for real-time admin updates
   useEffect(() => {
