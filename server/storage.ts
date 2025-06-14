@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -211,6 +211,56 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return wallet;
     }
+  }
+
+  async getBalance(currency: string): Promise<Balance | undefined> {
+    const [balance] = await db.select().from(balances).where(eq(balances.currency, currency.toLowerCase()));
+    return balance || undefined;
+  }
+
+  async getAllBalances(): Promise<Balance[]> {
+    return await db.select().from(balances);
+  }
+
+  async updateBalance(insertBalance: InsertBalance): Promise<Balance> {
+    const existing = await this.getBalance(insertBalance.currency);
+    
+    if (existing) {
+      const [balance] = await db
+        .update(balances)
+        .set({ 
+          amount: insertBalance.amount, 
+          updatedAt: new Date() 
+        })
+        .where(eq(balances.id, existing.id))
+        .returning();
+      return balance;
+    } else {
+      const [balance] = await db
+        .insert(balances)
+        .values(insertBalance)
+        .returning();
+      return balance;
+    }
+  }
+
+  async deductBalance(currency: string, amount: number): Promise<Balance | undefined> {
+    const currentBalance = await this.getBalance(currency);
+    if (!currentBalance) {
+      // Initialize balance if it doesn't exist
+      return await this.updateBalance({ 
+        currency: currency.toLowerCase(), 
+        amount: (0 - amount).toString() 
+      });
+    }
+
+    const currentAmount = parseFloat(currentBalance.amount);
+    const newAmount = currentAmount - amount;
+    
+    return await this.updateBalance({ 
+      currency: currency.toLowerCase(), 
+      amount: newAmount.toString() 
+    });
   }
 }
 

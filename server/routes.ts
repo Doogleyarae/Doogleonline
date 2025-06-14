@@ -146,6 +146,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const order = await storage.createOrder(validatedData);
       
+      // Deduct balance when order is created
+      await storage.deductBalance(validatedData.receiveMethod, parseFloat(validatedData.receiveAmount));
+      
       // Send order confirmation email
       await emailService.sendOrderConfirmation(order);
       
