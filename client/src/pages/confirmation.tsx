@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Copy, CreditCard, X, Clock, Timer } from "lucide-react";
-import { formatDate, formatCurrency, copyToClipboard } from "@/lib/utils";
+import { formatDate, formatCurrency, formatAmount, copyToClipboard } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
@@ -94,8 +94,12 @@ export default function Confirmation() {
   const getFormattedPaymentString = (paymentString: string | undefined, amount: string | undefined): string => {
     if (!paymentString || !amount) return paymentString || '';
     
-    // Replace 'amount' placeholder with actual amount (case insensitive)
-    return paymentString.replace(/amount/gi, amount);
+    // Format amount to remove unnecessary decimal places (e.g., 55.00 -> 55, 55.75 -> 55.75)
+    const numericAmount = parseFloat(amount);
+    const cleanAmount = formatAmount(numericAmount);
+    
+    // Replace 'amount' placeholder with cleaned amount (case insensitive)
+    return paymentString.replace(/amount/gi, cleanAmount);
   };
 
   const handleCopyWallet = async () => {
