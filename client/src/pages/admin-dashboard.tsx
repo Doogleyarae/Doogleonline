@@ -924,7 +924,7 @@ export default function AdminDashboard() {
                                       </AlertDialog>
                                     </>
                                   ) : (
-                                    <span className="text-gray-500 text-sm">No actions available</span>
+                                    <span className="text-slate-400 text-sm italic">No actions available</span>
                                   )}
                                 </div>
                               </TableCell>
@@ -940,33 +940,50 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Exchange Rates Management */}
-          <TabsContent value="rates" className="space-y-6">
+          <TabsContent value="rates" className="space-y-8">
             {/* Current Exchange Rates Display */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-slate-200 p-6">
+                <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                  <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                    <TrendingUp className="w-4 h-4 text-white" />
+                  </div>
                   Current Exchange Rates
-                </CardTitle>
-                <p className="text-sm text-gray-600">Live rates affecting all transaction calculations</p>
-              </CardHeader>
-              <CardContent>
+                </h3>
+                <p className="text-slate-600 mt-1">Live rates affecting all transaction calculations across the platform</p>
+              </div>
+              <div className="p-6">
                 {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {allExchangeRates.map((rate: any) => (
-                      <div key={`${rate.fromCurrency}-${rate.toCurrency}`} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold text-sm">
-                              {rate.fromCurrency.toUpperCase()} → {rate.toCurrency.toUpperCase()}
-                            </p>
-                            <p className="text-lg font-bold text-blue-900">
-                              {parseFloat(rate.rate).toFixed(6)}
-                            </p>
-                            <p className="text-xs text-gray-600">
+                      <div key={`${rate.fromCurrency}-${rate.toCurrency}`} className="bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <span className="font-semibold text-slate-700 bg-white px-2 py-1 rounded text-sm">
+                                {rate.fromCurrency.toUpperCase()}
+                              </span>
+                              <div className="flex-1 h-px bg-slate-300"></div>
+                              <TrendingUp className="w-4 h-4 text-blue-500" />
+                              <div className="flex-1 h-px bg-slate-300"></div>
+                              <span className="font-semibold text-slate-700 bg-white px-2 py-1 rounded text-sm">
+                                {rate.toCurrency.toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="text-center mb-3">
+                              <p className="text-2xl font-bold text-blue-600">
+                                {parseFloat(rate.rate).toFixed(6)}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Rate per unit
+                              </p>
+                            </div>
+                            <div className="text-xs text-slate-400 bg-white/50 rounded px-2 py-1">
                               Updated: {new Date(rate.updatedAt).toLocaleString()}
-                            </p>
+                            </div>
                           </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-slate-200">
                           <Button
                             variant="outline"
                             size="sm"
@@ -975,84 +992,111 @@ export default function AdminDashboard() {
                               setToCurrency(rate.toCurrency);
                               setExchangeRate(rate.rate);
                             }}
+                            className="w-full bg-white hover:bg-blue-50 border-blue-200 text-blue-600"
                           >
-                            Edit
+                            <Settings className="w-3 h-3 mr-1" />
+                            Edit Rate
                           </Button>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>No exchange rates configured</p>
-                    <p className="text-sm">Use the form below to set your first rate</p>
+                  <div className="text-center py-16">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <TrendingUp className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h4 className="text-slate-600 font-medium mb-2">No exchange rates configured</h4>
+                    <p className="text-sm text-slate-400 mb-4">Set up your first exchange rate using the form below</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Rate Update Form */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-slate-200 p-6">
+                <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                  <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center mr-3">
+                    <Settings className="w-4 h-4 text-white" />
+                  </div>
                   Update Exchange Rate
-                </CardTitle>
-                <p className="text-sm text-gray-600">Changes apply immediately to all live calculations</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="fromCurrency">From Currency</Label>
+                </h3>
+                <p className="text-slate-600 mt-1">Changes apply immediately to all live calculations and active orders</p>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="fromCurrency" className="text-sm font-medium text-slate-700">From Currency</Label>
                     <Select value={fromCurrency} onValueChange={setFromCurrency}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select from currency" />
+                      <SelectTrigger className="bg-slate-50 border-slate-300 focus:bg-white">
+                        <SelectValue placeholder="Choose source currency" />
                       </SelectTrigger>
                       <SelectContent>
                         {paymentMethods.map((method) => (
                           <SelectItem key={method.value} value={method.value}>
-                            {method.label}
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{method.label}</span>
+                              <span className="text-xs text-slate-500 uppercase">({method.value})</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="toCurrency">To Currency</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="toCurrency" className="text-sm font-medium text-slate-700">To Currency</Label>
                     <Select value={toCurrency} onValueChange={setToCurrency}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select to currency" />
+                      <SelectTrigger className="bg-slate-50 border-slate-300 focus:bg-white">
+                        <SelectValue placeholder="Choose target currency" />
                       </SelectTrigger>
                       <SelectContent>
                         {paymentMethods.map((method) => (
                           <SelectItem key={method.value} value={method.value}>
-                            {method.label}
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{method.label}</span>
+                              <span className="text-xs text-slate-500 uppercase">({method.value})</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="rate">Exchange Rate</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="rate" className="text-sm font-medium text-slate-700">Exchange Rate</Label>
                     <Input
                       type="number"
                       step="0.000001"
-                      placeholder="0.000000"
+                      placeholder="Enter rate (e.g., 0.950000)"
                       value={exchangeRate}
                       onChange={(e) => setExchangeRate(e.target.value)}
+                      className="bg-slate-50 border-slate-300 focus:bg-white"
                     />
+                    <p className="text-xs text-slate-500">
+                      Precision: Up to 6 decimal places
+                    </p>
                   </div>
                   
                   <div className="flex items-end">
                     <Button 
                       onClick={handleRateUpdate} 
-                      disabled={updateRateMutation.isPending}
-                      className="w-full"
+                      disabled={updateRateMutation.isPending || !fromCurrency || !toCurrency || !exchangeRate}
+                      className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300"
+                      size="lg"
                     >
-                      {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
+                      {updateRateMutation.isPending ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Updating...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <TrendingUp className="w-4 h-4" />
+                          <span>Update Rate</span>
+                        </div>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -1067,93 +1111,108 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Balance Management */}
-          <TabsContent value="limits" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
-                  Balance Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Actual Currency Balance Management */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                  <h3 className="text-xl font-semibold text-green-900 mb-4">Currency Balance Management</h3>
-                  <p className="text-green-700 mb-6">Manage available balances for each currency - these control maximum outgoing amounts</p>
+          <TabsContent value="limits" className="space-y-8">
+            {/* Currency Balance Management */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-slate-200 p-6">
+                <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                  <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                    <DollarSign className="w-4 h-4 text-white" />
+                  </div>
+                  Currency Balance Management
+                </h3>
+                <p className="text-slate-600 mt-1">Manage available balances for each currency - these control maximum outgoing transaction amounts</p>
+              </div>
+              <div className="p-6">
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {paymentMethods.map((method) => (
-                      <div key={method.value} className="bg-white border border-gray-200 rounded-lg p-4">
-                        <h4 className="font-semibold text-lg mb-4 flex items-center">
-                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                            <DollarSign className="w-4 h-4 text-green-600" />
-                          </div>
-                          {method.label}
-                        </h4>
-                        
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor={`balance-${method.value}`}>Current Balance ($)</Label>
-                            <div className="flex items-center space-x-2">
-                              <Input
-                                id={`balance-${method.value}`}
-                                type="number"
-                                value={balances[method.value.toUpperCase()] || 0}
-                                onChange={(e) => setBalances(prev => ({
-                                  ...prev,
-                                  [method.value.toUpperCase()]: parseFloat(e.target.value) || 0
-                                }))}
-                                placeholder="0"
-                                min="0"
-                                step="0.01"
-                                className="flex-1"
-                              />
-                              <Button
-                                onClick={async () => {
-                                  try {
-                                    const balance = balances[method.value.toUpperCase()] || 0;
-                                    const response = await apiRequest("POST", "/api/admin/balances", {
-                                      currency: method.value,
-                                      amount: balance,
-                                    });
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {paymentMethods.map((method) => (
+                    <div key={method.value} className="bg-gradient-to-br from-slate-50 to-green-50 border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                          <DollarSign className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-slate-800">{method.label}</h4>
+                          <p className="text-xs text-slate-500 uppercase">{method.value}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor={`balance-${method.value}`} className="text-sm font-medium text-slate-700">
+                            Current Balance ($)
+                          </Label>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Input
+                              id={`balance-${method.value}`}
+                              type="number"
+                              value={balances[method.value.toUpperCase()] || 0}
+                              onChange={(e) => setBalances(prev => ({
+                                ...prev,
+                                [method.value.toUpperCase()]: parseFloat(e.target.value) || 0
+                              }))}
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                              className="flex-1 bg-white border-slate-300"
+                            />
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  const balance = balances[method.value.toUpperCase()] || 0;
+                                  const response = await apiRequest("POST", "/api/admin/balances", {
+                                    currency: method.value,
+                                    amount: balance,
+                                  });
+                                  
+                                  if (response.ok) {
+                                    queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
                                     
-                                    if (response.ok) {
-                                      queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
-                                      
-                                      setRecentlyUpdatedBalance(method.value);
-                                      setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
-                                      
-                                      toast({
-                                        title: "✓ Balance Updated",
-                                        description: `${method.label}: $${balance.toLocaleString()}`,
-                                        duration: 4000,
-                                      });
-                                    } else {
-                                      throw new Error("Failed to update balance");
-                                    }
-                                  } catch (error) {
+                                    setRecentlyUpdatedBalance(method.value);
+                                    setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
+                                    
                                     toast({
-                                      title: "❌ Update Failed",
-                                      description: "Failed to update balance",
-                                      variant: "destructive",
+                                      title: "Balance Updated",
+                                      description: `${method.label}: $${balance.toLocaleString()}`,
+                                      duration: 4000,
                                     });
+                                  } else {
+                                    throw new Error("Failed to update balance");
                                   }
-                                }}
-                                size="sm"
-                                className={recentlyUpdatedBalance === method.value ? "bg-green-600" : ""}
-                              >
-                                {recentlyUpdatedBalance === method.value ? "✓" : "Update"}
-                              </Button>
-                            </div>
+                                } catch (error) {
+                                  toast({
+                                    title: "Update Failed",
+                                    description: "Failed to update balance",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                              size="sm"
+                              className={`${recentlyUpdatedBalance === method.value 
+                                ? "bg-green-600 hover:bg-green-700" 
+                                : "bg-blue-600 hover:bg-blue-700"} text-white border-0`}
+                            >
+                              {recentlyUpdatedBalance === method.value ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                "Update"
+                              )}
+                            </Button>
                           </div>
-                          
-                          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                            Available for outgoing transactions. Orders cannot exceed this amount.
+                        </div>
+                        
+                        <div className="text-xs text-slate-600 bg-white/70 p-3 rounded-lg border border-slate-200">
+                          <div className="flex items-center space-x-1 mb-1">
+                            <AlertCircle className="w-3 h-3 text-blue-500" />
+                            <span className="font-medium">Transaction Limit</span>
+                          </div>
+                          Available for outgoing transactions. Orders cannot exceed this amount.
                           </div>
                         </div>
                       </div>
@@ -1274,17 +1333,20 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Balance Impact Information */}
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <h4 className="font-semibold text-yellow-800 mb-2">Balance Settings Impact</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-800 mb-2 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Balance Settings Impact
+                  </h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
                     <li>• Changes apply immediately to new transactions</li>
                     <li>• Users will see updated limits on the exchange form</li>
                     <li>• Each currency has its own individual limits</li>
                     <li>• Existing pending orders are not affected</li>
                   </ul>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Wallet Management Tab */}
