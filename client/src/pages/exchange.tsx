@@ -294,6 +294,7 @@ export default function Exchange() {
   const form = useForm<ExchangeFormData>({
     resolver: getDynamicResolver(),
     mode: "onChange",
+    reValidateMode: "onChange", // Ensure validation runs on every change
     defaultValues: {
       sendMethod: sendMethod,
       receiveMethod: receiveMethod,
