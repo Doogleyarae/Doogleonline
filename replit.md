@@ -118,6 +118,7 @@ Changelog:
 - June 14, 2025. Implemented dynamic minimum amount calculations using formulas: Min Send = max(admin min send, admin min receive ÷ rate) and Min Receive = max(admin min receive, calculated min send × rate), ensuring proper bidirectional minimum enforcement with visual calculation indicators
 - June 14, 2025. Fixed accessibility warnings by adding required DialogTitle and DialogDescription elements to CommandDialog component, ensuring proper screen reader support while maintaining visual design
 - June 14, 2025. Simplified Transaction Limits Management in admin dashboard to show only minimum amount controls, removing maximum amount fields per user request for cleaner interface focusing on minimum limits only
+- June 14, 2025. Fixed real-time minimum amount synchronization across all currencies with WebSocket notifications, ensuring admin currency limit updates immediately reflect in exchange form calculations for all payment methods including Zaad, Sahal, EVC Plus, TRC20, and mobile money services
 
 ## User Preferences
 
