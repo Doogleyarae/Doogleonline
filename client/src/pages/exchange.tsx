@@ -178,37 +178,50 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  // Fetch admin-configured limits for the send currency
+  // Fetch admin-configured limits for the send currency - NEVER CACHE
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${sendMethod}`],
+    queryKey: [`/api/currency-limits/${sendMethod}`, Date.now()], // Force unique query every time
     enabled: !!sendMethod,
-    refetchInterval: 1000, // Refresh every 1 second for immediate admin updates
+    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
-  // Fetch admin-configured limits for the receive currency
+  // Fetch admin-configured limits for the receive currency - NEVER CACHE
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${receiveMethod}`],
+    queryKey: [`/api/currency-limits/${receiveMethod}`, Date.now()], // Force unique query every time
     enabled: !!receiveMethod,
-    refetchInterval: 1000, // Refresh every 1 second for immediate admin updates
+    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
-  // Fetch live wallet addresses from admin dashboard
+  // Fetch live wallet addresses from admin dashboard - NEVER CACHE
   const { data: walletAddresses } = useQuery<Record<string, string>>({
-    queryKey: ["/api/admin/wallet-addresses"],
+    queryKey: ["/api/admin/wallet-addresses", Date.now()],
+    refetchInterval: 500,
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
-  // Fetch current balances to enforce balance-based limits
+  // Fetch current balances to enforce balance-based limits - NEVER CACHE
   const { data: balances } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances"],
-    refetchInterval: 1000, // Refresh every 1 second for immediate updates
+    queryKey: ["/api/admin/balances", Date.now()],
+    refetchInterval: 500,
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
   // Create a dynamic form resolver that always uses current limits
@@ -350,16 +363,16 @@ export default function Exchange() {
     }
   }, [isReminded, savedData, hasSavedData, form]);
 
-  // Fetch exchange rate when methods change with frequent refresh for admin updates
+  // Fetch exchange rate when methods change - NEVER CACHE
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`, Date.now()], // Force unique query every time
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    refetchInterval: 500, // Faster refresh - every 500ms for immediate admin rate updates
-    staleTime: 0, // Always consider data stale to get latest rates
-    gcTime: 0, // Don't cache for garbage collection
-    refetchOnMount: 'always', // Always refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnReconnect: true, // Refetch when reconnecting
+    refetchInterval: 500, // Refresh every 500ms for immediate admin updates
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
   });
 
   // Update exchange rate and calculate initial receive amount
