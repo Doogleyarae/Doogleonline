@@ -29,6 +29,11 @@ export default function Confirmation() {
     refetchInterval: 5000, // Refresh every 5 seconds
   });
 
+  // Fetch live wallet addresses from admin dashboard
+  const { data: walletAddresses } = useQuery<Record<string, string>>({
+    queryKey: ["/api/admin/wallet-addresses"],
+  });
+
   // Countdown timer for paid orders
   useEffect(() => {
     if (order?.status === "paid" && processingStatus?.isProcessing) {
@@ -188,7 +193,9 @@ export default function Confirmation() {
             <CardContent className="p-4">
               <h3 className="text-sm font-semibold text-blue-900 mb-2">Send Payment To:</h3>
               <div className="flex items-center justify-between bg-white rounded-md px-3 py-2">
-                <span className="text-sm font-mono text-gray-900 flex-1 break-all">{order.paymentWallet}</span>
+                <span className="text-sm font-mono text-gray-900 flex-1 break-all">
+                  {walletAddresses?.[order.receiveMethod] || order.paymentWallet}
+                </span>
                 <Button
                   variant="ghost"
                   size="icon"

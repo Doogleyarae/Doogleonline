@@ -183,6 +183,11 @@ export default function Exchange() {
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
   });
 
+  // Fetch live wallet addresses from admin dashboard
+  const { data: walletAddresses } = useQuery<Record<string, string>>({
+    queryKey: ["/api/admin/wallet-addresses"],
+  });
+
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(createExchangeFormSchema(
       dynamicLimits.minSendAmount, 
@@ -369,6 +374,13 @@ export default function Exchange() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: ExchangeFormData) => {
+      // Get the live payment wallet address from admin dashboard
+      const paymentWallet = walletAddresses?.[data.receiveMethod] || '';
+      
+      if (!paymentWallet) {
+        throw new Error(`Payment wallet for ${data.receiveMethod.toUpperCase()} is not configured. Please contact support.`);
+      }
+
       const response = await apiRequest("POST", "/api/orders", {
         fullName: data.fullName,
         phoneNumber: data.phoneNumber,
@@ -378,6 +390,7 @@ export default function Exchange() {
         sendAmount: data.sendAmount,
         receiveAmount: data.receiveAmount,
         exchangeRate: data.exchangeRate,
+        paymentWallet: paymentWallet, // Use live wallet address from admin dashboard
       });
       return response.json();
     },
