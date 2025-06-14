@@ -182,18 +182,16 @@ export default function Exchange() {
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    refetchInterval: 1000, // Refresh every 1 second for immediate admin updates
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 30000, // Refresh every 30 seconds instead of 1 second
+    staleTime: 20000, // Consider data fresh for 20 seconds
   });
 
   // Fetch admin-configured limits for the receive currency
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    refetchInterval: 1000, // Refresh every 1 second for immediate admin updates
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 30000, // Refresh every 30 seconds instead of 1 second
+    staleTime: 20000, // Consider data fresh for 20 seconds
   });
 
   // Fetch live wallet addresses from admin dashboard
@@ -206,9 +204,8 @@ export default function Exchange() {
   // Fetch current balances to enforce balance-based limits
   const { data: balances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    refetchInterval: 1000, // Refresh every 1 second for immediate updates
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 60000, // Refresh every 60 seconds instead of 1 second
+    staleTime: 45000, // Consider data fresh for 45 seconds
   });
 
   // Create a dynamic form resolver that always uses current limits
@@ -348,13 +345,12 @@ export default function Exchange() {
     }
   }, [isReminded, savedData, hasSavedData, form]);
 
-  // Fetch exchange rate when methods change with frequent refresh for admin updates
+  // Fetch exchange rate when methods change with moderate refresh for admin updates
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    refetchInterval: 1000, // Refresh every 1 second for immediate admin rate updates
-    staleTime: 0, // Always consider data stale to get latest rates
-    gcTime: 0, // Don't cache for garbage collection
+    refetchInterval: 30000, // Refresh every 30 seconds instead of 1 second
+    staleTime: 20000, // Consider data fresh for 20 seconds
   });
 
   // Update exchange rate and calculate initial receive amount

@@ -125,7 +125,8 @@ export default function AdminDashboard() {
   // Fetch all current exchange rates for display
   const { data: allExchangeRates = [] } = useQuery<any[]>({
     queryKey: ["/api/admin/exchange-rates"],
-    refetchInterval: 3000, // Refresh every 3 seconds to show latest rates
+    refetchInterval: 30000, // Refresh every 30 seconds instead of 3 seconds
+    staleTime: 20000, // Consider data fresh for 20 seconds
   });
   
   // State for balance management
@@ -152,7 +153,8 @@ export default function AdminDashboard() {
   // Fetch current balances
   const { data: currentBalances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds instead of 5 seconds
+    staleTime: 45000, // Consider data fresh for 45 seconds
   });
 
   // Sync balance data with local state
