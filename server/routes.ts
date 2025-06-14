@@ -432,21 +432,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update wallet address (admin only)
   app.post("/api/admin/wallet-addresses", async (req, res) => {
     try {
-      const { method, address } = req.body;
+      const validatedData = insertWalletAddressSchema.parse(req.body);
+      const wallet = await storage.updateWalletAddress(validatedData);
       
-      if (!method || !address) {
-        return res.status(400).json({ message: "Method and address are required" });
-      }
-      
-      // In a production environment, this would update a database
-      // For now, we'll simulate a successful update
       res.json({
-        method: method.toUpperCase(),
-        address,
-        lastUpdated: new Date().toISOString(),
+        method: wallet.method.toUpperCase(),
+        address: wallet.address,
+        lastUpdated: wallet.updatedAt.toISOString(),
         message: "Wallet address updated successfully"
       });
     } catch (error) {
+      console.error('Wallet update error:', error);
       res.status(500).json({ message: "Failed to update wallet address" });
     }
   });
