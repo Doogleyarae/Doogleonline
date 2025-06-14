@@ -249,11 +249,21 @@ export default function Exchange() {
       // Calculate balance-constrained max receive amount (cannot exceed available balance)
       const balanceConstrainedMaxReceive = Math.min(adminMaxReceive, receiveBalance);
       
-      // Calculate corresponding send limits based on admin-controlled exchange rate and receive constraints
-      const balanceConstrainedMaxSend = balanceConstrainedMaxReceive / exchangeRate;
+      // Dynamic Max Send Calculation: Max Send = Max Receive / Exchange Rate
+      // This ensures when admin updates exchange rate, max send amount recalculates immediately
+      const dynamicMaxSendFromRate = balanceConstrainedMaxReceive / exchangeRate;
+      const dynamicMaxSendFromAdminReceive = adminMaxReceive / exchangeRate;
       
-      // Apply the most restrictive limits (admin send limits vs balance-constrained limits)
-      const effectiveMaxSend = Math.min(adminMaxSend, balanceConstrainedMaxSend);
+      // Apply the most restrictive max send limit among:
+      // 1. Admin-configured max send limit
+      // 2. Dynamic limit based on balance-constrained max receive / rate
+      // 3. Dynamic limit based on admin max receive / rate
+      const effectiveMaxSend = Math.min(
+        adminMaxSend,
+        dynamicMaxSendFromRate,
+        dynamicMaxSendFromAdminReceive
+      );
+      
       const effectiveMinSend = adminMinSend; // Always enforce admin minimum
       
       // Calculate receive limits based on send limits and admin-controlled exchange rate
@@ -269,8 +279,11 @@ export default function Exchange() {
 
       setDynamicLimits(newLimits);
       setFormKey(prev => prev + 1); // Force form re-render with new limits
+      
+      // Force validation update with new limits
+      form.trigger(['sendAmount', 'receiveAmount']);
     }
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, form]);
 
   // Update form values when state changes
   useEffect(() => {
@@ -326,6 +339,11 @@ export default function Exchange() {
         form.setValue("receiveAmount", convertedAmount);
         saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
       }
+      
+      // Trigger validation to update max amount limits based on new rate
+      setTimeout(() => {
+        form.trigger(['sendAmount', 'receiveAmount']);
+      }, 100);
     }
   }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
 
@@ -338,8 +356,15 @@ export default function Exchange() {
 
   // WebSocket connection for real-time admin updates
   useEffect(() => {
+    if (!sendMethod || !receiveMethod) return;
+    
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected for real-time updates');
+    };
     
     ws.onmessage = (event) => {
       try {
@@ -347,14 +372,23 @@ export default function Exchange() {
         
         // Handle exchange rate updates from admin dashboard
         if (message.type === 'exchange_rate_update') {
-          // Force refresh of exchange rate data
-          queryClient.invalidateQueries({ 
-            queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
-          });
-          queryClient.invalidateQueries({ 
-            queryKey: [`/api/admin/exchange-rates`] 
-          });
-          refetchRate();
+          const { fromCurrency, toCurrency } = message.data;
+          
+          // Check if this rate update affects current currency pair
+          if ((fromCurrency === sendMethod && toCurrency === receiveMethod) ||
+              (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
+            
+            // Force immediate refresh of exchange rate data
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
+            });
+            refetchRate();
+            
+            // Force recalculation of dynamic limits
+            setTimeout(() => {
+              form.trigger(['sendAmount', 'receiveAmount']);
+            }, 200);
+          }
         }
         
         // Handle currency limit updates
@@ -378,10 +412,20 @@ export default function Exchange() {
       }
     };
     
-    return () => {
-      ws.close();
+    ws.onerror = (error) => {
+      console.error('WebSocket connection error:', error);
     };
-  }, [sendMethod, receiveMethod, refetchRate]);
+    
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+    
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [sendMethod, receiveMethod, refetchRate, form]);
 
   // Handle amount calculations with prevention of loops
   const handleSendAmountChange = (value: string) => {
