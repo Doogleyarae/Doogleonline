@@ -542,61 +542,151 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage orders, exchange rates, and transaction limits</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                Admin Dashboard
+              </h1>
+              <p className="text-slate-600 text-lg">
+                Comprehensive management center for orders, rates, and system settings
+              </p>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{orders.length}</div>
+                <div className="text-sm text-slate-500">Total Orders</div>
+              </div>
+              <div className="w-px h-12 bg-slate-200"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {orders.filter(o => o.status === 'completed').length}
+                </div>
+                <div className="text-sm text-slate-500">Completed</div>
+              </div>
+              <div className="w-px h-12 bg-slate-200"></div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-600">
+                  {orders.filter(o => o.status === 'pending').length}
+                </div>
+                <div className="text-sm text-slate-500">Pending</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
-            <TabsTrigger value="limits">Balance Management</TabsTrigger>
-            <TabsTrigger value="wallets">Wallet Settings</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="orders" className="space-y-8">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-2">
+            <TabsList className="grid w-full grid-cols-6 bg-slate-50">
+              <TabsTrigger value="orders" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <Settings className="w-4 h-4" />
+                  <span>Orders</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="rates" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Exchange Rates</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="limits" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-4 h-4" />
+                  <span>Balance Management</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="wallets" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <Settings className="w-4 h-4" />
+                  <span>Wallets</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Messages</span>
+                </div>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Analytics</span>
+                </div>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Orders Management */}
-          <TabsContent value="orders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
-                  Update Order Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="orderId">Order ID</Label>
+          <TabsContent value="orders" className="space-y-8">
+            {/* Quick Actions Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-200 p-6">
+                <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                    <Settings className="w-4 h-4 text-white" />
+                  </div>
+                  Quick Order Actions
+                </h3>
+                <p className="text-slate-600 mt-1">Update order status or manage pending transactions</p>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="orderId" className="text-sm font-medium text-slate-700">Order Selection</Label>
                     <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select order" />
+                      <SelectTrigger className="bg-slate-50 border-slate-300 focus:bg-white">
+                        <SelectValue placeholder="Choose an order to manage" />
                       </SelectTrigger>
                       <SelectContent>
                         {orders.map((order) => (
                           <SelectItem key={order.orderId} value={order.orderId}>
-                            {order.orderId} - {order.fullName}
+                            <div className="flex items-center space-x-2">
+                              <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">
+                                {order.orderId}
+                              </span>
+                              <span>{order.fullName}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="status">New Status</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="status" className="text-sm font-medium text-slate-700">New Status</Label>
                     <Select value={newStatus} onValueChange={setNewStatus}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
+                      <SelectTrigger className="bg-slate-50 border-slate-300 focus:bg-white">
+                        <SelectValue placeholder="Select new status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="pending">
+                          <div className="flex items-center space-x-2">
+                            <Clock className="w-4 h-4 text-amber-500" />
+                            <span>Pending</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="processing">
+                          <div className="flex items-center space-x-2">
+                            <Clock3 className="w-4 h-4 text-blue-500" />
+                            <span>Processing</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="completed">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <span>Completed</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="cancelled">
+                          <div className="flex items-center space-x-2">
+                            <XCircle className="w-4 h-4 text-red-500" />
+                            <span>Cancelled</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -604,63 +694,88 @@ export default function AdminDashboard() {
                   <div className="flex items-end">
                     <Button 
                       onClick={handleStatusUpdate} 
-                      disabled={updateStatusMutation.isPending}
-                      className="w-full"
+                      disabled={updateStatusMutation.isPending || !selectedOrderId || !newStatus}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300"
+                      size="lg"
                     >
-                      {updateStatusMutation.isPending ? "Updating..." : "Update Status"}
+                      {updateStatusMutation.isPending ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Updating...</span>
+                        </div>
+                      ) : (
+                        "Update Status"
+                      )}
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-start">
+            {/* Order Management Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-slate-200 p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                   <div>
-                    <CardTitle>Order Management</CardTitle>
-                    <p className="text-sm text-gray-600">
-                      Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.
+                    <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                      <div className="w-8 h-8 bg-slate-600 rounded-lg flex items-center justify-center mr-3">
+                        <History className="w-4 h-4 text-white" />
+                      </div>
+                      Order Management
+                    </h3>
+                    <p className="text-slate-600 mt-1">
+                      Review and manage all customer orders with quick action buttons
                     </p>
                     {statusFilter !== "all" && (
-                      <p className="text-sm font-medium text-blue-600 mt-1">
-                        Showing {statusFilter} orders only ({orders.filter(order => order.status === statusFilter).length} found)
-                      </p>
+                      <div className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
+                        <Filter className="w-3 h-3 mr-1" />
+                        Showing {statusFilter} orders ({orders.filter(order => order.status === statusFilter).length} found)
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="status-filter">Filter:</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="All Orders" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Orders</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center space-x-4 mt-4 lg:mt-0">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="status-filter" className="text-sm font-medium text-slate-700 whitespace-nowrap">Filter by:</Label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-40 bg-white border-slate-300">
+                          <SelectValue placeholder="All Orders" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Orders</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={exportToCSV} className="flex items-center space-x-2">
+                      <Download className="w-4 h-4" />
+                      <span>Export</span>
+                    </Button>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
+              </div>
+              <div className="p-0">
                 {ordersLoading ? (
-                  <p>Loading orders...</p>
+                  <div className="flex items-center justify-center p-12">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-slate-600">Loading orders...</span>
+                    </div>
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>From</TableHead>
-                          <TableHead>To</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Actions</TableHead>
+                        <TableRow className="bg-slate-50/50">
+                          <TableHead className="font-semibold text-slate-700 py-4">Order ID</TableHead>
+                          <TableHead className="font-semibold text-slate-700 py-4">Customer</TableHead>
+                          <TableHead className="font-semibold text-slate-700 py-4">Transaction</TableHead>
+                          <TableHead className="font-semibold text-slate-700 py-4">Status</TableHead>
+                          <TableHead className="font-semibold text-slate-700 py-4">Date</TableHead>
+                          <TableHead className="font-semibold text-slate-700 py-4 text-center">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -670,33 +785,67 @@ export default function AdminDashboard() {
                           if (filteredOrders.length === 0) {
                             return (
                               <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                                  {statusFilter === "all" 
-                                    ? "No orders found" 
-                                    : `No ${statusFilter} orders found`
-                                  }
+                                <TableCell colSpan={6} className="text-center py-12">
+                                  <div className="flex flex-col items-center space-y-3">
+                                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                                      <Search className="w-6 h-6 text-slate-400" />
+                                    </div>
+                                    <div className="text-slate-500 font-medium">
+                                      {statusFilter === "all" ? "No orders found" : `No ${statusFilter} orders found`}
+                                    </div>
+                                    <div className="text-sm text-slate-400">
+                                      Orders will appear here when customers place transactions
+                                    </div>
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             );
                           }
                           
                           return filteredOrders.map((order) => (
-                            <TableRow key={order.orderId}>
-                              <TableCell className="font-medium">{order.orderId}</TableCell>
-                              <TableCell>{order.fullName}</TableCell>
-                              <TableCell>{formatCurrency(order.sendAmount, order.sendMethod)}</TableCell>
-                              <TableCell>{formatCurrency(order.receiveAmount, order.receiveMethod)}</TableCell>
-                              <TableCell>
-                                <Badge className={getStatusColor(order.status)}>
-                                  <div className="flex items-center">
+                            <TableRow key={order.orderId} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
+                              <TableCell className="py-4">
+                                <div className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                  {order.orderId}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <div>
+                                  <div className="font-medium text-slate-800">{order.fullName}</div>
+                                  <div className="text-sm text-slate-500">{order.phoneNumber}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <div className="space-y-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-sm font-medium text-slate-600">Send:</span>
+                                    <span className="font-semibold text-slate-800">
+                                      {formatCurrency(order.sendAmount, order.sendMethod)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-sm font-medium text-slate-600">Receive:</span>
+                                    <span className="font-semibold text-green-600">
+                                      {formatCurrency(order.receiveAmount, order.receiveMethod)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <Badge className={`${getStatusColor(order.status)} border-0 font-medium`}>
+                                  <div className="flex items-center space-x-1">
                                     {getStatusIcon(order.status)}
-                                    <span className="ml-1 capitalize">{order.status}</span>
+                                    <span className="capitalize">{order.status}</span>
                                   </div>
                                 </Badge>
                               </TableCell>
-                              <TableCell>{formatDate(order.createdAt)}</TableCell>
-                              <TableCell>
-                                <div className="flex space-x-2">
+                              <TableCell className="py-4">
+                                <div className="text-sm text-slate-600">
+                                  {formatDate(order.createdAt)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <div className="flex justify-center space-x-2">
                                   {order.status === "pending" || order.status === "paid" ? (
                                     <>
                                       {/* Accept Order Confirmation Dialog */}
@@ -705,20 +854,25 @@ export default function AdminDashboard() {
                                           <Button
                                             size="sm"
                                             disabled={acceptOrderMutation.isPending}
-                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                            className="bg-green-600 hover:bg-green-700 text-white border-0 shadow-sm"
                                           >
                                             <CheckCircle className="w-3 h-3 mr-1" />
                                             Accept
                                           </Button>
                                         </AlertDialogTrigger>
-                                        <AlertDialogContent>
+                                        <AlertDialogContent className="sm:max-w-md">
                                           <AlertDialogHeader>
-                                            <AlertDialogTitle>Accept Order</AlertDialogTitle>
+                                            <AlertDialogTitle className="flex items-center space-x-2">
+                                              <CheckCircle className="w-5 h-5 text-green-600" />
+                                              <span>Accept Order</span>
+                                            </AlertDialogTitle>
                                             <AlertDialogDescription>
                                               Are you sure you want to accept order {order.orderId}? This will mark the order as completed and cannot be undone.
-                                              <div className="mt-3 p-3 bg-gray-50 rounded">
-                                                <p><strong>Customer:</strong> {order.fullName}</p>
-                                                <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                              <div className="mt-4 p-4 bg-slate-50 rounded-lg border">
+                                                <div className="space-y-2 text-sm">
+                                                  <div><span className="font-medium text-slate-700">Customer:</span> {order.fullName}</div>
+                                                  <div><span className="font-medium text-slate-700">Transaction:</span> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</div>
+                                                </div>
                                               </div>
                                             </AlertDialogDescription>
                                           </AlertDialogHeader>
@@ -781,8 +935,8 @@ export default function AdminDashboard() {
                     </Table>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Exchange Rates Management */}
