@@ -161,12 +161,12 @@ export default function Exchange() {
   const [formKey, setFormKey] = useState(0);
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
-  const [dynamicLimits, setDynamicLimits] = useState({
-    minSendAmount: 25,
-    maxSendAmount: 7500,
-    minReceiveAmount: 24.50,
-    maxReceiveAmount: 7350,
-  });
+  const [dynamicLimits, setDynamicLimits] = useState<{
+    minSendAmount: number;
+    maxSendAmount: number;
+    minReceiveAmount: number;
+    maxReceiveAmount: number;
+  } | null>(null); // Start with null to force waiting for real data
 
   // Initialize form data memory for auto-save functionality
   const { 
@@ -213,6 +213,10 @@ export default function Exchange() {
 
   // Create a dynamic form resolver that always uses current limits
   const getDynamicResolver = useCallback(() => {
+    if (!dynamicLimits) {
+      // Return a basic resolver while waiting for real data
+      return zodResolver(createExchangeFormSchema(0, 999999, 0, 999999));
+    }
     return zodResolver(createExchangeFormSchema(
       dynamicLimits.minSendAmount, 
       dynamicLimits.maxSendAmount,
@@ -355,6 +359,9 @@ export default function Exchange() {
     refetchInterval: 1000, // Refresh every 1 second for immediate admin rate updates
     staleTime: 0, // Always consider data stale to get latest rates
     gcTime: 0, // Don't cache for garbage collection
+    refetchOnMount: true, // CRITICAL: Always fetch fresh data on page load/refresh
+    refetchOnWindowFocus: true, // Fetch when returning to page
+    retry: 3, // Ensure we get the data
   });
 
   // Update exchange rate and recalculate amounts in both directions
@@ -601,19 +608,19 @@ export default function Exchange() {
       const receiveAmount = parseFloat(data.receiveAmount);
       
       // Enforce dynamic max limits at submission time to prevent bypass
-      if (sendAmount > dynamicLimits.maxSendAmount) {
+      if (dynamicLimits && sendAmount > dynamicLimits.maxSendAmount) {
         throw new Error(`Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}. Current max is calculated as: Max Receive ($${dynamicLimits.maxReceiveAmount.toLocaleString()}) ÷ Exchange Rate (${exchangeRate}) = $${dynamicLimits.maxSendAmount.toLocaleString()}`);
       }
       
-      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+      if (dynamicLimits && receiveAmount > dynamicLimits.maxReceiveAmount) {
         throw new Error(`Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}`);
       }
       
-      if (sendAmount < dynamicLimits.minSendAmount) {
+      if (dynamicLimits && sendAmount < dynamicLimits.minSendAmount) {
         throw new Error(`Send amount must be at least $${dynamicLimits.minSendAmount.toFixed(2)}`);
       }
       
-      if (receiveAmount < dynamicLimits.minReceiveAmount) {
+      if (dynamicLimits && receiveAmount < dynamicLimits.minReceiveAmount) {
         throw new Error(`Receive amount must be at least $${dynamicLimits.minReceiveAmount.toFixed(2)}`);
       }
 
@@ -665,31 +672,34 @@ export default function Exchange() {
     const sendAmount = parseFloat(data.sendAmount);
     const receiveAmount = parseFloat(data.receiveAmount);
     
-    // Check against current dynamic max limits
-    if (sendAmount > dynamicLimits.maxSendAmount) {
-      toast({
-        title: "Amount Exceeds Limit",
-        description: `Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}. This limit is calculated as: Max Receive ($${dynamicLimits.maxReceiveAmount.toLocaleString()}) ÷ Exchange Rate (${exchangeRate})`,
-        variant: "destructive",
-      });
-      form.setError('sendAmount', {
-        type: 'manual',
-        message: `Maximum send amount is $${dynamicLimits.maxSendAmount.toLocaleString()}.`
-      });
-      return;
-    }
-    
-    if (receiveAmount > dynamicLimits.maxReceiveAmount) {
-      toast({
-        title: "Amount Exceeds Limit",
-        description: `Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
-        variant: "destructive",
-      });
-      form.setError('receiveAmount', {
-        type: 'manual',
-        message: `Maximum receive amount is $${dynamicLimits.maxReceiveAmount.toLocaleString()}.`
-      });
-      return;
+    // Only validate if limits are loaded
+    if (dynamicLimits) {
+      // Check against current dynamic max limits
+      if (sendAmount > dynamicLimits.maxSendAmount) {
+        toast({
+          title: "Amount Exceeds Limit",
+          description: `Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}. This limit is calculated as: Max Receive ($${dynamicLimits.maxReceiveAmount.toLocaleString()}) ÷ Exchange Rate (${exchangeRate})`,
+          variant: "destructive",
+        });
+        form.setError('sendAmount', {
+          type: 'manual',
+          message: `Maximum send amount is $${dynamicLimits.maxSendAmount.toLocaleString()}.`
+        });
+        return;
+      }
+      
+      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+        toast({
+          title: "Amount Exceeds Limit",
+          description: `Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
+          variant: "destructive",
+        });
+        form.setError('receiveAmount', {
+          type: 'manual',
+          message: `Maximum receive amount is $${dynamicLimits.maxReceiveAmount.toLocaleString()}.`
+        });
+        return;
+      }
     }
     
     createOrderMutation.mutate(data);
