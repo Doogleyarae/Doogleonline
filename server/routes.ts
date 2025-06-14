@@ -404,17 +404,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await updateCurrencyLimits(currency, parseFloat(minAmount), parseFloat(maxAmount));
       
-      // Broadcast currency limit update via WebSocket
-      wsManager.broadcast({
-        type: 'currency_limit_update',
-        data: {
-          currency: currency.toUpperCase(),
-          minAmount: parseFloat(minAmount),
-          maxAmount: parseFloat(maxAmount)
-        },
-        timestamp: new Date().toISOString()
-      });
-      
       res.json({
         currency: currency.toUpperCase(),
         minAmount: parseFloat(minAmount),
@@ -480,19 +469,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await updateCurrencyLimits(currency, min, max);
       
-      // CRITICAL FIX: Broadcast currency limit update via WebSocket
-      wsManager.broadcast({
-        type: 'currency_limit_update',
-        data: {
-          currency: currency.toUpperCase(),
-          minAmount: min,
-          maxAmount: max
-        },
-        timestamp: new Date().toISOString()
-      });
-      
-      console.log(`Currency limits updated via WebSocket: ${currency.toUpperCase()} min=${min}, max=${max}`);
-      
       res.json({
         currency: currency.toUpperCase(),
         minAmount: min,
@@ -500,7 +476,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Currency limits updated successfully"
       });
     } catch (error) {
-      console.error('Currency limit update error:', error);
       res.status(500).json({ message: "Failed to update currency limits" });
     }
   });

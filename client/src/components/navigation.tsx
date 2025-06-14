@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import NotificationsPanel from "@/components/notifications";
@@ -66,10 +66,6 @@ export default function Navigation() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
-                <SheetHeader className="sr-only">
-                  <SheetTitle>Navigation Menu</SheetTitle>
-                  <SheetDescription>Main navigation menu for mobile devices</SheetDescription>
-                </SheetHeader>
                 <div className="flex items-center space-x-2 mb-6 px-3">
                   <img 
                     src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"

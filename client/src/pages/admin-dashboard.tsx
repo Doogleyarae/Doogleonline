@@ -1001,8 +1001,8 @@ export default function AdminDashboard() {
 
                 {/* Transaction Limits Management */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Minimum Transaction Limits</h3>
-                  <p className="text-blue-700 mb-6">Set minimum transaction amounts for each currency</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Transaction Limits Management</h3>
+                  <p className="text-blue-700 mb-6">Set minimum and maximum transaction amounts for each currency</p>
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {paymentMethods.map((method) => (
@@ -1014,23 +1014,43 @@ export default function AdminDashboard() {
                           {method.label}
                         </h4>
                         
-                        <div className="mb-4">
-                          <Label htmlFor={`min-${method.value}`}>Min Amount ($)</Label>
-                          <Input
-                            id={`min-${method.value}`}
-                            type="number"
-                            value={currencyLimits[method.value]?.min || "5"}
-                            onChange={(e) => setCurrencyLimits(prev => ({
-                              ...prev,
-                              [method.value]: {
-                                ...prev[method.value],
-                                min: e.target.value
-                              }
-                            }))}
-                            placeholder="5"
-                            min="0"
-                            step="0.01"
-                          />
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <Label htmlFor={`min-${method.value}`}>Min Amount ($)</Label>
+                            <Input
+                              id={`min-${method.value}`}
+                              type="number"
+                              value={currencyLimits[method.value]?.min || "5"}
+                              onChange={(e) => setCurrencyLimits(prev => ({
+                                ...prev,
+                                [method.value]: {
+                                  ...prev[method.value],
+                                  min: e.target.value
+                                }
+                              }))}
+                              placeholder="5"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`max-${method.value}`}>Max Amount ($)</Label>
+                            <Input
+                              id={`max-${method.value}`}
+                              type="number"
+                              value={currencyLimits[method.value]?.max || "10000"}
+                              onChange={(e) => setCurrencyLimits(prev => ({
+                                ...prev,
+                                [method.value]: {
+                                  ...prev[method.value],
+                                  max: e.target.value
+                                }
+                              }))}
+                              placeholder="10000"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
                         </div>
                         
                         <Button
@@ -1051,17 +1071,17 @@ export default function AdminDashboard() {
                                 queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
                                 
                                 toast({
-                                  title: "✓ Minimum Updated",
-                                  description: `${method.label}: Min $${min}`,
+                                  title: "✓ Limits Updated",
+                                  description: `${method.label}: Min $${min} | Max $${parseFloat(max).toLocaleString()}`,
                                   duration: 4000,
                                 });
                               } else {
-                                throw new Error("Failed to update minimum limit");
+                                throw new Error("Failed to update limits");
                               }
                             } catch (error) {
                               toast({
                                 title: "❌ Update Failed",
-                                description: "Failed to update minimum limit",
+                                description: "Failed to update currency limits",
                                 variant: "destructive",
                               });
                             }
@@ -1069,7 +1089,7 @@ export default function AdminDashboard() {
                           size="sm"
                           className="w-full"
                         >
-                          Update {method.label} Minimum
+                          Update {method.label} Limits
                         </Button>
                       </div>
                     ))}
