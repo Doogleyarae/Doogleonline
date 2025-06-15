@@ -128,10 +128,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined> {
+    // Normalize currency names to uppercase for consistent lookup
+    const fromUpper = from.toUpperCase();
+    const toUpper = to.toUpperCase();
+    
     const [rate] = await db
       .select()
       .from(exchangeRates)
-      .where(and(eq(exchangeRates.fromCurrency, from), eq(exchangeRates.toCurrency, to)));
+      .where(and(eq(exchangeRates.fromCurrency, fromUpper), eq(exchangeRates.toCurrency, toUpper)));
     return rate || undefined;
   }
 
