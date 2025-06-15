@@ -262,6 +262,13 @@ export default function Exchange() {
       receiveMethod
     });
 
+    console.log('CHECKING RATE CONDITIONS:', {
+      sendLimits: !!sendCurrencyLimits,
+      receiveLimits: !!receiveCurrencyLimits,
+      exchangeRate: exchangeRate,
+      conditionMet: !!(sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0)
+    });
+
     // Ensure we have minimum data for rate-based calculation
     if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
       // Calculate rate-based minimum first (works with or without balance data)
@@ -274,7 +281,8 @@ export default function Exchange() {
         rateBasedMinSend: rateBasedMinSend.toFixed(2),
         adminSendMin: sendCurrencyLimits.minAmount,
         effectiveMinSend: effectiveMinSend.toFixed(2),
-        expectedResult: `${receiveCurrencyLimits.minAmount} ÷ ${exchangeRate} = ${(receiveCurrencyLimits.minAmount / exchangeRate).toFixed(2)}`
+        expectedResult: `${receiveCurrencyLimits.minAmount} ÷ ${exchangeRate} = ${(receiveCurrencyLimits.minAmount / exchangeRate).toFixed(2)}`,
+        willUseRateBased: rateBasedMinSend > sendCurrencyLimits.minAmount
       });
 
       // Handle balance-based maximum calculations only if balance data available
@@ -315,6 +323,7 @@ export default function Exchange() {
 
       setDynamicLimits(newLimits);
       console.log(`Rate-based limits applied: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
+      console.log(`APPLYING NEW LIMITS: minSend=${effectiveMinSend.toFixed(2)}, calculated from ${receiveCurrencyLimits.minAmount} ÷ ${exchangeRate} = ${rateBasedMinSend.toFixed(2)}`);
       
       if (balances) {
         const currencyMapping: Record<string, string> = {
