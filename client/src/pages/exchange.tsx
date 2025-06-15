@@ -490,6 +490,7 @@ export default function Exchange() {
 
         // Calculate rate-based minimum send amount
         const rateBasedMinSend = receiveCurrencyLimits.minAmount / rate;
+        // Use the higher of admin minimum or rate-based minimum to ensure both requirements are met
         const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
 
         const newLimits = {
