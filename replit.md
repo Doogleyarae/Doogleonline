@@ -132,6 +132,7 @@ Changelog:
 - June 15, 2025. Fixed critical Send Amount field validation issue - replaced static minimum amounts with rate-based calculations using formula Min Send = max(admin min, receive min ÷ rate), ensuring proper validation like $5 ÷ 0.95 = $5.26 instead of static $5.00. Also resolved EVC Plus synchronization by fixing case-sensitivity in storage layer, enabling proper admin updates to reflect immediately in exchange form
 - June 15, 2025. Implemented comprehensive exchange rate preservation system - when admin updates currency minimum/maximum limits, all exchange rates are automatically preserved and coordinated. Fixed MoneyGo to Zaad rate (1.1) persistence, added rate-based calculations with preserved rates (e.g., $5 ÷ 1.1 = $4.55), and enhanced WebSocket real-time synchronization ensuring currency limits and exchange rates work together seamlessly
 - June 15, 2025. Fixed rate-based minimum calculation to properly respect exchange rates - minimum send amounts now use rate-based calculations when higher than admin minimums. MoneyGo → Zaad now shows $4.55 minimum (calculated from $5 ÷ 1.1) instead of static admin minimum, ensuring receive amounts always meet target currency requirements
+- June 15, 2025. Fixed Balance Management minimum amounts to work with exchange rate coordination - updated Balance Management section to use rate-preserving endpoints ensuring currency limit updates maintain exchange rates. MoneyGo minimum updated to $6 with rate 1.1 preserved, providing proper rate-based validation in exchange form
 
 ## User Preferences
 
