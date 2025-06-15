@@ -246,6 +246,12 @@ export default function Exchange() {
     },
   });
 
+  // Update form resolver when dynamic limits change
+  useEffect(() => {
+    const newResolver = getDynamicResolver();
+    form.trigger(); // Re-validate all fields with new limits
+  }, [dynamicLimits, form, getDynamicResolver]);
+
   // Calculate dynamic limits using wallet balances and admin settings
   useEffect(() => {
     console.log('Checking balance calculation conditions:', {
@@ -256,45 +262,49 @@ export default function Exchange() {
       receiveMethod
     });
 
-    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances) {
-      // Map currency names to match admin dashboard balance keys
-      const currencyMapping: Record<string, string> = {
-        'evc': 'EVCPLUS',
-        'evcplus': 'EVCPLUS',
-        'trc20': 'TRC20',
-        'zaad': 'ZAAD',
-        'sahal': 'SAHAL',
-        'moneygo': 'MONEYGO',
-        'premier': 'PREMIER',
-        'edahab': 'EDAHAB',
-        'trx': 'TRX',
-        'peb20': 'PEB20'
-      };
-      
-      const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
-      const receiveBalance = balances[balanceKey] || 0;
-      
-      // Calculate maximum send amount based on available balance and exchange rate
-      // Max Send = Available Balance ÷ Exchange Rate
-      const balanceBasedMaxSend = receiveBalance / exchangeRate;
-      
-      // Use the smaller of admin limit or balance-based limit for maximum
-      const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
-      const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
-
-      // Calculate minimum send amount based on receive minimum and exchange rate
-      // Min Send = Receive Min ÷ Exchange Rate (to ensure user sends enough to meet receive minimum)
+    // Ensure we have minimum data for rate-based calculation
+    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
+      // Calculate rate-based minimum first (works with or without balance data)
       const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
-      
-      // Use the higher of admin send minimum or rate-based minimum
       const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
       
-      console.log(`RATE CALCULATION DEBUG: 
-        - Receive Min: ${receiveCurrencyLimits.minAmount}
-        - Exchange Rate: ${exchangeRate}
-        - Rate-based Min Send: ${rateBasedMinSend.toFixed(2)}
-        - Admin Send Min: ${sendCurrencyLimits.minAmount}
-        - Effective Min Send: ${effectiveMinSend.toFixed(2)}`);
+      console.log('RATE CALCULATION DEBUG:', {
+        receiveMin: receiveCurrencyLimits.minAmount,
+        exchangeRate: exchangeRate,
+        rateBasedMinSend: rateBasedMinSend.toFixed(2),
+        adminSendMin: sendCurrencyLimits.minAmount,
+        effectiveMinSend: effectiveMinSend.toFixed(2),
+        expectedResult: `${receiveCurrencyLimits.minAmount} ÷ ${exchangeRate} = ${(receiveCurrencyLimits.minAmount / exchangeRate).toFixed(2)}`
+      });
+
+      // Handle balance-based maximum calculations only if balance data available
+      let effectiveMaxSend = sendCurrencyLimits.maxAmount;
+      let effectiveMaxReceive = receiveCurrencyLimits.maxAmount;
+      
+      if (balances) {
+        const currencyMapping: Record<string, string> = {
+          'evc': 'EVCPLUS',
+          'evcplus': 'EVCPLUS',
+          'trc20': 'TRC20',
+          'zaad': 'ZAAD',
+          'sahal': 'SAHAL',
+          'moneygo': 'MONEYGO',
+          'premier': 'PREMIER',
+          'edahab': 'EDAHAB',
+          'trx': 'TRX',
+          'peb20': 'PEB20'
+        };
+        
+        const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+        const receiveBalance = balances[balanceKey] || 0;
+        
+        // Calculate maximum send amount based on available balance and exchange rate
+        const balanceBasedMaxSend = receiveBalance / exchangeRate;
+        
+        // Use the smaller of admin limit or balance-based limit for maximum
+        effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
+        effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+      }
 
       const newLimits = {
         minSendAmount: effectiveMinSend,
