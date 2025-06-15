@@ -180,24 +180,24 @@ export default function Exchange() {
 
   // Fetch admin-configured limits with NO CACHING - always use latest limits
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${sendMethod}`, Date.now()], // Force unique query
+    queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
     staleTime: 0, // No stale time - always fetch fresh
     gcTime: 0, // No garbage collection time - don't cache
     refetchOnWindowFocus: true, // Always refetch when user focuses
     refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   // Fetch admin-configured limits with NO CACHING - always use latest limits
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${receiveMethod}`, Date.now()], // Force unique query
+    queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
     staleTime: 0, // No stale time - always fetch fresh
     gcTime: 0, // No garbage collection time - don't cache
     refetchOnWindowFocus: true, // Always refetch when user focuses
     refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   // Fetch live wallet addresses from admin dashboard
@@ -211,7 +211,7 @@ export default function Exchange() {
 
   // Fetch current balances with NO CACHING - always use latest balance data
   const { data: balances } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances", Date.now()], // Force unique query
+    queryKey: ["/api/admin/balances"],
     staleTime: 0, // No stale time - always fetch fresh
     gcTime: 0, // No garbage collection time - don't cache
     refetchInterval: 5 * 1000, // Refetch every 5 seconds for real-time balance updates
@@ -319,7 +319,7 @@ export default function Exchange() {
 
   // Fetch exchange rate with NO CACHING - always use latest rates
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`, Date.now()], // Force unique query each time
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
     staleTime: 0, // No stale time - always fetch fresh
     gcTime: 0, // No garbage collection time - don't cache
