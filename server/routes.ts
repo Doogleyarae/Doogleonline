@@ -7,8 +7,7 @@ import { wsManager } from "./websocket";
 import { orderProcessor } from "./orderProcessor";
 import { z } from "zod";
 
-// Default fallback exchange rate
-const DEFAULT_EXCHANGE_RATE = 1.0;
+// NO DEFAULT RATES - Only admin-configured rates are allowed
 
 // Database-backed currency limits storage using currency_limits table
 async function getCurrencyLimits(currency: string): Promise<{ min: number; max: number }> {
@@ -100,13 +99,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Fallback to default 1:1 rate only if no admin rate exists
-      res.json({ 
-        rate: DEFAULT_EXCHANGE_RATE, 
-        from: from.toUpperCase(), 
-        to: to.toUpperCase(),
-        fallback: true, // Indicates this is a fallback rate
-        timestamp: Date.now()
+      // NO FALLBACK - Return error if no admin rate configured
+      res.status(404).json({ 
+        message: `No exchange rate configured for ${from.toUpperCase()} to ${to.toUpperCase()}. Admin must configure this rate.`,
+        error: "RATE_NOT_CONFIGURED"
       });
     } catch (error) {
       console.error('Exchange rate fetch error:', error);

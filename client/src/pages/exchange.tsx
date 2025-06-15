@@ -343,20 +343,20 @@ export default function Exchange() {
         console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${exchangeRate}`);
       }
     } else {
-      // Fallback to basic limits if balance data not available
+      // Use admin-configured limits when balance data not available
       if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
-        // Even in fallback, calculate rate-based minimum send amount
+        // Always calculate rate-based minimum send amount using admin settings
         const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
         const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
         
-        const fallbackLimits = {
+        const adminConfiguredLimits = {
           minSendAmount: effectiveMinSend,
           maxSendAmount: sendCurrencyLimits.maxAmount,
           minReceiveAmount: receiveCurrencyLimits.minAmount,
           maxReceiveAmount: receiveCurrencyLimits.maxAmount,
         };
-        setDynamicLimits(fallbackLimits);
-        console.log(`Rate-based limits applied (fallback): Send $${fallbackLimits.minSendAmount.toFixed(2)}-$${fallbackLimits.maxSendAmount.toFixed(2)}, Receive $${fallbackLimits.minReceiveAmount.toFixed(2)}-$${fallbackLimits.maxReceiveAmount.toFixed(2)}`);
+        setDynamicLimits(adminConfiguredLimits);
+        console.log(`Rate-based limits applied (admin-only): Send $${adminConfiguredLimits.minSendAmount.toFixed(2)}-$${adminConfiguredLimits.maxSendAmount.toFixed(2)}, Receive $${adminConfiguredLimits.minReceiveAmount.toFixed(2)}-$${adminConfiguredLimits.maxReceiveAmount.toFixed(2)}`);
       }
     }
   }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
