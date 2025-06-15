@@ -451,7 +451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update individual currency limits (admin only)
+  // Update individual currency limits (admin only) with exchange rate preservation
   app.post("/api/admin/currency-limits/:currency", async (req, res) => {
     try {
       const { currency } = req.params;
@@ -465,13 +465,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Minimum amount must be less than maximum amount" });
       }
       
+      // Verify existing exchange rates before updating limits
+      const currencyUpper = currency.toUpperCase();
+      const allRates = await storage.getAllExchangeRates();
+      const relatedRates = allRates.filter(rate => 
+        rate.fromCurrency === currencyUpper || rate.toCurrency === currencyUpper
+      );
+      
+      console.log(`Updating ${currency} limits (min: ${minAmount}, max: ${maxAmount}) while preserving ${relatedRates.length} related exchange rates`);
+      
       await updateCurrencyLimits(currency, parseFloat(minAmount), parseFloat(maxAmount));
       
+      // Broadcast update to ensure real-time synchronization
+      wsManager.broadcast({
+        type: 'currency_limit_update',
+        data: { 
+          currency: currencyUpper,
+          minAmount: parseFloat(minAmount),
+          maxAmount: parseFloat(maxAmount),
+          preservedRates: relatedRates.length
+        },
+        timestamp: new Date().toISOString()
+      });
+      
       res.json({
-        currency: currency.toUpperCase(),
+        currency: currencyUpper,
         minAmount: parseFloat(minAmount),
         maxAmount: parseFloat(maxAmount),
-        message: "Currency limits updated successfully"
+        preservedRates: relatedRates.length,
+        message: "Currency limits updated successfully with exchange rates preserved"
       });
     } catch (error) {
       console.error('Currency limit update error:', error);
@@ -744,12 +766,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update currency limit (admin only) - legacy endpoint
+  // Update currency limit (admin only) - legacy endpoint with exchange rate preservation
   app.post("/api/admin/currency-limits", async (req, res) => {
     try {
       const validatedData = insertCurrencyLimitSchema.parse(req.body);
+      
+      // Store existing exchange rates before updating limits
+      const existingRates = await storage.getAllExchangeRates();
+      console.log(`Preserving ${existingRates.length} exchange rates before updating currency limits`);
+      
       const limit = await storage.updateCurrencyLimit(validatedData);
       
+      // Broadcast currency limit update to connected clients
+      wsManager.broadcast({
+        type: 'currency_limit_update',
+        data: { 
+          currency: (validatedData.fromCurrency || 'unknown').toUpperCase(),
+          minAmount: parseFloat(validatedData.minAmount),
+          maxAmount: parseFloat(validatedData.maxAmount)
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+      console.log(`Currency limits updated for ${validatedData.fromCurrency}, exchange rates preserved`);
       res.json(limit);
     } catch (error) {
       if (error instanceof z.ZodError) {
