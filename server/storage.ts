@@ -193,6 +193,7 @@ export class DatabaseStorage implements IStorage {
 
   async clearAllCurrencyLimits(): Promise<void> {
     await db.delete(currencyLimits);
+    console.log('Cleared all currency limit overrides from database');
   }
 
   async getWalletAddress(method: string): Promise<WalletAddress | undefined> {
