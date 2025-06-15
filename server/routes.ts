@@ -771,6 +771,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertCurrencyLimitSchema.parse(req.body);
       
+      // Ensure required fields are present
+      if (!validatedData.fromCurrency || !validatedData.toCurrency) {
+        return res.status(400).json({ message: "Currency fields are required" });
+      }
+      
       // Store existing exchange rates before updating limits
       const existingRates = await storage.getAllExchangeRates();
       console.log(`Preserving ${existingRates.length} exchange rates before updating currency limits`);
@@ -781,7 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       wsManager.broadcast({
         type: 'currency_limit_update',
         data: { 
-          currency: (validatedData.fromCurrency || 'unknown').toUpperCase(),
+          currency: validatedData.fromCurrency.toUpperCase(),
           minAmount: parseFloat(validatedData.minAmount),
           maxAmount: parseFloat(validatedData.maxAmount)
         },
