@@ -123,6 +123,7 @@ Changelog:
 - June 14, 2025. Fixed critical performance issue by optimizing API caching strategy - replaced excessive 500ms refetch intervals with 30-minute stale times, disabled automatic refetching, and removed circular dependencies that caused constant re-renders and API calls
 - June 15, 2025. Implemented comprehensive wallet balance workflow system with hold amounts and transaction logging for order status management. Added holdAmount field to orders table and new transactions table with HOLD/RELEASE/PAYOUT transaction types. Updated storage layer with updateOrderStatusWithBalanceLogic method that handles wallet balance changes when orders change status
 - June 15, 2025. Added complete transaction tracking system with API routes (/api/transactions) and new Transactions tab in admin dashboard showing real-time HOLD, RELEASE, and PAYOUT operations with color-coded transaction types and wallet movement visualization
+- June 15, 2025. Simplified Transaction Limits Management in admin dashboard per user request - removed duplicate min/max fields and implemented universal limit range ($5 - $10,000) applied to all payment methods for cleaner interface
 
 ## User Preferences
 

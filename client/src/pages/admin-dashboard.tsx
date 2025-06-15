@@ -1163,125 +1163,27 @@ export default function AdminDashboard() {
 
                 {/* Transaction Limits Management */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Minimum Transaction Limits</h3>
-                  <p className="text-blue-700 mb-6">Set minimum transaction amounts for each currency</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Transaction Limits</h3>
+                  <p className="text-blue-700 mb-6">All currencies use standard range: $5 - $10,000</p>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {paymentMethods.map((method) => (
-                      <div key={method.value} className="bg-white border border-gray-200 rounded-lg p-4">
-                        <h4 className="font-semibold text-lg mb-4 flex items-center">
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                            <DollarSign className="w-4 h-4 text-blue-600" />
-                          </div>
-                          {method.label}
-                        </h4>
-                        
-                        <div className="mb-4">
-                          <Label htmlFor={`min-${method.value}`}>Min Amount ($)</Label>
-                          <Input
-                            id={`min-${method.value}`}
-                            type="number"
-                            value={currencyLimits[method.value]?.min || "5"}
-                            onChange={(e) => setCurrencyLimits(prev => ({
-                              ...prev,
-                              [method.value]: {
-                                ...prev[method.value],
-                                min: e.target.value
-                              }
-                            }))}
-                            placeholder="5"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                        
-                        <Button
-                          onClick={async () => {
-                            const min = currencyLimits[method.value]?.min || "5";
-                            const max = currencyLimits[method.value]?.max || "10000";
-                            
-                            try {
-                              const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
-                                minAmount: min,
-                                maxAmount: max,
-                              });
-                              
-                              if (response.ok) {
-                                // Invalidate multiple caches to refresh the data everywhere
-                                queryClient.invalidateQueries({ queryKey: ["/api/admin/balance-limits"] });
-                                queryClient.invalidateQueries({ queryKey: ["/api/currency-limits"] });
-                                queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
-                                
-                                toast({
-                                  title: "✓ Minimum Updated",
-                                  description: `${method.label}: Min $${min}`,
-                                  duration: 4000,
-                                });
-                              } else {
-                                throw new Error("Failed to update minimum limit");
-                              }
-                            } catch (error) {
-                              toast({
-                                title: "❌ Update Failed",
-                                description: "Failed to update minimum limit",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          size="sm"
-                          className="w-full"
-                        >
-                          Update {method.label} Minimum
-                        </Button>
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-lg mb-2">Universal Limit Range</h4>
+                        <p className="text-gray-600">Applied to all payment methods</p>
                       </div>
-                    ))}
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-900">$5 - $10,000</div>
+                        <p className="text-sm text-gray-600">Minimum - Maximum</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-4 bg-gray-50 rounded">
+                      <p className="text-sm text-gray-700">
+                        <strong>Applies to:</strong> {paymentMethods.map(m => m.label).join(', ')}
+                      </p>
+                    </div>
                   </div>
-                </div>
-
-                {/* Current Settings Overview */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Current Settings Overview</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Currency</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Min Amount</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Max Amount</th>
-                          <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paymentMethods.map((method) => {
-                          const min = currencyLimits[method.value]?.min || "5";
-                          const max = currencyLimits[method.value]?.max || "10000";
-                          return (
-                            <tr key={method.value} className="hover:bg-gray-50">
-                              <td className="border border-gray-300 px-4 py-2 font-medium">{method.label}</td>
-                              <td className="border border-gray-300 px-4 py-2">${min}</td>
-                              <td className="border border-gray-300 px-4 py-2">${max}</td>
-                              <td className="border border-gray-300 px-4 py-2">
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                  Active
-                                </Badge>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Balance Impact Information */}
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <h4 className="font-semibold text-yellow-800 mb-2">Balance Settings Impact</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• Changes apply immediately to new transactions</li>
-                    <li>• Users will see updated limits on the exchange form</li>
-                    <li>• Each currency has its own individual limits</li>
-                    <li>• Existing pending orders are not affected</li>
-                  </ul>
                 </div>
               </CardContent>
             </Card>
