@@ -1221,11 +1221,11 @@ export default function AdminDashboard() {
                                 onClick={async () => {
                                   try {
                                     const minAmount = currencyMinimums[method.value] || 5;
-                                    const response = await apiRequest("POST", "/api/admin/currency-limits", {
-                                      fromCurrency: method.value,
-                                      toCurrency: "default",
-                                      minAmount: minAmount.toString(),
-                                      maxAmount: "999999"
+                                    
+                                    // Use the new coordinated endpoint that preserves exchange rates
+                                    const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
+                                      minAmount: minAmount,
+                                      maxAmount: 10000 // Keep standard maximum
                                     });
                                     
                                     if (response.ok) {
@@ -1233,13 +1233,16 @@ export default function AdminDashboard() {
                                       queryClient.removeQueries({ 
                                         predicate: (query) => {
                                           const key = query.queryKey[0];
-                                          return typeof key === 'string' && key.includes('/api/currency-limits/');
+                                          return typeof key === 'string' && (
+                                            key.includes('/api/currency-limits/') ||
+                                            key.includes('/api/exchange-rate/')
+                                          );
                                         }
                                       });
                                       
                                       toast({
-                                        title: "Minimum Updated - Live Across Platform",
-                                        description: `${method.label} minimum: $${minAmount} (respects exchange rates)`,
+                                        title: "Minimum Updated with Rate Coordination",
+                                        description: `${method.label} minimum: $${minAmount} (exchange rates preserved)`,
                                         duration: 4000,
                                       });
                                     }
@@ -1280,11 +1283,11 @@ export default function AdminDashboard() {
                                 onClick={async () => {
                                   try {
                                     const maxAmount = currencyMaximums[method.value] || 50000;
-                                    const response = await apiRequest("POST", "/api/admin/currency-limits", {
-                                      fromCurrency: method.value,
-                                      toCurrency: "default",
-                                      minAmount: "0",
-                                      maxAmount: maxAmount.toString()
+                                    
+                                    // Use the new coordinated endpoint that preserves exchange rates
+                                    const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
+                                      minAmount: 5, // Keep standard minimum
+                                      maxAmount: maxAmount
                                     });
                                     
                                     if (response.ok) {
@@ -1292,12 +1295,15 @@ export default function AdminDashboard() {
                                       queryClient.removeQueries({ 
                                         predicate: (query) => {
                                           const key = query.queryKey[0];
-                                          return typeof key === 'string' && key.includes('/api/currency-limits/');
+                                          return typeof key === 'string' && (
+                                            key.includes('/api/currency-limits/') ||
+                                            key.includes('/api/exchange-rate/')
+                                          );
                                         }
                                       });
                                       
                                       toast({
-                                        title: "Maximum Updated - Live Across Platform",
+                                        title: "Maximum Updated with Rate Coordination",
                                         description: `${method.label} maximum: $${maxAmount.toLocaleString()} (protects exchange rates)`,
                                         duration: 4000,
                                       });
