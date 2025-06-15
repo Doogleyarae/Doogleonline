@@ -55,6 +55,10 @@ export default function AdminDashboard() {
     min: 5,
     max: 10000
   });
+
+  // State for individual currency minimums and maximums
+  const [currencyMinimums, setCurrencyMinimums] = useState<Record<string, number>>({});
+  const [currencyMaximums, setCurrencyMaximums] = useState<Record<string, number>>({});
   
   // Quick order action mutations
   const acceptOrderMutation = useMutation({
@@ -1138,8 +1142,9 @@ export default function AdminDashboard() {
                         </h4>
                         
                         <div className="space-y-4">
+                          {/* Available Balance */}
                           <div>
-                            <Label htmlFor={`balance-${method.value}`}>Current Balance ($)</Label>
+                            <Label htmlFor={`balance-${method.value}`}>Available Balance ($)</Label>
                             <div className="flex items-center space-x-2">
                               <Input
                                 id={`balance-${method.value}`}
@@ -1164,14 +1169,16 @@ export default function AdminDashboard() {
                                     });
                                     
                                     if (response.ok) {
-                                      queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                                      // Force immediate cache removal for instant updates
+                                      queryClient.removeQueries({ queryKey: ["/api/admin/balances"] });
+                                      queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
                                       
                                       setRecentlyUpdatedBalance(method.value);
                                       setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
                                       
                                       toast({
-                                        title: "✓ Balance Updated",
-                                        description: `${method.label}: $${balance.toLocaleString()}`,
+                                        title: "Balance Updated - Live Across Platform",
+                                        description: `${method.label}: $${balance.toLocaleString()} (affects exchange limits immediately)`,
                                         duration: 4000,
                                       });
                                     } else {
@@ -1193,8 +1200,128 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           
+                          {/* Minimum Amount Override */}
+                          <div>
+                            <Label htmlFor={`min-${method.value}`}>Minimum Amount Override ($)</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                id={`min-${method.value}`}
+                                type="number"
+                                value={currencyMinimums[method.value] || 5}
+                                onChange={(e) => setCurrencyMinimums(prev => ({
+                                  ...prev,
+                                  [method.value]: parseFloat(e.target.value) || 5
+                                }))}
+                                placeholder="5.00"
+                                min="0"
+                                step="0.01"
+                                className="flex-1"
+                              />
+                              <Button
+                                onClick={async () => {
+                                  try {
+                                    const minAmount = currencyMinimums[method.value] || 5;
+                                    const response = await apiRequest("POST", "/api/admin/currency-limits", {
+                                      fromCurrency: method.value,
+                                      toCurrency: "default",
+                                      minAmount: minAmount.toString(),
+                                      maxAmount: "999999"
+                                    });
+                                    
+                                    if (response.ok) {
+                                      // Force immediate cache removal for instant updates
+                                      queryClient.removeQueries({ 
+                                        predicate: (query) => {
+                                          const key = query.queryKey[0];
+                                          return typeof key === 'string' && key.includes('/api/currency-limits/');
+                                        }
+                                      });
+                                      
+                                      toast({
+                                        title: "Minimum Updated - Live Across Platform",
+                                        description: `${method.label} minimum: $${minAmount} (respects exchange rates)`,
+                                        duration: 4000,
+                                      });
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      title: "Update Failed",
+                                      description: "Failed to update minimum amount",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                size="sm"
+                                variant="outline"
+                              >
+                                Set Min
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Maximum Amount Override */}
+                          <div>
+                            <Label htmlFor={`max-${method.value}`}>Maximum Amount Override ($)</Label>
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                id={`max-${method.value}`}
+                                type="number"
+                                value={currencyMaximums[method.value] || 50000}
+                                onChange={(e) => setCurrencyMaximums(prev => ({
+                                  ...prev,
+                                  [method.value]: parseFloat(e.target.value) || 50000
+                                }))}
+                                placeholder="50000.00"
+                                min="0"
+                                step="0.01"
+                                className="flex-1"
+                              />
+                              <Button
+                                onClick={async () => {
+                                  try {
+                                    const maxAmount = currencyMaximums[method.value] || 50000;
+                                    const response = await apiRequest("POST", "/api/admin/currency-limits", {
+                                      fromCurrency: method.value,
+                                      toCurrency: "default",
+                                      minAmount: "0",
+                                      maxAmount: maxAmount.toString()
+                                    });
+                                    
+                                    if (response.ok) {
+                                      // Force immediate cache removal for instant updates
+                                      queryClient.removeQueries({ 
+                                        predicate: (query) => {
+                                          const key = query.queryKey[0];
+                                          return typeof key === 'string' && key.includes('/api/currency-limits/');
+                                        }
+                                      });
+                                      
+                                      toast({
+                                        title: "Maximum Updated - Live Across Platform",
+                                        description: `${method.label} maximum: $${maxAmount.toLocaleString()} (protects exchange rates)`,
+                                        duration: 4000,
+                                      });
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      title: "Update Failed",
+                                      description: "Failed to update maximum amount",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                size="sm"
+                                variant="outline"
+                              >
+                                Set Max
+                              </Button>
+                            </div>
+                          </div>
+                          
                           <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                            Available for outgoing transactions. Orders cannot exceed this amount.
+                            <p><strong>Balance:</strong> Controls maximum outgoing amounts</p>
+                            <p><strong>Limits:</strong> Override balance calculations when needed</p>
+                            <p><strong>Exchange Rate Protection:</strong> All limits respect current rates</p>
                           </div>
                         </div>
                       </div>

@@ -178,24 +178,26 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  // Fetch admin-configured limits for the send currency
+  // Fetch admin-configured limits with NO CACHING - always use latest limits
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${sendMethod}`],
+    queryKey: [`/api/currency-limits/${sendMethod}`, Date.now()], // Force unique query
     enabled: !!sendMethod,
-    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
-    gcTime: 60 * 60 * 1000, // 1 hour
-    refetchOnWindowFocus: false, // Disable automatic refetching
-    refetchOnReconnect: false,
+    staleTime: 0, // No stale time - always fetch fresh
+    gcTime: 0, // No garbage collection time - don't cache
+    refetchOnWindowFocus: true, // Always refetch when user focuses
+    refetchOnReconnect: true, // Always refetch on reconnect
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
-  // Fetch admin-configured limits for the receive currency
+  // Fetch admin-configured limits with NO CACHING - always use latest limits
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
-    queryKey: [`/api/currency-limits/${receiveMethod}`],
+    queryKey: [`/api/currency-limits/${receiveMethod}`, Date.now()], // Force unique query
     enabled: !!receiveMethod,
-    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
-    gcTime: 60 * 60 * 1000, // 1 hour
-    refetchOnWindowFocus: false, // Disable automatic refetching
-    refetchOnReconnect: false,
+    staleTime: 0, // No stale time - always fetch fresh
+    gcTime: 0, // No garbage collection time - don't cache
+    refetchOnWindowFocus: true, // Always refetch when user focuses
+    refetchOnReconnect: true, // Always refetch on reconnect
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   // Fetch live wallet addresses from admin dashboard
@@ -315,14 +317,15 @@ export default function Exchange() {
     });
   }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
 
-  // Fetch exchange rate when methods change
+  // Fetch exchange rate with NO CACHING - always use latest rates
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`, Date.now()], // Force unique query each time
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
-    gcTime: 60 * 60 * 1000, // 1 hour
-    refetchOnWindowFocus: false, // Disable automatic refetching
-    refetchOnReconnect: false,
+    staleTime: 0, // No stale time - always fetch fresh
+    gcTime: 0, // No garbage collection time - don't cache
+    refetchOnWindowFocus: true, // Always refetch when user focuses
+    refetchOnReconnect: true, // Always refetch on reconnect
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
   });
 
   // Update exchange rate and calculate initial receive amount
