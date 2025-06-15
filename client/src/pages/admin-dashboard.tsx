@@ -1164,7 +1164,7 @@ export default function AdminDashboard() {
                 {/* Transaction Limits Management */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                   <h3 className="text-xl font-semibold text-blue-900 mb-4">Transaction Limits</h3>
-                  <p className="text-blue-700 mb-6">All currencies use standard range: $5 - $100,000</p>
+                  <p className="text-blue-700 mb-6">All currencies use standard range: $5 - $10,000</p>
                   
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
                     <div className="flex items-center justify-between">
@@ -1173,7 +1173,7 @@ export default function AdminDashboard() {
                         <p className="text-gray-600">Applied to all payment methods</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-900">$5 - $100,000</div>
+                        <div className="text-2xl font-bold text-blue-900">$5 - $10,000</div>
                         <p className="text-sm text-gray-600">Minimum - Maximum</p>
                       </div>
                     </div>

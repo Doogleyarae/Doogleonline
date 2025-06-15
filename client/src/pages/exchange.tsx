@@ -559,33 +559,34 @@ export default function Exchange() {
       return;
     }
     
-    // Final validation against dynamic limits before submission
+    // Final validation with strict $10,000 limits
     const sendAmount = parseFloat(data.sendAmount);
     const receiveAmount = parseFloat(data.receiveAmount);
+    const STRICT_MAX_LIMIT = 10000;
     
-    // Check against current dynamic max limits
-    if (sendAmount > dynamicLimits.maxSendAmount) {
+    // Enforce strict maximum limits
+    if (sendAmount > STRICT_MAX_LIMIT) {
       toast({
         title: "Amount Exceeds Limit",
-        description: `Maximum send amount: $${dynamicLimits.maxSendAmount.toLocaleString()}`,
+        description: "You can place an order up to $10,000 only. Please enter an amount less than or equal to $10,000.",
         variant: "destructive",
       });
       form.setError('sendAmount', {
         type: 'manual',
-        message: `Maximum send amount: $${dynamicLimits.maxSendAmount.toLocaleString()}`
+        message: "Maximum send amount: $10,000"
       });
       return;
     }
     
-    if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+    if (receiveAmount > STRICT_MAX_LIMIT) {
       toast({
-        title: "Amount Exceeds Limit",
-        description: `Maximum receive amount: $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
+        title: "Amount Exceeds Limit", 
+        description: "You can place an order up to $10,000 only. Please enter an amount less than or equal to $10,000.",
         variant: "destructive",
       });
       form.setError('receiveAmount', {
         type: 'manual',
-        message: `Maximum receive amount: $${dynamicLimits.maxReceiveAmount.toLocaleString()}`
+        message: "Maximum receive amount: $10,000"
       });
       return;
     }
@@ -724,8 +725,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Minimum: $33.00</span>
-                            <span>Maximum: ${dynamicLimits.maxSendAmount.toLocaleString()}</span>
+                            <span>Minimum: $5.00</span>
+                            <span>Maximum: $10,000</span>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -802,8 +803,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Minimum receive amount: $33.00</span>
-                            <span>Maximum: ${dynamicLimits.maxReceiveAmount.toLocaleString()}</span>
+                            <span>Minimum receive amount: $5.00</span>
+                            <span>Maximum: $10,000</span>
                           </div>
                           <FormMessage />
                         </FormItem>
