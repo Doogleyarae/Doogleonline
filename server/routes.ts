@@ -380,10 +380,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update exchange rate (admin only)
+  // Update exchange rate (admin only) with complete data preservation
   app.post("/api/admin/exchange-rates", async (req, res) => {
     try {
       const validatedData = insertExchangeRateSchema.parse(req.body);
+      
+      // Preserve existing currency limits before updating exchange rate
+      const fromCurrency = validatedData.fromCurrency.toLowerCase();
+      const toCurrency = validatedData.toCurrency.toLowerCase();
+      
+      const fromLimits = await getCurrencyLimits(fromCurrency);
+      const toLimits = await getCurrencyLimits(toCurrency);
+      
+      console.log(`Updating exchange rate ${fromCurrency} → ${toCurrency} = ${validatedData.rate} while preserving limits:
+        ${fromCurrency.toUpperCase()}: min $${fromLimits.min}, max $${fromLimits.max}
+        ${toCurrency.toUpperCase()}: min $${toLimits.min}, max $${toLimits.max}`);
+      
       const rate = await storage.updateExchangeRate(validatedData);
       
       // Broadcast exchange rate update to all connected clients via WebSocket
@@ -393,18 +405,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fromCurrency: validatedData.fromCurrency,
           toCurrency: validatedData.toCurrency,
           rate: validatedData.rate,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          preservedLimits: {
+            fromCurrency: { min: fromLimits.min, max: fromLimits.max },
+            toCurrency: { min: toLimits.min, max: toLimits.max }
+          }
         },
         timestamp: new Date().toISOString()
       });
       
       // Also send status notification
       wsManager.notifyStatusChange(
-        `Exchange rate updated: ${validatedData.fromCurrency.toUpperCase()} → ${validatedData.toCurrency.toUpperCase()} = ${validatedData.rate}`,
+        `Exchange rate updated: ${validatedData.fromCurrency.toUpperCase()} → ${validatedData.toCurrency.toUpperCase()} = ${validatedData.rate} (all limits preserved)`,
         'info'
       );
       
-      res.json(rate);
+      res.json({
+        ...rate,
+        preservedLimits: {
+          fromCurrency: { min: fromLimits.min, max: fromLimits.max },
+          toCurrency: { min: toLimits.min, max: toLimits.max }
+        },
+        message: "Exchange rate updated with all currency limits preserved"
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid rate data", errors: error.errors });

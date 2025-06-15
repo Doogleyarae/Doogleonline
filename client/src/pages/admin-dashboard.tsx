@@ -302,14 +302,21 @@ export default function AdminDashboard() {
       // Invalidate balances to ensure all calculations are updated
       queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
       
+      // Show detailed preservation confirmation
+      const preservedInfo = data.preservedLimits ? 
+        `\nPreserved: ${variables.fromCurrency.toUpperCase()} ($${data.preservedLimits.fromCurrency.min}-$${data.preservedLimits.fromCurrency.max}), ${variables.toCurrency.toUpperCase()} ($${data.preservedLimits.toCurrency.min}-$${data.preservedLimits.toCurrency.max})` : 
+        '';
+      
       toast({
-        title: "Exchange Rate Updated",
-        description: `Rate for ${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} set to ${variables.rate}. All calculations updated instantly.`,
+        title: "✓ Exchange Rate Updated - All Data Preserved",
+        description: `Rate: ${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} = ${variables.rate}${preservedInfo}`,
+        duration: 6000,
       });
       
-      setFromCurrency("");
-      setToCurrency("");
-      setExchangeRate("");
+      // Keep form data for easy editing - don't clear fields
+      // setFromCurrency("");
+      // setToCurrency("");
+      // setExchangeRate("");
     },
     onError: (error: any) => {
       toast({
