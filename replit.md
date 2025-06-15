@@ -124,6 +124,7 @@ Changelog:
 - June 15, 2025. Implemented comprehensive wallet balance workflow system with hold amounts and transaction logging for order status management. Added holdAmount field to orders table and new transactions table with HOLD/RELEASE/PAYOUT transaction types. Updated storage layer with updateOrderStatusWithBalanceLogic method that handles wallet balance changes when orders change status
 - June 15, 2025. Added complete transaction tracking system with API routes (/api/transactions) and new Transactions tab in admin dashboard showing real-time HOLD, RELEASE, and PAYOUT operations with color-coded transaction types and wallet movement visualization
 - June 15, 2025. Simplified Transaction Limits Management in admin dashboard per user request - removed duplicate min/max fields and implemented universal limit range ($5 - $10,000) applied to all payment methods for cleaner interface
+- June 15, 2025. Cleaned up exchange form validation messages per user request - removed confusing "greater than or equal to" text and simplified all limit displays to show clean format like "Minimum receive amount: $33.00" without complex calculation explanations
 
 ## User Preferences
 
