@@ -58,6 +58,14 @@ async function updateCurrencyLimits(currency: string, min: number, max: number):
   }
 }
 
+// Function to update universal defaults
+let universalDefaults = { min: 5, max: 10000 };
+
+async function updateUniversalDefaults(min: number, max: number): Promise<void> {
+  universalDefaults = { min, max };
+  console.log(`Updated universal defaults: min=${min}, max=${max}`);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get exchange rate with bidirectional support and no-cache headers
@@ -295,6 +303,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(transactions);
     } catch (error) {
       res.status(500).json({ message: "Failed to get transactions" });
+    }
+  });
+
+  // Update universal transaction limits
+  app.post("/api/admin/universal-limits", async (req, res) => {
+    try {
+      const { min, max } = req.body;
+      
+      if (!min || !max || min >= max || min < 0 || max < 0) {
+        return res.status(400).json({ message: "Invalid limit values" });
+      }
+
+      // Update all currency defaults by clearing database overrides
+      // This forces the system to use the new server defaults
+      await storage.clearAllCurrencyLimits();
+      
+      // Update server defaults
+      await updateUniversalDefaults(min, max);
+      
+      // Broadcast update to all connected clients
+      wsManager.broadcast({
+        type: 'currency_limit_update',
+        data: { min, max },
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ min, max, message: "Universal limits updated successfully" });
+    } catch (error) {
+      console.error('Universal limits update error:', error);
+      res.status(500).json({ message: "Failed to update universal limits" });
     }
   });
 

@@ -50,6 +50,12 @@ export default function AdminDashboard() {
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
   const [newStatus, setNewStatus] = useState<string>("");
   
+  // State for universal transaction limits
+  const [universalLimits, setUniversalLimits] = useState({
+    min: 5,
+    max: 10000
+  });
+  
   // Quick order action mutations
   const acceptOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
@@ -434,6 +440,41 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  // Universal limits update mutation
+  const updateLimitsMutation = useMutation({
+    mutationFn: async ({ min, max }: { min: number; max: number }) => {
+      const response = await apiRequest("POST", "/api/admin/universal-limits", { min, max });
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/currency-limits"] });
+      toast({
+        title: "Limits Updated",
+        description: `Universal limits updated: $${data.min} - $${data.max}`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Universal limits update error:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update universal limits",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateUniversalLimits = () => {
+    if (universalLimits.min >= universalLimits.max) {
+      toast({
+        title: "Invalid Range",
+        description: "Minimum amount must be less than maximum amount",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateLimitsMutation.mutate(universalLimits);
+  };
 
   const handleWalletUpdate = (method: string, address: string) => {
     if (!address.trim()) {
@@ -1163,19 +1204,56 @@ export default function AdminDashboard() {
 
                 {/* Transaction Limits Management */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Transaction Limits</h3>
-                  <p className="text-blue-700 mb-6">All currencies use standard range: $5 - $10,000</p>
+                  <h3 className="text-xl font-semibold text-blue-900 mb-4">Universal Transaction Limits</h3>
+                  <p className="text-blue-700 mb-6">Configure minimum and maximum order amounts for all payment methods</p>
                   
                   <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="font-semibold text-lg mb-2">Universal Limit Range</h4>
-                        <p className="text-gray-600">Applied to all payment methods</p>
+                        <Label htmlFor="universal-min">Minimum Order Amount ($)</Label>
+                        <Input
+                          id="universal-min"
+                          type="number"
+                          value={universalLimits.min}
+                          onChange={(e) => setUniversalLimits(prev => ({
+                            ...prev,
+                            min: parseFloat(e.target.value) || 0
+                          }))}
+                          placeholder="5"
+                          min="1"
+                          step="0.01"
+                          className="mt-2"
+                        />
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-900">$5 - $10,000</div>
-                        <p className="text-sm text-gray-600">Minimum - Maximum</p>
+                      <div>
+                        <Label htmlFor="universal-max">Maximum Order Amount ($)</Label>
+                        <Input
+                          id="universal-max"
+                          type="number"
+                          value={universalLimits.max}
+                          onChange={(e) => setUniversalLimits(prev => ({
+                            ...prev,
+                            max: parseFloat(e.target.value) || 0
+                          }))}
+                          placeholder="10000"
+                          min="1"
+                          step="0.01"
+                          className="mt-2"
+                        />
                       </div>
+                    </div>
+                    
+                    <div className="mt-6 flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        Current Range: <span className="font-semibold">${universalLimits.min} - ${universalLimits.max.toLocaleString()}</span>
+                      </div>
+                      <Button 
+                        onClick={updateUniversalLimits}
+                        disabled={updateLimitsMutation.isPending}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {updateLimitsMutation.isPending ? "Updating..." : "Update Limits"}
+                      </Button>
                     </div>
                     
                     <div className="mt-4 p-4 bg-gray-50 rounded">

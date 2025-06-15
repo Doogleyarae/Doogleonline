@@ -27,6 +27,7 @@ export interface IStorage {
   getCurrencyLimit(from: string, to: string): Promise<CurrencyLimit | undefined>;
   getAllCurrencyLimits(): Promise<CurrencyLimit[]>;
   updateCurrencyLimit(limit: InsertCurrencyLimit): Promise<CurrencyLimit>;
+  clearAllCurrencyLimits(): Promise<void>;
   
   // Wallet address methods
   getWalletAddress(method: string): Promise<WalletAddress | undefined>;
