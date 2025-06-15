@@ -207,13 +207,14 @@ export default function Exchange() {
     refetchOnReconnect: false,
   });
 
-  // Fetch current balances to enforce balance-based limits
+  // Fetch current balances to enforce balance-based limits with frequent updates
   const { data: balances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    staleTime: 30 * 60 * 1000, // 30 minutes - much longer caching
-    gcTime: 60 * 60 * 1000, // 1 hour
-    refetchOnWindowFocus: false, // Disable automatic refetching
-    refetchOnReconnect: false,
+    staleTime: 5 * 1000, // 5 seconds - fresh balance data
+    gcTime: 60 * 1000, // 1 minute
+    refetchInterval: 10 * 1000, // Refetch every 10 seconds
+    refetchOnWindowFocus: true, // Refetch when user focuses window
+    refetchOnReconnect: true,
   });
 
   // Create a dynamic form resolver that always uses current limits
@@ -243,21 +244,32 @@ export default function Exchange() {
     },
   });
 
-  // Use admin-configured universal limits for real-time updates
+  // Calculate dynamic limits using wallet balances and admin settings
   useEffect(() => {
-    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
-      // Use the admin-configured limits directly (they're already universal)
+    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances) {
+      // Get current wallet balance for receive currency (what we pay out)
+      const receiveBalance = balances[receiveMethod.toUpperCase()] || 0;
+      
+      // Calculate maximum send amount based on available balance and exchange rate
+      // Max Send = Available Balance ÷ Exchange Rate
+      const balanceBasedMaxSend = receiveBalance / exchangeRate;
+      
+      // Use the smaller of admin limit or balance-based limit for maximum
+      const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
+      const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+
       const newLimits = {
         minSendAmount: sendCurrencyLimits.minAmount,
-        maxSendAmount: sendCurrencyLimits.maxAmount,
+        maxSendAmount: effectiveMaxSend,
         minReceiveAmount: receiveCurrencyLimits.minAmount,
-        maxReceiveAmount: receiveCurrencyLimits.maxAmount,
+        maxReceiveAmount: effectiveMaxReceive,
       };
 
       setDynamicLimits(newLimits);
-      console.log(`Universal limits applied: Send $${newLimits.minSendAmount}-$${newLimits.maxSendAmount}, Receive $${newLimits.minReceiveAmount}-$${newLimits.maxReceiveAmount}`);
+      console.log(`Balance-based limits applied: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
+      console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${exchangeRate}`);
     }
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
 
   // Save state whenever any exchange value changes
   useEffect(() => {
