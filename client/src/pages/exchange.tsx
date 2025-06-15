@@ -255,8 +255,22 @@ export default function Exchange() {
     });
 
     if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances) {
-      // Get current wallet balance for receive currency (what we pay out)
-      const receiveBalance = balances[receiveMethod.toUpperCase()] || 0;
+      // Map currency names to match admin dashboard balance keys
+      const currencyMapping: Record<string, string> = {
+        'evc': 'EVCPLUS',
+        'evcplus': 'EVCPLUS',
+        'trc20': 'TRC20',
+        'zaad': 'ZAAD',
+        'sahal': 'SAHAL',
+        'moneygo': 'MONEYGO',
+        'premier': 'PREMIER',
+        'edahab': 'EDAHAB',
+        'trx': 'TRX',
+        'peb20': 'PEB20'
+      };
+      
+      const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+      const receiveBalance = balances[balanceKey] || 0;
       
       // Calculate maximum send amount based on available balance and exchange rate
       // Max Send = Available Balance ÷ Exchange Rate
@@ -331,7 +345,22 @@ export default function Exchange() {
       
       // Immediately trigger balance-based limit calculation with new rate
       if (sendCurrencyLimits && receiveCurrencyLimits && balances) {
-        const receiveBalance = balances[receiveMethod.toUpperCase()] || 0;
+        // Map currency names to match admin dashboard balance keys
+        const currencyMapping: Record<string, string> = {
+          'evc': 'EVCPLUS',
+          'evcplus': 'EVCPLUS',
+          'trc20': 'TRC20',
+          'zaad': 'ZAAD',
+          'sahal': 'SAHAL',
+          'moneygo': 'MONEYGO',
+          'premier': 'PREMIER',
+          'edahab': 'EDAHAB',
+          'trx': 'TRX',
+          'peb20': 'PEB20'
+        };
+        
+        const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+        const receiveBalance = balances[balanceKey] || 0;
         const balanceBasedMaxSend = receiveBalance / rate;
         const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
         const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
