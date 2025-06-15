@@ -282,8 +282,22 @@ export default function Exchange() {
       const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
       const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
 
+      // Calculate minimum send amount based on receive minimum and exchange rate
+      // Min Send = Receive Min ÷ Exchange Rate (to ensure user sends enough to meet receive minimum)
+      const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
+      
+      // Use the higher of admin send minimum or rate-based minimum
+      const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
+      
+      console.log(`RATE CALCULATION DEBUG: 
+        - Receive Min: ${receiveCurrencyLimits.minAmount}
+        - Exchange Rate: ${exchangeRate}
+        - Rate-based Min Send: ${rateBasedMinSend.toFixed(2)}
+        - Admin Send Min: ${sendCurrencyLimits.minAmount}
+        - Effective Min Send: ${effectiveMinSend.toFixed(2)}`);
+
       const newLimits = {
-        minSendAmount: sendCurrencyLimits.minAmount,
+        minSendAmount: effectiveMinSend,
         maxSendAmount: effectiveMaxSend,
         minReceiveAmount: receiveCurrencyLimits.minAmount,
         maxReceiveAmount: effectiveMaxReceive,
@@ -294,15 +308,19 @@ export default function Exchange() {
       console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${exchangeRate}`);
     } else {
       // Fallback to basic limits if balance data not available
-      if (sendCurrencyLimits && receiveCurrencyLimits) {
+      if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
+        // Even in fallback, calculate rate-based minimum send amount
+        const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
+        const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
+        
         const fallbackLimits = {
-          minSendAmount: sendCurrencyLimits.minAmount,
+          minSendAmount: effectiveMinSend,
           maxSendAmount: sendCurrencyLimits.maxAmount,
           minReceiveAmount: receiveCurrencyLimits.minAmount,
           maxReceiveAmount: receiveCurrencyLimits.maxAmount,
         };
         setDynamicLimits(fallbackLimits);
-        console.log(`Universal limits applied: Send $${fallbackLimits.minSendAmount}-$${fallbackLimits.maxSendAmount}, Receive $${fallbackLimits.minReceiveAmount}-$${fallbackLimits.maxReceiveAmount}`);
+        console.log(`Rate-based limits applied (fallback): Send $${fallbackLimits.minSendAmount.toFixed(2)}-$${fallbackLimits.maxSendAmount.toFixed(2)}, Receive $${fallbackLimits.minReceiveAmount.toFixed(2)}-$${fallbackLimits.maxReceiveAmount.toFixed(2)}`);
       }
     }
   }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
@@ -368,13 +386,12 @@ export default function Exchange() {
       };
 
       ws.onclose = () => {
-        console.log('WebSocket connection closed');
-        // Reconnect after 3 seconds for continuous real-time updates
-        setTimeout(connectWebSocket, 3000);
+        // Reduce reconnection frequency to prevent spam
+        setTimeout(connectWebSocket, 10000);
       };
 
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      ws.onerror = () => {
+        // Silent error handling to reduce console spam
       };
 
       return ws;
