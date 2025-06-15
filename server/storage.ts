@@ -191,6 +191,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async clearAllCurrencyLimits(): Promise<void> {
+    await db.delete(currencyLimits);
+  }
+
   async getWalletAddress(method: string): Promise<WalletAddress | undefined> {
     const [wallet] = await db.select().from(walletAddresses).where(eq(walletAddresses.method, method));
     return wallet || undefined;

@@ -243,29 +243,19 @@ export default function Exchange() {
     },
   });
 
-  // Calculate dynamic limits with strict $10,000 maximum enforcement
+  // Use admin-configured universal limits for real-time updates
   useEffect(() => {
     if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
-      // Enforce strict $10,000 maximum limits regardless of balance or calculations
-      const STRICT_MAX_LIMIT = 10000;
-      const STRICT_MIN_LIMIT = 5;
-      
-      // Always enforce strict maximums regardless of admin settings or calculations
-      const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, STRICT_MIN_LIMIT);
-      const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, STRICT_MAX_LIMIT);
-      
-      const effectiveMinReceive = Math.max(receiveCurrencyLimits.minAmount, STRICT_MIN_LIMIT);
-      const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, STRICT_MAX_LIMIT);
-      
+      // Use the admin-configured limits directly (they're already universal)
       const newLimits = {
-        minSendAmount: effectiveMinSend,
-        maxSendAmount: effectiveMaxSend,
-        minReceiveAmount: effectiveMinReceive,
-        maxReceiveAmount: effectiveMaxReceive,
+        minSendAmount: sendCurrencyLimits.minAmount,
+        maxSendAmount: sendCurrencyLimits.maxAmount,
+        minReceiveAmount: receiveCurrencyLimits.minAmount,
+        maxReceiveAmount: receiveCurrencyLimits.maxAmount,
       };
 
       setDynamicLimits(newLimits);
-      console.log(`Strict limits enforced: Send max = $${effectiveMaxSend}, Receive max = $${effectiveMaxReceive}`);
+      console.log(`Universal limits applied: Send $${newLimits.minSendAmount}-$${newLimits.maxSendAmount}, Receive $${newLimits.minReceiveAmount}-$${newLimits.maxReceiveAmount}`);
     }
   }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate]);
 
@@ -493,26 +483,25 @@ export default function Exchange() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: ExchangeFormData) => {
-      // Strict validation - enforce $10,000 maximum regardless of balance
+      // Use admin-configured limits for validation
       const sendAmount = parseFloat(data.sendAmount);
       const receiveAmount = parseFloat(data.receiveAmount);
-      const STRICT_MAX_LIMIT = 10000;
       
-      // Hard limit enforcement
-      if (sendAmount > STRICT_MAX_LIMIT) {
-        throw new Error(`Send amount cannot exceed $10,000. Please enter an amount less than or equal to $10,000.`);
+      // Validate against current dynamic limits
+      if (sendAmount > dynamicLimits.maxSendAmount) {
+        throw new Error(`Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}. Please enter an amount less than or equal to $${dynamicLimits.maxSendAmount.toLocaleString()}.`);
       }
       
-      if (receiveAmount > STRICT_MAX_LIMIT) {
-        throw new Error(`Receive amount cannot exceed $10,000. Please enter an amount less than or equal to $10,000.`);
+      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+        throw new Error(`Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}. Please enter an amount less than or equal to $${dynamicLimits.maxReceiveAmount.toLocaleString()}.`);
       }
       
-      if (sendAmount < 5) {
-        throw new Error(`Send amount must be at least $5.00`);
+      if (sendAmount < dynamicLimits.minSendAmount) {
+        throw new Error(`Send amount must be at least $${dynamicLimits.minSendAmount.toFixed(2)}`);
       }
       
-      if (receiveAmount < 5) {
-        throw new Error(`Receive amount must be at least $5.00`);
+      if (receiveAmount < dynamicLimits.minReceiveAmount) {
+        throw new Error(`Receive amount must be at least $${dynamicLimits.minReceiveAmount.toFixed(2)}`);
       }
 
       // Get the live payment wallet address from admin dashboard
@@ -559,34 +548,59 @@ export default function Exchange() {
       return;
     }
     
-    // Final validation with strict $10,000 limits
+    // Final validation with admin-configured limits
     const sendAmount = parseFloat(data.sendAmount);
     const receiveAmount = parseFloat(data.receiveAmount);
-    const STRICT_MAX_LIMIT = 10000;
     
-    // Enforce strict maximum limits
-    if (sendAmount > STRICT_MAX_LIMIT) {
+    // Use dynamic limits from admin configuration
+    if (sendAmount > dynamicLimits.maxSendAmount) {
       toast({
         title: "Amount Exceeds Limit",
-        description: "You can place an order up to $10,000 only. Please enter an amount less than or equal to $10,000.",
+        description: `You can place an order up to $${dynamicLimits.maxSendAmount.toLocaleString()} only. Please enter an amount less than or equal to $${dynamicLimits.maxSendAmount.toLocaleString()}.`,
         variant: "destructive",
       });
       form.setError('sendAmount', {
         type: 'manual',
-        message: "Maximum send amount: $10,000"
+        message: `Maximum send amount: $${dynamicLimits.maxSendAmount.toLocaleString()}`
       });
       return;
     }
     
-    if (receiveAmount > STRICT_MAX_LIMIT) {
+    if (receiveAmount > dynamicLimits.maxReceiveAmount) {
       toast({
         title: "Amount Exceeds Limit", 
-        description: "You can place an order up to $10,000 only. Please enter an amount less than or equal to $10,000.",
+        description: `You can place an order up to $${dynamicLimits.maxReceiveAmount.toLocaleString()} only. Please enter an amount less than or equal to $${dynamicLimits.maxReceiveAmount.toLocaleString()}.`,
         variant: "destructive",
       });
       form.setError('receiveAmount', {
         type: 'manual',
-        message: "Maximum receive amount: $10,000"
+        message: `Maximum receive amount: $${dynamicLimits.maxReceiveAmount.toLocaleString()}`
+      });
+      return;
+    }
+    
+    if (sendAmount < dynamicLimits.minSendAmount) {
+      toast({
+        title: "Amount Below Minimum",
+        description: `Minimum send amount is $${dynamicLimits.minSendAmount.toFixed(2)}.`,
+        variant: "destructive",
+      });
+      form.setError('sendAmount', {
+        type: 'manual',
+        message: `Minimum send amount: $${dynamicLimits.minSendAmount.toFixed(2)}`
+      });
+      return;
+    }
+    
+    if (receiveAmount < dynamicLimits.minReceiveAmount) {
+      toast({
+        title: "Amount Below Minimum",
+        description: `Minimum receive amount is $${dynamicLimits.minReceiveAmount.toFixed(2)}.`,
+        variant: "destructive",
+      });
+      form.setError('receiveAmount', {
+        type: 'manual',
+        message: `Minimum receive amount: $${dynamicLimits.minReceiveAmount.toFixed(2)}`
       });
       return;
     }
@@ -614,7 +628,7 @@ export default function Exchange() {
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="text-xs text-center">
                     <span className="text-blue-700 font-medium">Transaction Limits: </span>
-                    <span className="text-blue-600">$5 - $10,000 for all payment methods</span>
+                    <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
                   </div>
                 </div>
               </div>
@@ -687,8 +701,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Minimum: $5.00</span>
-                            <span>Maximum: $10,000</span>
+                            <span>Minimum: ${dynamicLimits.minSendAmount.toFixed(2)}</span>
+                            <span>Maximum: ${dynamicLimits.maxSendAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -765,8 +779,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Minimum receive amount: $5.00</span>
-                            <span>Maximum: $10,000</span>
+                            <span>Minimum receive amount: ${dynamicLimits.minReceiveAmount.toFixed(2)}</span>
+                            <span>Maximum: ${dynamicLimits.maxReceiveAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
