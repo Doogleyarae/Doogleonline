@@ -741,7 +741,6 @@ export default function Exchange() {
                               placeholder="0.00"
                               step="0.01"
                               min="5"
-                              max="10000"
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e);
