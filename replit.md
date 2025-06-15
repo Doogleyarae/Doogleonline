@@ -125,7 +125,7 @@ Changelog:
 - June 15, 2025. Added complete transaction tracking system with API routes (/api/transactions) and new Transactions tab in admin dashboard showing real-time HOLD, RELEASE, and PAYOUT operations with color-coded transaction types and wallet movement visualization
 - June 15, 2025. Simplified Transaction Limits Management in admin dashboard per user request - removed duplicate min/max fields and implemented universal limit range ($5 - $10,000) applied to all payment methods for cleaner interface
 - June 15, 2025. Cleaned up exchange form validation messages per user request - removed confusing "greater than or equal to" text and simplified all limit displays to show clean format like "Minimum receive amount: $33.00" without complex calculation explanations
-- June 15, 2025. Fixed order rejection issue for amounts over $10,000 by increasing maximum currency limits - mobile money currencies now support up to $100,000, cryptocurrencies up to $50,000, eliminating the previous $10,000 barrier that was blocking high-value transactions
+- June 15, 2025. Implemented comprehensive $10,000 maximum limit enforcement across entire system - server defaults, client validation, form display, and admin dashboard all consistently enforce $5-$10,000 range regardless of wallet balances or dynamic calculations, removing all per-currency limit variations and complex dynamic displays
 
 ## User Preferences
 

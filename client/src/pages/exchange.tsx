@@ -611,50 +611,12 @@ export default function Exchange() {
                   <span className="text-sm font-medium text-blue-800">Current Rate:</span>
                   <span className="text-lg font-bold text-blue-900">{rateDisplay}</span>
                 </div>
-                {sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances && (
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    <div className="grid grid-cols-2 gap-4 text-xs mb-3">
-                      <div>
-                        <span className="text-blue-700 font-medium">Send Limits:</span>
-                        <div className="text-blue-600">
-                          ${dynamicLimits.minSendAmount.toFixed(2)} - ${dynamicLimits.maxSendAmount.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-blue-500 mt-1">
-                          Max = ${dynamicLimits.maxReceiveAmount.toLocaleString()} ÷ {exchangeRate}
-                        </div>
-                        <div className="text-xs text-green-600 mt-1">
-                          Min = max(admin min, ${dynamicLimits.minReceiveAmount.toFixed(2)} ÷ {exchangeRate})
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-blue-700 font-medium">Receive Limits:</span>
-                        <div className="text-blue-600">
-                          ${dynamicLimits.minReceiveAmount.toFixed(2)} - ${dynamicLimits.maxReceiveAmount.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-blue-500 mt-1">
-                          Admin configured max
-                        </div>
-                        <div className="text-xs text-green-600 mt-1">
-                          Min = max(admin min, ${dynamicLimits.minSendAmount.toFixed(2)} × {exchangeRate})
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-blue-200">
-                      <div>
-                        <span className="text-blue-700 font-medium">Available Balance:</span>
-                        <div className="text-blue-600">
-                          {receiveMethod?.toUpperCase()}: ${balances[receiveMethod?.toUpperCase()]?.toLocaleString() || '0'}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-blue-700 font-medium">Admin Limits:</span>
-                        <div className="text-blue-600">
-                          Send: ${sendCurrencyLimits.minAmount}-${sendCurrencyLimits.maxAmount.toLocaleString()} | Receive: ${receiveCurrencyLimits.minAmount}-${receiveCurrencyLimits.maxAmount.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <div className="text-xs text-center">
+                    <span className="text-blue-700 font-medium">Transaction Limits: </span>
+                    <span className="text-blue-600">$5 - $10,000 for all payment methods</span>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Send Section */}
