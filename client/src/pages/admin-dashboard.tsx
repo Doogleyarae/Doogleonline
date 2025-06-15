@@ -1220,7 +1220,7 @@ export default function AdminDashboard() {
                               <Button
                                 onClick={async () => {
                                   try {
-                                    const minAmount = currencyMinimums[method.value] || 5;
+                                    const minAmount = currencyMinimums[method.value];
                                     
                                     // Use the new coordinated endpoint that preserves exchange rates
                                     const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
@@ -1277,10 +1277,10 @@ export default function AdminDashboard() {
                               <Input
                                 id={`max-${method.value}`}
                                 type="number"
-                                value={currencyMaximums[method.value] || 50000}
+                                value={currencyMaximums[method.value]}
                                 onChange={(e) => setCurrencyMaximums(prev => ({
                                   ...prev,
-                                  [method.value]: parseFloat(e.target.value) || 50000
+                                  [method.value]: parseFloat(e.target.value)
                                 }))}
                                 placeholder="50000.00"
                                 min="0"
@@ -1290,11 +1290,11 @@ export default function AdminDashboard() {
                               <Button
                                 onClick={async () => {
                                   try {
-                                    const maxAmount = currencyMaximums[method.value] || 50000;
+                                    const maxAmount = currencyMaximums[method.value];
                                     
                                     // Use the new coordinated endpoint that preserves exchange rates
                                     const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
-                                      minAmount: 5, // Keep standard minimum
+                                      minAmount: currencyMinimums[method.value], // Use admin-configured minimum
                                       maxAmount: maxAmount
                                     });
                                     
