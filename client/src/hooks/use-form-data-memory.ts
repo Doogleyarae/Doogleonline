@@ -70,8 +70,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       setSavedData(completeData);
-      const preservedKeys = Object.keys(completeData).filter(key => !!completeData[key]);
-      console.log('Customer data preserved with remind enabled:', preservedKeys);
+      console.log('Customer data preserved with remind enabled');
     } catch (error) {
       console.warn('Failed to save form data:', error);
     }
@@ -105,8 +104,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       try {
         localStorage.setItem(storageKey, JSON.stringify(dataToSave));
         setSavedData(completeCustomerData);
-        const preservedFields = Object.keys(completeCustomerData).filter(key => completeCustomerData[key]);
-        console.log('REMIND ENABLED: All customer information preserved permanently:', preservedFields);
+        console.log('REMIND ENABLED: All customer information preserved permanently');
       } catch (error) {
         console.warn('Failed to save form data:', error);
       }
