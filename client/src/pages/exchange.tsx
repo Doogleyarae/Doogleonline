@@ -314,8 +314,25 @@ export default function Exchange() {
       };
 
       setDynamicLimits(newLimits);
-      console.log(`Balance-based limits applied: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
-      console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${exchangeRate}`);
+      console.log(`Rate-based limits applied: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
+      
+      if (balances) {
+        const currencyMapping: Record<string, string> = {
+          'evc': 'EVCPLUS',
+          'evcplus': 'EVCPLUS',
+          'trc20': 'TRC20',
+          'zaad': 'ZAAD',
+          'sahal': 'SAHAL',
+          'moneygo': 'MONEYGO',
+          'premier': 'PREMIER',
+          'edahab': 'EDAHAB',
+          'trx': 'TRX',
+          'peb20': 'PEB20'
+        };
+        const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+        const receiveBalance = balances[balanceKey] || 0;
+        console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${exchangeRate}`);
+      }
     } else {
       // Fallback to basic limits if balance data not available
       if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
