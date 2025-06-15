@@ -1240,6 +1240,14 @@ export default function AdminDashboard() {
                                         }
                                       });
                                       
+                                      // Force complete cache reset for exchange form updates
+                                      queryClient.clear();
+                                      
+                                      // Force immediate refetch of all currency limits
+                                      setTimeout(() => {
+                                        queryClient.invalidateQueries();
+                                      }, 100);
+                                      
                                       toast({
                                         title: "Minimum Updated with Rate Coordination",
                                         description: `${method.label} minimum: $${minAmount} (exchange rates preserved)`,
