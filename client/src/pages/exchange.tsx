@@ -55,9 +55,9 @@ const paymentMethods = [
 
 const createExchangeFormSchema = (
   minSendAmount: number = 25, 
-  maxSendAmount: number = 7500,
+  maxSendAmount: number = 100000,
   minReceiveAmount: number = 24.50,
-  maxReceiveAmount: number = 7350
+  maxReceiveAmount: number = 100000
 ) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
   receiveMethod: z.string().min(1, "Please select a receive method"),
@@ -163,9 +163,9 @@ export default function Exchange() {
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
   const [dynamicLimits, setDynamicLimits] = useState({
     minSendAmount: 25,
-    maxSendAmount: 7500,
+    maxSendAmount: 100000,
     minReceiveAmount: 24.50,
-    maxReceiveAmount: 7350,
+    maxReceiveAmount: 100000,
   });
 
   // Initialize form data memory for auto-save functionality
