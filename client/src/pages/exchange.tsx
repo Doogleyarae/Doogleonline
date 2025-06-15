@@ -72,8 +72,8 @@ const createExchangeFormSchema = (
       if (!val || val === "") return { message: "Amount is required" };
       const amount = parseFloat(val);
       if (isNaN(amount)) return { message: "Please enter a valid number" };
-      if (amount < minSendAmount) return { message: `Minimum send amount is $${minSendAmount.toFixed(2)}.` };
-      if (amount > maxSendAmount) return { message: `Maximum send amount is $${maxSendAmount.toLocaleString()}.` };
+      if (amount < minSendAmount) return { message: `Minimum send amount: $${minSendAmount.toFixed(2)}` };
+      if (amount > maxSendAmount) return { message: `Maximum send amount: $${maxSendAmount.toLocaleString()}` };
       return { message: "Invalid amount" };
     }
   ),
@@ -88,8 +88,8 @@ const createExchangeFormSchema = (
       if (!val || val === "") return { message: "Amount is required" };
       const amount = parseFloat(val);
       if (isNaN(amount)) return { message: "Please enter a valid number" };
-      if (amount < minReceiveAmount) return { message: `Minimum receive amount is $${minReceiveAmount.toFixed(2)}.` };
-      if (amount > maxReceiveAmount) return { message: `Maximum receive amount is $${maxReceiveAmount.toLocaleString()}.` };
+      if (amount < minReceiveAmount) return { message: `Minimum receive amount: $${minReceiveAmount.toFixed(2)}` };
+      if (amount > maxReceiveAmount) return { message: `Maximum receive amount: $${maxReceiveAmount.toLocaleString()}` };
       return { message: "Invalid amount" };
     }
   ),
@@ -592,12 +592,12 @@ export default function Exchange() {
     if (sendAmount > dynamicLimits.maxSendAmount) {
       toast({
         title: "Amount Exceeds Limit",
-        description: `Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}. This limit is calculated as: Max Receive ($${dynamicLimits.maxReceiveAmount.toLocaleString()}) ÷ Exchange Rate (${exchangeRate})`,
+        description: `Maximum send amount: $${dynamicLimits.maxSendAmount.toLocaleString()}`,
         variant: "destructive",
       });
       form.setError('sendAmount', {
         type: 'manual',
-        message: `Maximum send amount is $${dynamicLimits.maxSendAmount.toLocaleString()}.`
+        message: `Maximum send amount: $${dynamicLimits.maxSendAmount.toLocaleString()}`
       });
       return;
     }
@@ -605,12 +605,12 @@ export default function Exchange() {
     if (receiveAmount > dynamicLimits.maxReceiveAmount) {
       toast({
         title: "Amount Exceeds Limit",
-        description: `Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
+        description: `Maximum receive amount: $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
         variant: "destructive",
       });
       form.setError('receiveAmount', {
         type: 'manual',
-        message: `Maximum receive amount is $${dynamicLimits.maxReceiveAmount.toLocaleString()}.`
+        message: `Maximum receive amount: $${dynamicLimits.maxReceiveAmount.toLocaleString()}`
       });
       return;
     }
@@ -750,8 +750,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: ${dynamicLimits.minSendAmount.toFixed(2)}</span>
-                            <span>Max: ${dynamicLimits.maxSendAmount.toLocaleString()}</span>
+                            <span>Minimum: $33.00</span>
+                            <span>Maximum: ${dynamicLimits.maxSendAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -828,8 +828,8 @@ export default function Exchange() {
                             />
                           </FormControl>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Min: ${dynamicLimits.minReceiveAmount.toFixed(2)}</span>
-                            <span>Max: ${dynamicLimits.maxReceiveAmount.toLocaleString()}</span>
+                            <span>Minimum receive amount: $33.00</span>
+                            <span>Maximum: ${dynamicLimits.maxReceiveAmount.toLocaleString()}</span>
                           </div>
                           <FormMessage />
                         </FormItem>
