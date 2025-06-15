@@ -621,6 +621,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {} as Record<string, number>);
       
+      // Handle EVC Plus currency synchronization - EVCPLUS and EVC should use the same balance
+      if (balanceMap['EVCPLUS'] && !balanceMap['EVC']) {
+        balanceMap['EVC'] = balanceMap['EVCPLUS'];
+      } else if (balanceMap['EVC'] && !balanceMap['EVCPLUS']) {
+        balanceMap['EVCPLUS'] = balanceMap['EVC'];
+      } else if (balanceMap['EVCPLUS'] && balanceMap['EVC']) {
+        // Use the higher balance if both exist (latest update)
+        const maxBalance = Math.max(balanceMap['EVCPLUS'], balanceMap['EVC']);
+        balanceMap['EVC'] = maxBalance;
+        balanceMap['EVCPLUS'] = maxBalance;
+      }
+      
       // Initialize default balances for currencies not in database
       const defaultCurrencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20'];
       defaultCurrencies.forEach(currency => {
@@ -645,9 +657,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Currency and amount are required" });
       }
       
+      const currencyKey = currency.toLowerCase();
       const balance = await storage.updateBalance({ 
-        currency: currency.toLowerCase(), 
+        currency: currencyKey, 
         amount: amount.toString() 
+      });
+      
+      // Handle EVC Plus currency synchronization - when admin updates EVC or EVCPLUS, sync both
+      if (currencyKey === 'evc' || currencyKey === 'evcplus') {
+        // Update both EVC and EVCPLUS to the same value
+        await storage.updateBalance({ 
+          currency: 'evc', 
+          amount: amount.toString() 
+        });
+        await storage.updateBalance({ 
+          currency: 'evcplus', 
+          amount: amount.toString() 
+        });
+      }
+      
+      // Broadcast balance update to all connected clients for real-time updates
+      wsManager.broadcast({
+        type: 'balance_update',
+        data: { 
+          currency: balance.currency.toUpperCase(), 
+          amount: parseFloat(balance.amount) 
+        },
+        timestamp: new Date().toISOString()
       });
       
       res.json({

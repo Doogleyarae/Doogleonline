@@ -317,6 +317,73 @@ export default function Exchange() {
     });
   }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
 
+  // Set up WebSocket listeners for real-time admin updates (EVC Plus synchronization)
+  useEffect(() => {
+    const connectWebSocket = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected for real-time updates');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          
+          // Handle balance updates from admin dashboard
+          if (message.type === 'balance_update') {
+            console.log('Real-time balance update received:', message.data);
+            // Force refetch all balance-dependent queries
+            queryClient.removeQueries({ queryKey: ["/api/admin/balances"] });
+            queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+          }
+          
+          // Handle exchange rate updates from admin dashboard  
+          if (message.type === 'exchange_rate_update') {
+            console.log('Real-time exchange rate update received:', message.data);
+            // Force refetch all rate-dependent queries
+            queryClient.removeQueries({ 
+              predicate: (query) => {
+                const key = query.queryKey[0];
+                return typeof key === 'string' && key.includes('/api/exchange-rate');
+              }
+            });
+          }
+          
+          // Handle currency limit updates from admin dashboard
+          if (message.type === 'currency_limit_update') {
+            console.log('Real-time currency limit update received:', message.data);
+            // Force refetch all limit-dependent queries
+            queryClient.removeQueries({ 
+              predicate: (query) => {
+                const key = query.queryKey[0];
+                return typeof key === 'string' && key.includes('/api/currency-limits');
+              }
+            });
+          }
+        } catch (error) {
+          console.error('WebSocket message parsing error:', error);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket connection closed');
+        // Reconnect after 3 seconds for continuous real-time updates
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      return ws;
+    };
+
+    const ws = connectWebSocket();
+    return () => ws.close();
+  }, [queryClient]);
+
   // Fetch exchange rate with NO CACHING - always use latest rates
   const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],

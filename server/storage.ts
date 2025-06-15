@@ -239,8 +239,9 @@ export class DatabaseStorage implements IStorage {
   async updateBalance(insertBalance: InsertBalance): Promise<Balance> {
     const existing = await this.getBalance(insertBalance.currency);
     
+    let balance: Balance;
     if (existing) {
-      const [balance] = await db
+      const [updatedBalance] = await db
         .update(balances)
         .set({ 
           amount: insertBalance.amount, 
@@ -248,14 +249,40 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(balances.id, existing.id))
         .returning();
-      return balance;
+      balance = updatedBalance;
     } else {
-      const [balance] = await db
+      const [newBalance] = await db
         .insert(balances)
         .values(insertBalance)
         .returning();
-      return balance;
+      balance = newBalance;
     }
+    
+    // Handle EVC Plus currency synchronization - when updating EVC or EVCPLUS, sync both
+    const currency = insertBalance.currency.toLowerCase();
+    if (currency === 'evc' || currency === 'evcplus') {
+      const syncCurrency = currency === 'evc' ? 'evcplus' : 'evc';
+      const syncExisting = await this.getBalance(syncCurrency);
+      
+      if (syncExisting) {
+        await db
+          .update(balances)
+          .set({ 
+            amount: insertBalance.amount, 
+            updatedAt: new Date() 
+          })
+          .where(eq(balances.id, syncExisting.id));
+      } else {
+        await db
+          .insert(balances)
+          .values({
+            currency: syncCurrency,
+            amount: insertBalance.amount
+          });
+      }
+    }
+    
+    return balance;
   }
 
   async deductBalance(currency: string, amount: number): Promise<Balance | undefined> {
