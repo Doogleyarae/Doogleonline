@@ -488,8 +488,12 @@ export default function Exchange() {
         const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
         const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
 
+        // Calculate rate-based minimum send amount
+        const rateBasedMinSend = receiveCurrencyLimits.minAmount / rate;
+        const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
+
         const newLimits = {
-          minSendAmount: sendCurrencyLimits.minAmount,
+          minSendAmount: effectiveMinSend,
           maxSendAmount: effectiveMaxSend,
           minReceiveAmount: receiveCurrencyLimits.minAmount,
           maxReceiveAmount: effectiveMaxReceive,
@@ -498,6 +502,7 @@ export default function Exchange() {
         setDynamicLimits(newLimits);
         console.log(`Balance-based limits recalculated: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
         console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${rate}`);
+        console.log(`RATE CALCULATION: ${receiveCurrencyLimits.minAmount} ÷ ${rate} = ${rateBasedMinSend.toFixed(2)}, using max(${sendCurrencyLimits.minAmount}, ${rateBasedMinSend.toFixed(2)}) = ${effectiveMinSend.toFixed(2)}`);
       }
       
       // Trigger validation to update max amount limits based on new rate
