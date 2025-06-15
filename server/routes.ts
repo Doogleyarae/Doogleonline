@@ -288,6 +288,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all transactions
+  app.get("/api/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getAllTransactions();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get transactions" });
+    }
+  });
+
+  // Get transactions for a specific order
+  app.get("/api/orders/:orderId/transactions", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const transactions = await storage.getTransactionsByOrder(orderId);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get order transactions" });
+    }
+  });
+
   // Create contact message
   app.post("/api/contact", async (req, res) => {
     try {

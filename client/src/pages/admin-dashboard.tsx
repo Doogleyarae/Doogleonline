@@ -28,7 +28,7 @@ import {
   Clock3,
   AlertCircle,
 } from "lucide-react";
-import type { Order, ContactMessage } from "@shared/schema";
+import type { Order, ContactMessage, Transaction } from "@shared/schema";
 
 const paymentMethods = [
   { value: "zaad", label: "Zaad" },
@@ -211,6 +211,11 @@ export default function AdminDashboard() {
   // Fetch all contact messages
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ContactMessage[]>({
     queryKey: ['/api/contact'],
+  });
+
+  // Fetch all transactions for wallet balance workflow monitoring
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery<Transaction[]>({
+    queryKey: ['/api/transactions'],
   });
 
 
@@ -550,8 +555,9 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
             <TabsTrigger value="limits">Balance Management</TabsTrigger>
             <TabsTrigger value="wallets">Wallet Settings</TabsTrigger>
@@ -783,6 +789,154 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Transactions Log - Wallet Balance Workflow */}
+          <TabsContent value="transactions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <History className="w-5 h-5 mr-2" />
+                  Transaction Log - Wallet Balance Workflow
+                </CardTitle>
+                <p className="text-sm text-gray-600">Monitor HOLD, RELEASE, and PAYOUT transactions for order status changes</p>
+              </CardHeader>
+              <CardContent>
+                {transactionsLoading ? (
+                  <p>Loading transactions...</p>
+                ) : (
+                  <div className="space-y-4">
+                    {transactions.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Order ID</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>From Wallet</TableHead>
+                            <TableHead>To Wallet</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Date</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {transactions
+                            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                            .map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell className="font-mono text-sm">
+                                {transaction.orderId}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={
+                                    transaction.type === 'HOLD' ? 'secondary' :
+                                    transaction.type === 'RELEASE' ? 'outline' :
+                                    transaction.type === 'PAYOUT' ? 'default' : 'destructive'
+                                  }
+                                  className={
+                                    transaction.type === 'HOLD' ? 'bg-yellow-100 text-yellow-800' :
+                                    transaction.type === 'RELEASE' ? 'bg-orange-100 text-orange-800' :
+                                    transaction.type === 'PAYOUT' ? 'bg-green-100 text-green-800' : ''
+                                  }
+                                >
+                                  {transaction.type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold">
+                                {formatCurrency(transaction.amount, transaction.currency)}
+                              </TableCell>
+                              <TableCell>
+                                <span className={
+                                  transaction.fromWallet === 'exchange_wallet' ? 'text-blue-600' :
+                                  transaction.fromWallet === 'hold' ? 'text-yellow-600' :
+                                  'text-gray-600'
+                                }>
+                                  {transaction.fromWallet.replace('_', ' ').toUpperCase()}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span className={
+                                  transaction.toWallet === 'exchange_wallet' ? 'text-blue-600' :
+                                  transaction.toWallet === 'customer_wallet' ? 'text-green-600' :
+                                  transaction.toWallet === 'hold' ? 'text-yellow-600' :
+                                  'text-gray-600'
+                                }>
+                                  {transaction.toWallet.replace('_', ' ').toUpperCase()}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-sm text-gray-600 max-w-xs truncate">
+                                {transaction.description}
+                              </TableCell>
+                              <TableCell className="text-sm text-gray-500">
+                                {formatDate(transaction.createdAt)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <History className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                        <p>No transactions yet</p>
+                        <p className="text-sm">Transactions will appear here when orders change status</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Transaction Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                      <Clock className="w-4 h-4 text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">HOLD Transactions</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {transactions.filter(t => t.type === 'HOLD').length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                      <XCircle className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">RELEASE Transactions</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {transactions.filter(t => t.type === 'RELEASE').length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">PAYOUT Transactions</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {transactions.filter(t => t.type === 'PAYOUT').length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Exchange Rates Management */}

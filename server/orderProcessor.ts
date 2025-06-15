@@ -17,8 +17,8 @@ class OrderProcessor {
       try {
         console.log(`Processing timer completed for order ${orderId}, marking as completed`);
         
-        // Update order status to completed
-        const completedOrder = await storage.updateOrderStatus(orderId, "completed");
+        // Update order status to completed with wallet balance logic
+        const completedOrder = await storage.updateOrderStatusWithBalanceLogic(orderId, "completed");
         
         if (completedOrder) {
           // Send completion email
