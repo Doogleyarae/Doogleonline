@@ -186,7 +186,7 @@ export default function Exchange() {
     gcTime: 0, // No garbage collection time - don't cache
     refetchOnWindowFocus: true, // Always refetch when user focuses
     refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 1000, // Refetch every 1 second for immediate Balance Management updates
   });
 
   // Fetch admin-configured limits with NO CACHING - always use latest limits
@@ -197,7 +197,7 @@ export default function Exchange() {
     gcTime: 0, // No garbage collection time - don't cache
     refetchOnWindowFocus: true, // Always refetch when user focuses
     refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 1000, // Refetch every 1 second for immediate Balance Management updates
   });
 
   // Fetch live wallet addresses from admin dashboard
