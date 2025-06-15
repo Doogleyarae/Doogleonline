@@ -54,10 +54,10 @@ const paymentMethods = [
 ];
 
 const createExchangeFormSchema = (
-  minSendAmount: number = 25, 
-  maxSendAmount: number = 100000,
-  minReceiveAmount: number = 24.50,
-  maxReceiveAmount: number = 100000
+  minSendAmount: number = 5, 
+  maxSendAmount: number = 10000,
+  minReceiveAmount: number = 5,
+  maxReceiveAmount: number = 10000
 ) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
   receiveMethod: z.string().min(1, "Please select a receive method"),
@@ -162,10 +162,10 @@ export default function Exchange() {
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
   const [dynamicLimits, setDynamicLimits] = useState({
-    minSendAmount: 25,
-    maxSendAmount: 100000,
-    minReceiveAmount: 24.50,
-    maxReceiveAmount: 100000,
+    minSendAmount: 5,
+    maxSendAmount: 10000,
+    minReceiveAmount: 5,
+    maxReceiveAmount: 10000,
   });
 
   // Initialize form data memory for auto-save functionality
@@ -243,57 +243,31 @@ export default function Exchange() {
     },
   });
 
-  // Calculate dynamic limits when exchange rate, currency limits, or balances change
+  // Calculate dynamic limits with strict $10,000 maximum enforcement
   useEffect(() => {
-    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances) {
-      // Get admin-configured limits for send currency
-      const adminMinSend = sendCurrencyLimits.minAmount;
-      const adminMaxSend = sendCurrencyLimits.maxAmount;
+    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
+      // Enforce strict $10,000 maximum limits regardless of balance or calculations
+      const STRICT_MAX_LIMIT = 10000;
+      const STRICT_MIN_LIMIT = 5;
       
-      // Get admin-configured limits for receive currency
-      const adminMinReceive = receiveCurrencyLimits.minAmount;
-      const adminMaxReceive = receiveCurrencyLimits.maxAmount;
+      // Always enforce strict maximums regardless of admin settings or calculations
+      const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, STRICT_MIN_LIMIT);
+      const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, STRICT_MAX_LIMIT);
       
-      // Get available balance for receive currency to limit max outgoing amount
-      const receiveBalance = balances[receiveMethod?.toUpperCase()] || 0;
-      
-      // Calculate balance-constrained max receive amount (cannot exceed available balance)
-      const balanceConstrainedMaxReceive = Math.min(adminMaxReceive, receiveBalance);
-      
-      // Dynamic Max Send Calculation: Max Send = Max Receive / Exchange Rate
-      // Priority: Use the calculated value from max receive and rate, not static admin send limit
-      const dynamicMaxSendFromAdminReceive = adminMaxReceive / exchangeRate;
-      const dynamicMaxSendFromBalance = balanceConstrainedMaxReceive / exchangeRate;
-      
-      // Use the dynamic calculation as primary limit (Max Receive ÷ Rate)
-      // Only constrain by balance if it's lower than the calculated value
-      const effectiveMaxSend = Math.min(
-        dynamicMaxSendFromAdminReceive,  // Primary: Max Receive ÷ Rate  
-        dynamicMaxSendFromBalance        // Secondary: Balance constraint
-      );
-      // Note: Removed adminMaxSend constraint to allow dynamic calculation to take precedence
-      
-      // Dynamic Min Send Calculation: Similar to max, but for minimums
-      // Min Send should be the larger of: admin min send OR (admin min receive / rate)
-      const dynamicMinSendFromAdminReceive = adminMinReceive / exchangeRate;
-      const effectiveMinSend = Math.max(adminMinSend, dynamicMinSendFromAdminReceive);
-      
-      // Dynamic Min Receive Calculation: Min Receive = Min Send * Exchange Rate  
-      const dynamicMinReceiveFromSend = effectiveMinSend * exchangeRate;
-      const effectiveMinReceive = Math.max(adminMinReceive, dynamicMinReceiveFromSend);
-      const effectiveMaxReceive = Math.min(adminMaxReceive, balanceConstrainedMaxReceive);
+      const effectiveMinReceive = Math.max(receiveCurrencyLimits.minAmount, STRICT_MIN_LIMIT);
+      const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, STRICT_MAX_LIMIT);
       
       const newLimits = {
         minSendAmount: effectiveMinSend,
-        maxSendAmount: Math.max(effectiveMinSend, effectiveMaxSend), // Ensure max >= min
+        maxSendAmount: effectiveMaxSend,
         minReceiveAmount: effectiveMinReceive,
-        maxReceiveAmount: Math.max(effectiveMinReceive, effectiveMaxReceive), // Ensure max >= min
+        maxReceiveAmount: effectiveMaxReceive,
       };
 
       setDynamicLimits(newLimits);
-      console.log(`Dynamic limits recalculated: Max Send = ${effectiveMaxSend.toFixed(2)} (${adminMaxReceive} ÷ ${exchangeRate})`);
+      console.log(`Strict limits enforced: Send max = $${effectiveMaxSend}, Receive max = $${effectiveMaxReceive}`);
     }
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate]);
 
   // Save state whenever any exchange value changes
   useEffect(() => {
@@ -519,25 +493,26 @@ export default function Exchange() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: ExchangeFormData) => {
-      // Final client-side validation with current dynamic limits
+      // Strict validation - enforce $10,000 maximum regardless of balance
       const sendAmount = parseFloat(data.sendAmount);
       const receiveAmount = parseFloat(data.receiveAmount);
+      const STRICT_MAX_LIMIT = 10000;
       
-      // Enforce dynamic max limits at submission time to prevent bypass
-      if (sendAmount > dynamicLimits.maxSendAmount) {
-        throw new Error(`Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}. Current max is calculated as: Max Receive ($${dynamicLimits.maxReceiveAmount.toLocaleString()}) ÷ Exchange Rate (${exchangeRate}) = $${dynamicLimits.maxSendAmount.toLocaleString()}`);
+      // Hard limit enforcement
+      if (sendAmount > STRICT_MAX_LIMIT) {
+        throw new Error(`Send amount cannot exceed $10,000. Please enter an amount less than or equal to $10,000.`);
       }
       
-      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
-        throw new Error(`Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}`);
+      if (receiveAmount > STRICT_MAX_LIMIT) {
+        throw new Error(`Receive amount cannot exceed $10,000. Please enter an amount less than or equal to $10,000.`);
       }
       
-      if (sendAmount < dynamicLimits.minSendAmount) {
-        throw new Error(`Send amount must be at least $${dynamicLimits.minSendAmount.toFixed(2)}`);
+      if (sendAmount < 5) {
+        throw new Error(`Send amount must be at least $5.00`);
       }
       
-      if (receiveAmount < dynamicLimits.minReceiveAmount) {
-        throw new Error(`Receive amount must be at least $${dynamicLimits.minReceiveAmount.toFixed(2)}`);
+      if (receiveAmount < 5) {
+        throw new Error(`Receive amount must be at least $5.00`);
       }
 
       // Get the live payment wallet address from admin dashboard

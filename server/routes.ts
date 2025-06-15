@@ -25,21 +25,21 @@ async function getCurrencyLimits(currency: string): Promise<{ min: number; max: 
     console.log(`No custom limits found for ${currency}, using defaults`);
   }
   
-  // Default fallback limits - increased maximum amounts
+  // Default fallback limits - enforcing $10,000 maximum
   const defaults: Record<string, { min: number; max: number }> = {
-    zaad: { min: 5, max: 100000 },
-    sahal: { min: 5, max: 100000 },
-    evc: { min: 5, max: 100000 },
-    edahab: { min: 5, max: 100000 },
-    premier: { min: 5, max: 100000 },
-    moneygo: { min: 5, max: 100000 },
-    trx: { min: 1, max: 50000 },
-    trc20: { min: 1, max: 50000 },
-    peb20: { min: 5, max: 100000 },
-    usdc: { min: 5, max: 100000 }
+    zaad: { min: 5, max: 10000 },
+    sahal: { min: 5, max: 10000 },
+    evc: { min: 5, max: 10000 },
+    edahab: { min: 5, max: 10000 },
+    premier: { min: 5, max: 10000 },
+    moneygo: { min: 5, max: 10000 },
+    trx: { min: 1, max: 10000 },
+    trc20: { min: 1, max: 10000 },
+    peb20: { min: 5, max: 10000 },
+    usdc: { min: 5, max: 10000 }
   };
   
-  return defaults[currency.toLowerCase()] || { min: 5, max: 100000 };
+  return defaults[currency.toLowerCase()] || { min: 5, max: 10000 };
 }
 
 // Function to update currency limits in database
