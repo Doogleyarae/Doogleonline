@@ -128,6 +128,7 @@ Changelog:
 - June 15, 2025. Implemented comprehensive $10,000 maximum limit enforcement across entire system - server defaults, client validation, form display, and admin dashboard all consistently enforce $5-$10,000 range regardless of wallet balances or dynamic calculations, removing all per-currency limit variations and complex dynamic displays
 - June 15, 2025. Completed fully functional real-time admin configuration system - universal transaction limits instantly update across platform ($10-$15,000 tested), exchange rates apply immediately to all calculations, form validation uses dynamic admin-configured limits, and WebSocket notifications ensure instant UI synchronization without page refreshes
 - June 15, 2025. Fixed balance-based maximum limit calculation in exchange form - when admin updates wallet balances, exchange form immediately calculates new maximum limits using formula Max Send = Available Balance ÷ Exchange Rate, ensuring orders cannot exceed actual wallet availability (tested with ZAAD $6,800 balance limiting TRC20 sends to $6,181.82)
+- June 15, 2025. Implemented comprehensive balance and rate management system with four key improvements: (1) Admin can edit maximum amounts for all currencies with exchange rate protection, (2) Minimum amount management per currency respecting live exchange rates, (3) Live exchange rate handling with immediate platform updates and no caching delays, (4) Consistent min/max calculations using only latest rates with forced cache removal and real-time data fetching
 
 ## User Preferences
 

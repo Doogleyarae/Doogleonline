@@ -209,12 +209,12 @@ export default function Exchange() {
     refetchOnReconnect: false,
   });
 
-  // Fetch current balances to enforce balance-based limits with frequent updates
+  // Fetch current balances with NO CACHING - always use latest balance data
   const { data: balances } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances"],
-    staleTime: 5 * 1000, // 5 seconds - fresh balance data
-    gcTime: 60 * 1000, // 1 minute
-    refetchInterval: 10 * 1000, // Refetch every 10 seconds
+    queryKey: ["/api/admin/balances", Date.now()], // Force unique query
+    staleTime: 0, // No stale time - always fetch fresh
+    gcTime: 0, // No garbage collection time - don't cache
+    refetchInterval: 5 * 1000, // Refetch every 5 seconds for real-time balance updates
     refetchOnWindowFocus: true, // Refetch when user focuses window
     refetchOnReconnect: true,
   });
