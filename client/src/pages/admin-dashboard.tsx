@@ -308,8 +308,8 @@ export default function AdminDashboard() {
         '';
       
       toast({
-        title: "✓ Exchange Rate Updated - All Data Preserved",
-        description: `Rate: ${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} = ${variables.rate}${preservedInfo}`,
+        title: "✓ NEW DATA PERSISTED - Old Data Replaced",
+        description: `${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} = ${variables.rate} (NEW DATA KEPT)${preservedInfo}`,
         duration: 6000,
       });
       
@@ -1184,8 +1184,8 @@ export default function AdminDashboard() {
                                       setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
                                       
                                       toast({
-                                        title: "Balance Updated - Live Across Platform",
-                                        description: `${method.label}: $${balance.toLocaleString()} (affects exchange limits immediately)`,
+                                        title: "✓ NEW BALANCE PERSISTED - Old Data Replaced",
+                                        description: `${method.label}: $${balance.toLocaleString()} (NEW DATA KEPT, affects limits immediately)`,
                                         duration: 4000,
                                       });
                                     } else {

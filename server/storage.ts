@@ -159,17 +159,26 @@ export class DatabaseStorage implements IStorage {
     const existing = await this.getExchangeRate(insertRate.fromCurrency, insertRate.toCurrency);
     
     if (existing) {
+      // Force replace old data with new data - no merging, complete replacement
       const [rate] = await db
         .update(exchangeRates)
-        .set({ rate: insertRate.rate, updatedAt: new Date() })
+        .set({ 
+          rate: insertRate.rate, 
+          updatedAt: new Date(),
+          fromCurrency: insertRate.fromCurrency,
+          toCurrency: insertRate.toCurrency
+        })
         .where(eq(exchangeRates.id, existing.id))
         .returning();
+      console.log(`REPLACED old exchange rate data: ${existing.rate} → ${insertRate.rate} for ${insertRate.fromCurrency}/${insertRate.toCurrency}`);
       return rate;
     } else {
+      // Insert completely new data
       const [rate] = await db
         .insert(exchangeRates)
         .values(insertRate)
         .returning();
+      console.log(`INSERTED new exchange rate data: ${insertRate.rate} for ${insertRate.fromCurrency}/${insertRate.toCurrency}`);
       return rate;
     }
   }
@@ -188,21 +197,27 @@ export class DatabaseStorage implements IStorage {
     const existing = await this.getCurrencyLimit(insertLimit.fromCurrency, insertLimit.toCurrency);
     
     if (existing) {
+      // Force replace old limit data with new data - complete replacement
       const [limit] = await db
         .update(currencyLimits)
         .set({ 
           minAmount: insertLimit.minAmount, 
           maxAmount: insertLimit.maxAmount, 
-          updatedAt: new Date() 
+          updatedAt: new Date(),
+          fromCurrency: insertLimit.fromCurrency,
+          toCurrency: insertLimit.toCurrency
         })
         .where(eq(currencyLimits.id, existing.id))
         .returning();
+      console.log(`REPLACED old currency limit data: min ${existing.minAmount} → ${insertLimit.minAmount}, max ${existing.maxAmount} → ${insertLimit.maxAmount} for ${insertLimit.fromCurrency}`);
       return limit;
     } else {
+      // Insert completely new limit data
       const [limit] = await db
         .insert(currencyLimits)
         .values(insertLimit)
         .returning();
+      console.log(`INSERTED new currency limit data: min ${insertLimit.minAmount}, max ${insertLimit.maxAmount} for ${insertLimit.fromCurrency}`);
       return limit;
     }
   }
@@ -257,21 +272,26 @@ export class DatabaseStorage implements IStorage {
     
     let balance: Balance;
     if (existing) {
+      // Force replace old balance data with new data - complete replacement
       const [updatedBalance] = await db
         .update(balances)
         .set({ 
           amount: insertBalance.amount, 
-          updatedAt: new Date() 
+          updatedAt: new Date(),
+          currency: insertBalance.currency
         })
         .where(eq(balances.id, existing.id))
         .returning();
       balance = updatedBalance;
+      console.log(`REPLACED old balance data: ${existing.amount} → ${insertBalance.amount} for ${insertBalance.currency}`);
     } else {
+      // Insert completely new balance data
       const [newBalance] = await db
         .insert(balances)
         .values(insertBalance)
         .returning();
       balance = newBalance;
+      console.log(`INSERTED new balance data: ${insertBalance.amount} for ${insertBalance.currency}`);
     }
     
     // Handle EVC Plus currency synchronization - when updating EVC or EVCPLUS, sync both

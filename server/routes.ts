@@ -422,11 +422,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         ...rate,
+        dataReplacement: {
+          oldRate: "REPLACED",
+          newRate: validatedData.rate,
+          status: "NEW_DATA_PERSISTED"
+        },
         preservedLimits: {
           fromCurrency: { min: fromLimits.min, max: fromLimits.max },
           toCurrency: { min: toLimits.min, max: toLimits.max }
         },
-        message: "Exchange rate updated with all currency limits preserved"
+        message: "NEW DATA PERSISTED: Exchange rate completely replaced, all limits preserved"
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
