@@ -438,8 +438,8 @@ export default function AdminDashboard() {
       setRecentlyUpdatedBalance(data.currency.toLowerCase());
       setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
       toast({
-        title: "Balance Updated",
-        description: `${data.currency} balance updated to ${data.amount}`,
+        title: "✓ NEW BALANCE PERSISTED - Old Data Replaced",
+        description: `${data.currency.toUpperCase()}: $${data.amount.toLocaleString()} (NEW DATA KEPT)`,
       });
     },
     onError: (error: any) => {
