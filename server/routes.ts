@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update order status
+  // Update order status with wallet balance management
   app.patch("/api/orders/:orderId/status", async (req, res) => {
     try {
       const { orderId } = req.params;
@@ -227,7 +227,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status" });
       }
       
-      const order = await storage.updateOrderStatus(orderId, status);
+      // Use the new wallet balance workflow logic
+      const order = await storage.updateOrderStatusWithBalanceLogic(orderId, status);
       
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
@@ -243,15 +244,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (status === "paid") {
         // Start 15-minute timer for automatic completion
         orderProcessor.startProcessingTimer(orderId);
-        console.log(`Order ${orderId} marked as paid, starting 15-minute processing timer`);
+        console.log(`Order ${orderId} marked as paid, ${order.holdAmount} ${order.receiveMethod.toUpperCase()} put on hold, starting 15-minute processing timer`);
       } else if (status === "cancelled") {
         // Clear any existing timer for cancelled orders
         orderProcessor.clearTimer(orderId);
-        console.log(`Order ${orderId} cancelled, clearing processing timer`);
+        console.log(`Order ${orderId} cancelled, hold amount released back to exchange wallet`);
+      } else if (status === "completed") {
+        // Clear any existing timer for completed orders
+        orderProcessor.clearTimer(orderId);
+        console.log(`Order ${orderId} completed, ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} transferred to customer wallet`);
       }
       
       res.json(order);
     } catch (error) {
+      console.error('Order status update error:', error);
       res.status(500).json({ message: "Failed to update order status" });
     }
   });

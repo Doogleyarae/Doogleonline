@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -38,6 +38,14 @@ export interface IStorage {
   getAllBalances(): Promise<Balance[]>;
   updateBalance(balance: InsertBalance): Promise<Balance>;
   deductBalance(currency: string, amount: number): Promise<Balance | undefined>;
+  
+  // Transaction methods
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  getTransactionsByOrder(orderId: string): Promise<Transaction[]>;
+  getAllTransactions(): Promise<Transaction[]>;
+  
+  // Order workflow methods with balance management
+  updateOrderStatusWithBalanceLogic(orderId: string, status: string): Promise<Order | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -261,6 +269,138 @@ export class DatabaseStorage implements IStorage {
       currency: currency.toLowerCase(), 
       amount: newAmount.toString() 
     });
+  }
+
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
+    return transaction;
+  }
+
+  async getTransactionsByOrder(orderId: string): Promise<Transaction[]> {
+    return await db.select().from(transactions).where(eq(transactions.orderId, orderId));
+  }
+
+  async getAllTransactions(): Promise<Transaction[]> {
+    return await db.select().from(transactions);
+  }
+
+  async updateOrderStatusWithBalanceLogic(orderId: string, status: string): Promise<Order | undefined> {
+    const order = await this.getOrder(orderId);
+    if (!order) return undefined;
+
+    const receiveAmountNum = parseFloat(order.receiveAmount);
+    const receiveCurrency = order.receiveMethod.toUpperCase();
+
+    // Begin transaction-like logic for balance management
+    try {
+      // Handle status transitions according to workflow
+      if (status === "cancelled") {
+        // C. Admin "Cancel" - Release hold amount back to available balance
+        if (parseFloat(order.holdAmount) > 0) {
+          // Increase available balance by hold amount
+          const currentBalance = await this.getBalance(receiveCurrency);
+          const currentAmount = currentBalance ? parseFloat(currentBalance.amount) : 0;
+          const newAmount = currentAmount + parseFloat(order.holdAmount);
+          
+          await this.updateBalance({
+            currency: receiveCurrency.toLowerCase(),
+            amount: newAmount.toString()
+          });
+
+          // Log the release transaction
+          await this.createTransaction({
+            orderId: order.orderId,
+            type: "RELEASE",
+            currency: receiveCurrency,
+            amount: order.holdAmount,
+            fromWallet: "hold",
+            toWallet: "exchange_wallet",
+            description: `Released ${order.holdAmount} ${receiveCurrency} from hold - order cancelled`
+          });
+
+          // Update order to clear hold amount
+          await db
+            .update(orders)
+            .set({ 
+              status: status, 
+              holdAmount: "0",
+              updatedAt: new Date() 
+            })
+            .where(eq(orders.orderId, orderId));
+        }
+      } else if (status === "completed") {
+        // D. Admin "Completed" - Decrease exchange wallet, increase customer wallet
+        const currentBalance = await this.getBalance(receiveCurrency);
+        const currentAmount = currentBalance ? parseFloat(currentBalance.amount) : 0;
+        const newAmount = currentAmount - receiveAmountNum;
+        
+        // Update exchange wallet balance
+        await this.updateBalance({
+          currency: receiveCurrency.toLowerCase(),
+          amount: newAmount.toString()
+        });
+
+        // Log the payout transaction
+        await this.createTransaction({
+          orderId: order.orderId,
+          type: "PAYOUT",
+          currency: receiveCurrency,
+          amount: receiveAmountNum.toString(),
+          fromWallet: "exchange_wallet",
+          toWallet: "customer_wallet",
+          description: `Payout ${receiveAmountNum} ${receiveCurrency} to customer - order completed`
+        });
+
+        // Update order status and clear hold amount
+        await db
+          .update(orders)
+          .set({ 
+            status: status, 
+            holdAmount: "0",
+            updatedAt: new Date() 
+          })
+          .where(eq(orders.orderId, orderId));
+      } else if (status === "paid") {
+        // When marked as paid, put amount on hold
+        await this.createTransaction({
+          orderId: order.orderId,
+          type: "HOLD",
+          currency: receiveCurrency,
+          amount: receiveAmountNum.toString(),
+          fromWallet: "exchange_wallet",
+          toWallet: "hold",
+          description: `Put ${receiveAmountNum} ${receiveCurrency} on hold - order paid`
+        });
+
+        // Update order with hold amount
+        await db
+          .update(orders)
+          .set({ 
+            status: status, 
+            holdAmount: receiveAmountNum.toString(),
+            updatedAt: new Date() 
+          })
+          .where(eq(orders.orderId, orderId));
+      } else {
+        // For other status changes, just update status
+        await db
+          .update(orders)
+          .set({ 
+            status: status, 
+            updatedAt: new Date() 
+          })
+          .where(eq(orders.orderId, orderId));
+      }
+
+      // Return updated order
+      return await this.getOrder(orderId);
+    } catch (error) {
+      console.error('Error updating order status with balance logic:', error);
+      throw error;
+    }
   }
 }
 

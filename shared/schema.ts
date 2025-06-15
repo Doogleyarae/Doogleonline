@@ -15,6 +15,7 @@ export const orders = pgTable("orders", {
   exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
   status: text("status").notNull().default("pending"), // pending, processing, completed, cancelled, paid
   paymentWallet: text("payment_wallet").notNull(),
+  holdAmount: decimal("hold_amount", { precision: 15, scale: 2 }).notNull().default("0"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -129,3 +130,24 @@ export const insertBalanceSchema = createInsertSchema(balances).omit({
 
 export type InsertBalance = z.infer<typeof insertBalanceSchema>;
 export type Balance = typeof balances.$inferSelect;
+
+// Transactions schema for tracking all wallet movements
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  orderId: text("order_id").notNull(),
+  type: text("type").notNull(), // HOLD, RELEASE, PAYOUT
+  currency: text("currency").notNull(),
+  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  fromWallet: text("from_wallet").notNull(), // exchange_wallet, customer_wallet
+  toWallet: text("to_wallet").notNull(), // exchange_wallet, customer_wallet
+  description: text("description").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Transaction = typeof transactions.$inferSelect;
