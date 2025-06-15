@@ -5,6 +5,10 @@ interface FormData {
   email?: string;
   phoneNumber?: string;
   walletAddress?: string;
+  sendMethod?: string;
+  receiveMethod?: string;
+  sendAmount?: string;
+  receiveAmount?: string;
   [key: string]: any;
 }
 
@@ -44,40 +48,65 @@ export function useFormDataMemory(formKey: string = 'default') {
     }
   }, [storageKey]);
 
-  // Save data to localStorage
+  // Save data to localStorage - enhanced to preserve ALL customer information
   const saveFormData = (data: FormData) => {
     if (!isReminded) return; // Only save if reminded
 
     try {
+      // Ensure all customer data fields are preserved
+      const completeData = {
+        fullName: data.fullName || savedData.fullName || '',
+        email: data.email || savedData.email || '',
+        phoneNumber: data.phoneNumber || savedData.phoneNumber || '',
+        walletAddress: data.walletAddress || savedData.walletAddress || '',
+        ...data // Include any additional fields
+      };
+
       const dataToSave: SavedFormData = {
-        data,
+        data: completeData,
         isReminded: true,
         timestamp: Date.now()
       };
       
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
-      setSavedData(data);
+      setSavedData(completeData);
+      const preservedKeys = Object.keys(completeData).filter(key => !!completeData[key]);
+      console.log('Customer data preserved with remind enabled:', preservedKeys);
     } catch (error) {
       console.warn('Failed to save form data:', error);
     }
   };
 
-  // Toggle remind status with complete data control
+  // Toggle remind status with complete customer data preservation
   const toggleRemind = (currentData?: FormData) => {
     const newRemindStatus = !isReminded;
     setIsReminded(newRemindStatus);
 
     if (newRemindStatus && currentData) {
-      // Save data when remind is enabled
+      // Save ALL customer data when remind is enabled - preserve everything
+      const completeCustomerData = {
+        fullName: currentData.fullName || savedData.fullName || '',
+        email: currentData.email || savedData.email || '',
+        phoneNumber: currentData.phoneNumber || savedData.phoneNumber || '',
+        walletAddress: currentData.walletAddress || savedData.walletAddress || '',
+        sendMethod: currentData.sendMethod || savedData.sendMethod || '',
+        receiveMethod: currentData.receiveMethod || savedData.receiveMethod || '',
+        sendAmount: currentData.sendAmount || savedData.sendAmount || '',
+        receiveAmount: currentData.receiveAmount || savedData.receiveAmount || '',
+        ...currentData // Include any additional fields
+      };
+
       const dataToSave: SavedFormData = {
-        data: currentData,
+        data: completeCustomerData,
         isReminded: true,
         timestamp: Date.now()
       };
       
       try {
         localStorage.setItem(storageKey, JSON.stringify(dataToSave));
-        setSavedData(currentData);
+        setSavedData(completeCustomerData);
+        const preservedFields = Object.keys(completeCustomerData).filter(key => completeCustomerData[key]);
+        console.log('REMIND ENABLED: All customer information preserved permanently:', preservedFields);
       } catch (error) {
         console.warn('Failed to save form data:', error);
       }
@@ -86,6 +115,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       try {
         localStorage.removeItem(storageKey);
         setSavedData({});
+        console.log('REMIND DISABLED: Customer data cleared');
       } catch (error) {
         console.warn('Failed to clear form data:', error);
       }
