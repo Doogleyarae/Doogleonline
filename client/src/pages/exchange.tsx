@@ -246,6 +246,14 @@ export default function Exchange() {
 
   // Calculate dynamic limits using wallet balances and admin settings
   useEffect(() => {
+    console.log('Checking balance calculation conditions:', {
+      sendCurrencyLimits: !!sendCurrencyLimits,
+      receiveCurrencyLimits: !!receiveCurrencyLimits,
+      exchangeRate,
+      balances,
+      receiveMethod
+    });
+
     if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0 && balances) {
       // Get current wallet balance for receive currency (what we pay out)
       const receiveBalance = balances[receiveMethod.toUpperCase()] || 0;
@@ -268,6 +276,18 @@ export default function Exchange() {
       setDynamicLimits(newLimits);
       console.log(`Balance-based limits applied: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
       console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${exchangeRate}`);
+    } else {
+      // Fallback to basic limits if balance data not available
+      if (sendCurrencyLimits && receiveCurrencyLimits) {
+        const fallbackLimits = {
+          minSendAmount: sendCurrencyLimits.minAmount,
+          maxSendAmount: sendCurrencyLimits.maxAmount,
+          minReceiveAmount: receiveCurrencyLimits.minAmount,
+          maxReceiveAmount: receiveCurrencyLimits.maxAmount,
+        };
+        setDynamicLimits(fallbackLimits);
+        console.log(`Universal limits applied: Send $${fallbackLimits.minSendAmount}-$${fallbackLimits.maxSendAmount}, Receive $${fallbackLimits.minReceiveAmount}-$${fallbackLimits.maxReceiveAmount}`);
+      }
     }
   }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
 
@@ -309,12 +329,31 @@ export default function Exchange() {
         saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
       }
       
+      // Immediately trigger balance-based limit calculation with new rate
+      if (sendCurrencyLimits && receiveCurrencyLimits && balances) {
+        const receiveBalance = balances[receiveMethod.toUpperCase()] || 0;
+        const balanceBasedMaxSend = receiveBalance / rate;
+        const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
+        const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+
+        const newLimits = {
+          minSendAmount: sendCurrencyLimits.minAmount,
+          maxSendAmount: effectiveMaxSend,
+          minReceiveAmount: receiveCurrencyLimits.minAmount,
+          maxReceiveAmount: effectiveMaxReceive,
+        };
+
+        setDynamicLimits(newLimits);
+        console.log(`Balance-based limits recalculated: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
+        console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${rate}`);
+      }
+      
       // Trigger validation to update max amount limits based on new rate
       setTimeout(() => {
         form.trigger(['sendAmount', 'receiveAmount']);
       }, 100);
     }
-  }, [rateData, sendMethod, receiveMethod, form, sendAmount]);
+  }, [rateData, sendMethod, receiveMethod, form, sendAmount, sendCurrencyLimits, receiveCurrencyLimits, balances]);
 
   // Force refresh exchange rate when methods change (once per change)
   useEffect(() => {
