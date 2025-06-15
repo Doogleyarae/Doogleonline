@@ -136,6 +136,7 @@ Changelog:
 - June 15, 2025. Resolved Balance Management cache synchronization issue - implemented aggressive cache clearing (queryClient.clear()) and reduced exchange form refetch interval to 1 second ensuring Balance Management updates appear immediately in exchange form. Both MoneyGo and Zaad minimums updated to $6 with exchange rate 1.1 preserved and working rate-based calculations
 - June 15, 2025. Fixed admin data persistence issue - restored configured exchange rate (1.1) that had reverted to fallback (1.0) and ensured all admin changes persist without reverting to old data. Zaad minimum updated to $44 with rate-based calculation working ($44 ÷ 1.1 = $40.00 minimum send), maintaining user's admin configuration preferences
 - June 15, 2025. Implemented complete admin-only configuration system eliminating ALL fallback scenarios - removed DEFAULT_EXCHANGE_RATE constant, eliminated all || 5 and || 50000 fallback values, server returns 404 errors instead of fallback rates, renamed "fallback limits" to "admin-configured limits", ensuring platform ONLY uses admin dashboard settings with zero tolerance for old or default data
+- June 15, 2025. Fixed critical case sensitivity issue in exchange rate lookup causing admin-configured rates to return 404 errors. Implemented flexible database lookup supporting both lowercase and uppercase currency formats, ensuring admin exchange rate and currency limit updates are properly coordinated and preserved together without data loss
 
 ## User Preferences
 
