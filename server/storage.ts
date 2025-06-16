@@ -200,28 +200,34 @@ export class DatabaseStorage implements IStorage {
   async updateCurrencyLimit(insertLimit: InsertCurrencyLimit): Promise<CurrencyLimit> {
     const existing = await this.getCurrencyLimit(insertLimit.fromCurrency, insertLimit.toCurrency);
     
+    // Enforce $10,000 maximum limit at database level
+    const enforceMaxAmount = Math.min(parseFloat(insertLimit.maxAmount), 10000).toString();
+    
     if (existing) {
-      // Force replace old limit data with new data - complete replacement
+      // Force replace old limit data with new data - complete replacement with $10,000 enforcement
       const [limit] = await db
         .update(currencyLimits)
         .set({ 
           minAmount: insertLimit.minAmount, 
-          maxAmount: insertLimit.maxAmount, 
+          maxAmount: enforceMaxAmount, // Use enforced maximum
           updatedAt: new Date(),
           fromCurrency: insertLimit.fromCurrency,
           toCurrency: insertLimit.toCurrency
         })
         .where(eq(currencyLimits.id, existing.id))
         .returning();
-      console.log(`REPLACED old currency limit data: min ${existing.minAmount} → ${insertLimit.minAmount}, max ${existing.maxAmount} → ${insertLimit.maxAmount} for ${insertLimit.fromCurrency}`);
+      console.log(`REPLACED old currency limit data: min ${existing.minAmount} → ${insertLimit.minAmount}, max ${existing.maxAmount} → ${enforceMaxAmount} for ${insertLimit.fromCurrency} (enforced $10,000 maximum)`);
       return limit;
     } else {
-      // Insert completely new limit data
+      // Insert completely new limit data with $10,000 enforcement
       const [limit] = await db
         .insert(currencyLimits)
-        .values(insertLimit)
+        .values({
+          ...insertLimit,
+          maxAmount: enforceMaxAmount // Use enforced maximum
+        })
         .returning();
-      console.log(`INSERTED new currency limit data: min ${insertLimit.minAmount}, max ${insertLimit.maxAmount} for ${insertLimit.fromCurrency}`);
+      console.log(`INSERTED new currency limit data: min ${insertLimit.minAmount}, max ${enforceMaxAmount} for ${insertLimit.fromCurrency} (enforced $10,000 maximum)`);
       return limit;
     }
   }

@@ -1349,15 +1349,17 @@ export default function AdminDashboard() {
                               <Button
                                 onClick={async () => {
                                   try {
-                                    const maxAmount = currencyMaximums[method.value];
+                                    const maxAmount = Math.min(currencyMaximums[method.value] || 10000, 10000); // Enforce $10,000 maximum
                                     
-                                    // Use the new coordinated endpoint that preserves exchange rates
+                                    // Use the new $10,000 enforcement endpoint that preserves exchange rates
                                     const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
-                                      minAmount: currencyMinimums[method.value], // Use admin-configured minimum
+                                      minAmount: currencyMinimums[method.value] || 5,
                                       maxAmount: maxAmount
                                     });
                                     
                                     if (response.ok) {
+                                      const result = await response.json();
+                                      
                                       // Force immediate cache removal for instant updates
                                       queryClient.removeQueries({ 
                                         predicate: (query) => {
@@ -1369,9 +1371,15 @@ export default function AdminDashboard() {
                                         }
                                       });
                                       
+                                      // Update local state to reflect the enforced maximum
+                                      setCurrencyMaximums(prev => ({
+                                        ...prev,
+                                        [method.value]: result.maxAmount || 10000
+                                      }));
+                                      
                                       toast({
-                                        title: "Maximum Updated with Rate Coordination",
-                                        description: `${method.label} maximum: $${maxAmount.toLocaleString()} (protects exchange rates)`,
+                                        title: "Maximum Updated - $10,000 Enforced",
+                                        description: `${method.label}: $${(result.maxAmount || 10000).toLocaleString()} (exchange rates preserved)`,
                                         duration: 4000,
                                       });
                                     }
@@ -1386,7 +1394,7 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="outline"
                               >
-                                Set Max
+                                Set Max ($10K)
                               </Button>
                             </div>
                           </div>

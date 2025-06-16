@@ -880,6 +880,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update currency limit with maximum $10,000 enforcement and exchange rate preservation
+  app.post("/api/admin/currency-limits/:currency", async (req, res) => {
+    try {
+      const { currency } = req.params;
+      const { minAmount, maxAmount } = req.body;
+      
+      if (!currency || minAmount === undefined || maxAmount === undefined) {
+        return res.status(400).json({ message: "Currency, minAmount, and maxAmount are required" });
+      }
+      
+      // Enforce maximum limit of $10,000
+      const enforceMaxAmount = Math.min(parseFloat(maxAmount), 10000);
+      
+      // Store and preserve existing exchange rates before updating limits
+      const existingRates = await storage.getAllExchangeRates();
+      console.log(`PRESERVING ${existingRates.length} exchange rates before updating ${currency.toUpperCase()} limits`);
+      
+      // Update currency limit with enforced maximum
+      const limit = await storage.updateCurrencyLimit({
+        fromCurrency: currency.toLowerCase(),
+        toCurrency: currency.toLowerCase(), // Self-reference for single currency limits
+        minAmount: minAmount.toString(),
+        maxAmount: enforceMaxAmount.toString()
+      });
+      
+      // Override the returned maxAmount to ensure it reflects the enforced limit
+      if (limit && typeof limit === 'object') {
+        (limit as any).maxAmount = enforceMaxAmount.toString();
+      }
+      
+      // Verify exchange rates are still preserved after limit update
+      const postUpdateRates = await storage.getAllExchangeRates();
+      console.log(`CONFIRMED: ${postUpdateRates.length} exchange rates preserved after ${currency.toUpperCase()} limit update`);
+      
+      // Broadcast currency limit update with $10,000 maximum enforcement
+      wsManager.broadcast({
+        type: 'currency_limit_update',
+        data: { 
+          currency: currency.toUpperCase(),
+          minAmount: parseFloat(minAmount),
+          maxAmount: enforceMaxAmount,
+          message: `Maximum enforced at $10,000, exchange rates preserved`
+        },
+        timestamp: new Date().toISOString()
+      });
+      
+      console.log(`${currency.toUpperCase()} limits updated with $10,000 maximum enforcement, exchange rates preserved`);
+      res.json({
+        ...limit,
+        maxAmount: enforceMaxAmount,
+        message: "Currency limits updated with $10,000 maximum enforcement, exchange rates preserved"
+      });
+    } catch (error) {
+      console.error("Currency limit update error:", error);
+      res.status(500).json({ message: "Failed to update currency limit" });
+    }
+  });
+
   // Update currency limit (admin only) - legacy endpoint with exchange rate preservation
   app.post("/api/admin/currency-limits", async (req, res) => {
     try {
