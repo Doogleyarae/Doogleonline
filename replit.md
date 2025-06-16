@@ -153,6 +153,7 @@ Changelog:
 - June 16, 2025. Enhanced customer order cancellation workflow - when customers click "Cancel Order" they immediately go to dedicated cancelled order page without redirecting to track page. System instantly updates database, releases hold amounts, and sends real-time WebSocket notifications to admin dashboard ensuring immediate synchronization of customer-initiated cancellations
 - June 16, 2025. Updated admin password to secure custom password per user request for enhanced security
 - June 16, 2025. Implemented cancelled order hiding system - all cancelled orders are automatically hidden from main admin dashboard view to reduce clutter and focus on active orders. Cancelled orders can still be accessed through dedicated cancelled orders page
+- June 16, 2025. Confirmed complete bidirectional order cancellation system - admin cancel function works via red Cancel button with confirmation dialog for manual order cancellation, and customer-initiated cancellations from confirmation page automatically update admin dashboard in real-time with WebSocket notifications and immediate order list refresh
 
 ## User Preferences
 
