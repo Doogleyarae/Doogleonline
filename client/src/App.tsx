@@ -12,6 +12,8 @@ import Services from "@/pages/services";
 import HowItWorks from "@/pages/how-it-works";
 import Exchange from "@/pages/exchange";
 import Confirmation from "@/pages/confirmation";
+import OrderCompleted from "@/pages/order-completed";
+import OrderCancelled from "@/pages/order-cancelled";
 import TrackOrder from "@/pages/track-order";
 import Contact from "@/pages/contact";
 import AdminLogin from "@/pages/admin-login";
@@ -34,6 +36,8 @@ function Router() {
       <Route path="/how-it-works" component={HowItWorks} />
       <Route path="/exchange" component={Exchange} />
       <Route path="/confirmation" component={Confirmation} />
+      <Route path="/order-completed" component={OrderCompleted} />
+      <Route path="/order-cancelled" component={OrderCancelled} />
       <Route path="/track" component={TrackOrder} />
       <Route path="/contact" component={Contact} />
       <Route path="/orders" component={OrderHistory} />

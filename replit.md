@@ -149,6 +149,7 @@ Changelog:
 - June 16, 2025. Implemented comprehensive real-time data synchronization system ensuring all admin dashboard changes (exchange rates, currency minimums/maximums, wallet balances) immediately apply new data to exchange form. Enhanced WebSocket broadcasting with forced cache invalidation guarantees instant updates without page refreshes, eliminating all caching delays for immediate new data application across platform
 - June 16, 2025. Added duplicate "Accept Deposit" button in admin dashboard that only appears when customers make deposits (paid status). Blue-styled button provides deposit-specific confirmation dialog alongside regular green Accept button, enabling clear visual distinction between deposit confirmions and regular order completions
 - June 16, 2025. Implemented complete cancelled orders page with search, export, and statistics features. Added automatic redirect from confirmation page to cancelled orders page when orders are cancelled, providing seamless workflow for cancelled order management
+- June 16, 2025. Implemented comprehensive real-time order status synchronization system with bidirectional updates. Added dedicated OrderCompleted and OrderCancelled pages with automatic WebSocket-driven redirects. Customers see instant status changes when admin accepts/cancels orders, and admin dashboard immediately reflects customer-initiated cancellations. All status changes sync in real-time without page refreshes using WebSocket broadcasting and sessionStorage coordination
 
 ## User Preferences
 

@@ -8,6 +8,7 @@ import { CheckCircle, Copy, CreditCard, X, Clock, Timer } from "lucide-react";
 import { formatDate, formatCurrency, formatAmount, copyToClipboard } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useOrderStatusSync } from "@/hooks/use-websocket";
 import type { Order } from "@shared/schema";
 
 export default function Confirmation() {
@@ -16,12 +17,48 @@ export default function Confirmation() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  // Initialize WebSocket for real-time order status updates
+  const { isConnected } = useOrderStatusSync(order?.orderId);
+
   useEffect(() => {
     const storedOrder = sessionStorage.getItem("currentOrder");
     if (storedOrder) {
-      setOrder(JSON.parse(storedOrder));
+      const orderData = JSON.parse(storedOrder);
+      setOrder(orderData);
+      
+      // Auto-redirect if order is already completed or cancelled
+      if (orderData.status === 'completed') {
+        setLocation('/order-completed');
+      } else if (orderData.status === 'cancelled') {
+        setLocation('/order-cancelled');
+      }
     }
-  }, []);
+  }, [setLocation]);
+
+  // Listen for real-time order updates
+  useEffect(() => {
+    const handleOrderUpdate = () => {
+      const storedOrder = sessionStorage.getItem("currentOrder");
+      if (storedOrder) {
+        const orderData = JSON.parse(storedOrder);
+        setOrder(orderData);
+        
+        // Auto-redirect based on new status
+        if (orderData.status === 'completed') {
+          setLocation('/order-completed');
+        } else if (orderData.status === 'cancelled') {
+          setLocation('/order-cancelled');
+        }
+      }
+    };
+
+    // Listen for sessionStorage changes (triggered by WebSocket updates)
+    window.addEventListener('storage', handleOrderUpdate);
+    
+    return () => {
+      window.removeEventListener('storage', handleOrderUpdate);
+    };
+  }, [setLocation]);
 
   // Query processing status for paid orders
   const { data: processingStatus } = useQuery<{ isProcessing: boolean; remainingTimeMinutes: number }>({
@@ -142,9 +179,37 @@ export default function Confirmation() {
     }
   };
 
+  // Customer-side order cancellation mutation
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "cancelled" });
+      return response.json();
+    },
+    onSuccess: (updatedOrder) => {
+      // Update stored order
+      sessionStorage.setItem("currentOrder", JSON.stringify(updatedOrder));
+      setOrder(updatedOrder);
+      
+      toast({
+        title: "Order Cancelled",
+        description: "Your order has been cancelled successfully",
+      });
+      
+      // Redirect to cancelled page immediately
+      setLocation('/order-cancelled');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel order",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCancelOrder = () => {
     if (order) {
-      updateOrderStatusMutation.mutate({ orderId: order.orderId, status: "cancelled" });
+      cancelOrderMutation.mutate(order.orderId);
     }
   };
 
@@ -256,7 +321,7 @@ export default function Confirmation() {
                   </Button>
                   <Button
                     onClick={handleCancelOrder}
-                    disabled={updateOrderStatusMutation.isPending}
+                    disabled={cancelOrderMutation.isPending}
                     variant="destructive"
                   >
                     <X className="w-4 h-4 mr-2" />
