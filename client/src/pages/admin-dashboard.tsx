@@ -35,6 +35,7 @@ import {
   AlertCircle,
   UserCheck,
   Send,
+  ArrowDownCircle,
 } from "lucide-react";
 import type { Order, ContactMessage, Transaction } from "@shared/schema";
 
@@ -1428,7 +1429,23 @@ export default function AdminDashboard() {
             </Card>
 
             {/* Transaction Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <ArrowDownCircle className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">RECEIVE Transactions</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {transactions.filter(t => t.type === 'RECEIVE').length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
