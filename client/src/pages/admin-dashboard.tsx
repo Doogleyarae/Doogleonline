@@ -573,15 +573,29 @@ export default function AdminDashboard() {
 
 
 
-  // Filter orders for history
+  // Filter orders with precise Order ID matching
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = searchTerm === "" || 
-      order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.phoneNumber.includes(searchTerm);
+    // Apply search filter
+    let matchesSearch = true;
+    if (searchTerm !== "") {
+      const searchLower = searchTerm.toLowerCase().trim();
+      const orderIdLower = order.orderId.toLowerCase();
+      
+      // If search looks like an Order ID (contains DGL- pattern), prioritize exact Order ID matches
+      if (searchTerm.toUpperCase().includes('DGL-')) {
+        matchesSearch = orderIdLower.includes(searchLower);
+      } else {
+        // Search in all fields for non-Order ID searches
+        matchesSearch = orderIdLower.includes(searchLower) ||
+                      order.fullName.toLowerCase().includes(searchLower) ||
+                      order.phoneNumber.includes(searchTerm);
+      }
+    }
     
+    // Apply status filter
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     
+    // Apply date filter
     const matchesDate = dateRange === "all" || (() => {
       const orderDate = new Date(order.createdAt);
       const now = new Date();
