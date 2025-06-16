@@ -17,12 +17,12 @@ import {
 } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDVZkZH_MmkX8uZY7EXe8HJKL_MbKo4uYw",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA7jy7FNlH--Rkpd627WRvq5bikM1r7xVc",
   authDomain: "doogle-e-money.firebaseapp.com",
   projectId: "doogle-e-money",
   storageBucket: "doogle-e-money.firebasestorage.app",
   messagingSenderId: "478312672914",
-  appId: "1:478312672914:web:4e387484174b5498b9804b",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:478312672914:web:4e387484174b5498b9804b",
   measurementId: "G-WDBVG29D2V"
 };
 
