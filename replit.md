@@ -154,6 +154,7 @@ Changelog:
 - June 16, 2025. Updated admin password to secure custom password per user request for enhanced security
 - June 16, 2025. Implemented cancelled order hiding system - all cancelled orders are automatically hidden from main admin dashboard view to reduce clutter and focus on active orders. Cancelled orders can still be accessed through dedicated cancelled orders page
 - June 16, 2025. Confirmed complete bidirectional order cancellation system - admin cancel function works via red Cancel button with confirmation dialog for manual order cancellation, and customer-initiated cancellations from confirmation page automatically update admin dashboard in real-time with WebSocket notifications and immediate order list refresh
+- June 16, 2025. Fixed admin cancel functionality - resolved storage layer status update issue ensuring admin cancellations properly save to database with correct status and timestamps. Enhanced customer redirection system ensuring immediate redirect to cancelled order page when admin cancels their order via WebSocket real-time synchronization
 
 ## User Preferences
 
