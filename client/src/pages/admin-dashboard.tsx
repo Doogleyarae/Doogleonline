@@ -1228,9 +1228,25 @@ export default function AdminDashboard() {
                                     });
                                     
                                     if (response.ok) {
-                                      // Force immediate cache removal for instant updates
-                                      queryClient.removeQueries({ queryKey: ["/api/admin/balances"] });
-                                      queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+                                      // Force complete cache invalidation for instant synchronization
+                                      queryClient.removeQueries({ 
+                                        predicate: (query) => {
+                                          const key = query.queryKey[0];
+                                          return typeof key === 'string' && (
+                                            key.includes('/api/admin/balances') ||
+                                            key.includes('/api/currency-limits/') ||
+                                            key.includes('/api/exchange-rate/')
+                                          );
+                                        }
+                                      });
+                                      
+                                      // Force complete cache reset for exchange form updates
+                                      queryClient.clear();
+                                      
+                                      // Force immediate refetch of all balance-related data
+                                      setTimeout(() => {
+                                        queryClient.invalidateQueries();
+                                      }, 100);
                                       
                                       setRecentlyUpdatedBalance(method.value);
                                       setTimeout(() => setRecentlyUpdatedBalance(''), 3000);

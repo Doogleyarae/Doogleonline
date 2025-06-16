@@ -398,9 +398,19 @@ export default function Exchange() {
           // Handle balance updates from admin dashboard
           if (message.type === 'balance_update') {
             console.log('Real-time balance update received:', message.data);
-            // Force refetch all balance-dependent queries
-            queryClient.removeQueries({ queryKey: ["/api/admin/balances"] });
-            queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+            
+            // Force complete cache invalidation for immediate updates
+            if (message.data.forceRefresh) {
+              queryClient.clear();
+              setTimeout(() => {
+                queryClient.invalidateQueries();
+                queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+              }, 100);
+            } else {
+              // Standard balance update handling
+              queryClient.removeQueries({ queryKey: ["/api/admin/balances"] });
+              queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+            }
           }
           
           // Handle exchange rate updates from admin dashboard  

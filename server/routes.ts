@@ -817,10 +817,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'balance_update',
         data: { 
           currency: balance.currency.toUpperCase(), 
-          amount: parseFloat(balance.amount) 
+          amount: parseFloat(balance.amount),
+          forceRefresh: true // Force immediate cache invalidation
         },
         timestamp: new Date().toISOString()
       });
+      
+      console.log(`BALANCE UPDATE BROADCAST: ${balance.currency.toUpperCase()} = $${balance.amount} (forced cache refresh)`);
       
       res.json({
         currency: balance.currency.toUpperCase(),
