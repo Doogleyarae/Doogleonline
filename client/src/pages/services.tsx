@@ -98,6 +98,24 @@ export default function Services() {
         { name: "Premier Bank", description: "Full-service banking solutions", users: "500K+ users" }
       ],
       color: "from-blue-500 to-blue-600"
+    },
+    {
+      category: "Digital Wallets",
+      description: "Modern digital payment ecosystems",
+      methods: [
+        { name: "MoneyGo", description: "Fast digital wallet transactions", users: "300K+ users" }
+      ],
+      color: "from-purple-500 to-indigo-600"
+    },
+    {
+      category: "Cryptocurrency",
+      description: "Blockchain-based digital currency solutions",
+      methods: [
+        { name: "TRX", description: "TRON blockchain cryptocurrency", users: "Global" },
+        { name: "TRC20", description: "TRON network token standard", users: "Global" },
+        { name: "PEB20", description: "Advanced blockchain protocol", users: "Global" }
+      ],
+      color: "from-orange-500 to-yellow-600"
     }
   ];
 

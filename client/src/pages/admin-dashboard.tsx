@@ -36,6 +36,11 @@ const paymentMethods = [
   { value: "evcplus", label: "EVC Plus" },
   { value: "edahab", label: "eDahab" },
   { value: "premier", label: "Premier Bank" },
+  { value: "moneygo", label: "MoneyGo" },
+  { value: "trc20", label: "TRC20" },
+  { value: "trx", label: "TRX" },
+  { value: "peb20", label: "PEB20" },
+  { value: "usdc", label: "USDC" },
 ];
 
 export default function AdminDashboard() {
