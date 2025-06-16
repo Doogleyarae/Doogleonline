@@ -47,10 +47,6 @@ const paymentMethods = [
   { value: "evc", label: "EVC Plus", logo: evcLogo },
   { value: "edahab", label: "eDahab", logo: edahabLogo },
   { value: "premier", label: "Premier Bank", logo: premierLogo },
-  { value: "moneygo", label: "MoneyGo", logo: moneygoLogo },
-  { value: "trx", label: "TRX", logo: trxLogo },
-  { value: "trc20", label: "TRC20", logo: trc20Logo },
-  { value: "peb20", label: "PEB20", logo: peb20Logo },
 ];
 
 
@@ -120,8 +116,8 @@ export default function Exchange() {
       if (saved) {
         const parsed = JSON.parse(saved);
         return {
-          sendMethod: parsed.sendMethod || "trc20",
-          receiveMethod: parsed.receiveMethod || "moneygo",
+          sendMethod: parsed.sendMethod || "zaad",
+          receiveMethod: parsed.receiveMethod || "premier",
           sendAmount: parsed.sendAmount || "1",
           receiveAmount: parsed.receiveAmount || ""
         };
@@ -130,8 +126,8 @@ export default function Exchange() {
       console.warn('Failed to load persisted exchange state:', error);
     }
     return {
-      sendMethod: "trc20",
-      receiveMethod: "moneygo", 
+      sendMethod: "zaad",
+      receiveMethod: "premier", 
       sendAmount: "1",
       receiveAmount: ""
     };
