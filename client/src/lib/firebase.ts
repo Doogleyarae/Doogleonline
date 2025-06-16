@@ -1,5 +1,19 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
+import { 
+  getAuth, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  GoogleAuthProvider, 
+  signOut, 
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  updateProfile,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA7jy7FNlH--Rkpd627WRvq5bikM1r7xVc",
@@ -15,6 +29,52 @@ export const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
 
+// Email/Password Authentication
+export const signUpWithEmail = async (email: string, password: string, fullName: string, rememberMe: boolean = false) => {
+  try {
+    // Set persistence based on remember me
+    await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+    
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // Update user profile with full name
+    if (userCredential.user && fullName) {
+      await updateProfile(userCredential.user, {
+        displayName: fullName
+      });
+    }
+    
+    return userCredential;
+  } catch (error: any) {
+    console.error('Sign up error:', error);
+    throw error;
+  }
+};
+
+export const signInWithEmail = async (email: string, password: string, rememberMe: boolean = false) => {
+  try {
+    // Set persistence based on remember me
+    await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+    
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential;
+  } catch (error: any) {
+    console.error('Sign in error:', error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (email: string) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Password reset error:', error);
+    throw error;
+  }
+};
+
+// Google Authentication
 export const loginWithGoogle = () => {
   try {
     signInWithRedirect(auth, provider);
@@ -37,4 +97,26 @@ export const logout = () => {
 
 export const onAuthStateChange = (callback: (user: any) => void) => {
   return onAuthStateChanged(auth, callback);
+};
+
+// Helper function to get user-friendly error messages
+export const getAuthErrorMessage = (errorCode: string) => {
+  switch (errorCode) {
+    case 'auth/user-not-found':
+      return 'No account found with this email address.';
+    case 'auth/wrong-password':
+      return 'Incorrect password. Please try again.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email already exists.';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters long.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/too-many-requests':
+      return 'Too many failed attempts. Please try again later.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled.';
+    default:
+      return 'An error occurred. Please try again.';
+  }
 };

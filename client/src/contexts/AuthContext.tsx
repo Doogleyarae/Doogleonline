@@ -1,12 +1,26 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from 'firebase/auth';
-import { auth, onAuthStateChange, loginWithGoogle, logout, handleRedirectResult } from '@/lib/firebase';
+import { 
+  auth, 
+  onAuthStateChange, 
+  loginWithGoogle, 
+  logout, 
+  handleRedirectResult,
+  signUpWithEmail,
+  signInWithEmail,
+  resetPassword,
+  getAuthErrorMessage
+} from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => void;
+  signInWithEmail: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, fullName: string, rememberMe?: boolean) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  getErrorMessage: (errorCode: string) => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +65,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loginWithGoogle();
   };
 
+  const handleSignInWithEmail = async (email: string, password: string, rememberMe: boolean = false) => {
+    try {
+      await signInWithEmail(email, password, rememberMe);
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const handleSignUpWithEmail = async (email: string, password: string, fullName: string, rememberMe: boolean = false) => {
+    try {
+      await signUpWithEmail(email, password, fullName, rememberMe);
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const handleResetPassword = async (email: string) => {
+    try {
+      await resetPassword(email);
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       await logout();
@@ -64,7 +102,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     loading,
     signInWithGoogle,
+    signInWithEmail: handleSignInWithEmail,
+    signUpWithEmail: handleSignUpWithEmail,
+    resetPassword: handleResetPassword,
     signOut,
+    getErrorMessage: getAuthErrorMessage,
   };
 
   return (

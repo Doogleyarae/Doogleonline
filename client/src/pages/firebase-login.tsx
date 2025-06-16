@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import FirebaseLogin from "@/components/FirebaseLogin";
+import AuthForm from "@/components/AuthForm";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function FirebaseLoginPage() {
@@ -28,8 +28,8 @@ export default function FirebaseLoginPage() {
             <p className="text-gray-600">Secure Currency Exchange Platform</p>
           </div>
 
-          {/* Firebase Login Component */}
-          <FirebaseLogin />
+          {/* Complete Authentication Form */}
+          <AuthForm />
 
           {/* Additional Info */}
           {!user && (
