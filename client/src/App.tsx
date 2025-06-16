@@ -38,6 +38,7 @@ function Router() {
       <Route path="/orders" component={OrderHistory} />
       <Route path="/completed" component={CompletedOrders} />
       <Route path="/admin" component={AdminLogin} />
+      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route component={NotFound} />
