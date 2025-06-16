@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +27,6 @@ import {
   XCircle,
   Clock3,
   AlertCircle,
-  LogOut,
-  Menu,
-  X,
 } from "lucide-react";
 import type { Order, ContactMessage, Transaction } from "@shared/schema";
 
@@ -49,27 +45,6 @@ const paymentMethods = [
 
 export default function AdminDashboard() {
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Authentication check
-  useEffect(() => {
-    const token = sessionStorage.getItem("adminToken");
-    if (!token) {
-      setLocation("/admin/login");
-      return;
-    }
-  }, [setLocation]);
-
-  // Logout function
-  const handleLogout = () => {
-    sessionStorage.removeItem("adminToken");
-    setLocation("/admin/login");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
-  };
   
   // State for order management
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
@@ -379,77 +354,26 @@ export default function AdminDashboard() {
 
 
   const handleStatusUpdate = () => {
-    // Enhanced validation with specific error messages
-    if (!selectedOrderId) {
+    if (!selectedOrderId || !newStatus) {
       toast({
-        title: "Validation Error",
-        description: "Please select an order from the dropdown",
+        title: "Error",
+        description: "Please select an order and status",
         variant: "destructive",
       });
       return;
     }
-    
-    if (!newStatus) {
-      toast({
-        title: "Validation Error", 
-        description: "Please select a new status for the order",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     updateStatusMutation.mutate({ orderId: selectedOrderId, status: newStatus });
   };
 
   const handleRateUpdate = () => {
-    // Enhanced validation with specific error messages
-    if (!fromCurrency) {
+    if (!fromCurrency || !toCurrency || !exchangeRate) {
       toast({
-        title: "Validation Error",
-        description: "Please select a 'From' currency",
+        title: "Error",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
       return;
     }
-    
-    if (!toCurrency) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a 'To' currency",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!exchangeRate) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter an exchange rate",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Validate exchange rate is a positive number
-    const rate = parseFloat(exchangeRate);
-    if (isNaN(rate) || rate <= 0) {
-      toast({
-        title: "Validation Error",
-        description: "Exchange rate must be a positive number greater than 0",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (rate > 10000) {
-      toast({
-        title: "Validation Error",
-        description: "Exchange rate seems too high. Please verify the value",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     updateRateMutation.mutate({ fromCurrency, toCurrency, rate: exchangeRate });
   };
 
@@ -722,283 +646,24 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
-      <div className="lg:hidden bg-white shadow-sm border-b">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-lg font-bold text-gray-900">Admin Dashboard</h1>
-          <div className="flex items-center space-x-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2 h-9 w-9 flex items-center justify-center"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 h-10 w-10 flex items-center justify-center hover:bg-gray-100 border-0"
-            >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-gray-700" />
-              ) : (
-                <Menu className="w-6 h-6 text-gray-700" />
-              )}
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+          <p className="text-gray-600">Manage orders, exchange rates, and transaction limits</p>
         </div>
-      </div>
 
-      {/* Update Exchange Rate Section - Highest Priority */}
-      <div className="bg-gray-50 border-b-2 border-blue-200">
-        <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
-          <Card className="bg-white border-gray-200 shadow-lg">
-            <CardHeader className="pb-6">
-              <CardTitle className="flex items-center text-gray-900 text-2xl">
-                <Settings className="w-6 h-6 mr-3" />
-                Update Exchange Rate
-              </CardTitle>
-              <p className="text-gray-600 mt-2">Changes apply immediately to all live calculations</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="main-from-currency" className="text-base font-medium text-gray-700 mb-3 block">From Currency</Label>
-                  <Select value={fromCurrency} onValueChange={setFromCurrency}>
-                    <SelectTrigger className="h-12 text-base">
-                      <SelectValue placeholder="Select from currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method.value} value={method.value}>
-                          {method.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="main-to-currency" className="text-base font-medium text-gray-700 mb-3 block">To Currency</Label>
-                  <Select value={toCurrency} onValueChange={setToCurrency}>
-                    <SelectTrigger className="h-12 text-base">
-                      <SelectValue placeholder="Select to currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentMethods.map((method) => (
-                        <SelectItem key={method.value} value={method.value}>
-                          {method.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="main-rate" className="text-base font-medium text-gray-700 mb-3 block">Exchange Rate</Label>
-                  <Input
-                    id="main-rate"
-                    type="number"
-                    step="0.000001"
-                    placeholder="0.000000"
-                    value={exchangeRate}
-                    onChange={(e) => setExchangeRate(e.target.value)}
-                    className="h-12 text-base"
-                  />
-                </div>
-                
-                <Button 
-                  onClick={handleRateUpdate} 
-                  disabled={updateRateMutation.isPending || !fromCurrency || !toCurrency || !exchangeRate}
-                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-base"
-                >
-                  {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
-                </Button>
-              </div>
-              
-              {fromCurrency && toCurrency && exchangeRate && (
-                <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-800">
-                    <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    This rate will immediately affect all live calculations and new transactions
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Desktop Header */}
-      <div className="hidden lg:block bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage orders, exchange rates, and transaction limits</p>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
-
-        {/* Current Exchange Rates Section */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center text-blue-900">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Current Exchange Rates
-            </CardTitle>
-            <p className="text-sm text-blue-700">Live rates affecting all transaction calculations</p>
-          </CardHeader>
-          <CardContent>
-            {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allExchangeRates.slice(0, 6).map((rate: any, index: number) => (
-                  <div key={`current-rate-${rate.id || index}-${rate.fromCurrency}-${rate.toCurrency}`} className="bg-white border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-semibold text-sm text-gray-800">
-                          {rate.fromCurrency.toUpperCase()} → {rate.toCurrency.toUpperCase()}
-                        </p>
-                        <p className="text-xl font-bold text-blue-900">
-                          {parseFloat(rate.rate).toFixed(6)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Updated: {formatDate(rate.updatedAt)}
-                        </p>
-                      </div>
-                      <div className="flex flex-col space-y-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setFromCurrency(rate.fromCurrency);
-                            setToCurrency(rate.toCurrency);
-                            setExchangeRate(rate.rate);
-                            // Automatically switch to rates tab
-                            const ratesTab = document.querySelector('[value="rates"]') as HTMLElement;
-                            if (ratesTab) ratesTab.click();
-                          }}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs"
-                        >
-                          Quick Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-blue-600">
-                <TrendingUp className="w-10 h-10 mx-auto mb-3 text-blue-400" />
-                <p className="font-medium">No exchange rates configured</p>
-                <p className="text-sm text-blue-500">Configure rates in the Exchange Rates tab</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Tabs defaultValue="orders" className="space-y-4 lg:space-y-6">
-          {/* Mobile Navigation */}
-          {isMobileMenuOpen && (
-            <div className="lg:hidden bg-white rounded-lg shadow-lg border p-3 mb-4">
-              <TabsList className="grid grid-cols-2 gap-2 h-auto bg-transparent">
-                <TabsTrigger 
-                  value="orders" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Clock className="w-4 h-4 mb-1" />
-                  Orders
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="transactions" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <History className="w-4 h-4 mb-1" />
-                  Transactions
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="rates" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <TrendingUp className="w-4 h-4 mb-1" />
-                  Rates
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="limits" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <DollarSign className="w-4 h-4 mb-1" />
-                  Balance
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="wallets" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Settings className="w-4 h-4 mb-1" />
-                  Wallets
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="contact" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <MessageSquare className="w-4 h-4 mb-1" />
-                  Contact
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="messages" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Users className="w-4 h-4 mb-1" />
-                  Messages
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="analytics" 
-                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <TrendingUp className="w-4 h-4 mb-1" />
-                  Analytics
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          )}
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:block">
-            <TabsList className="grid w-full grid-cols-8 h-11">
-              <TabsTrigger value="orders" className="text-sm">Orders</TabsTrigger>
-              <TabsTrigger value="transactions" className="text-sm">Transactions</TabsTrigger>
-              <TabsTrigger value="rates" className="text-sm">Exchange Rates</TabsTrigger>
-              <TabsTrigger value="limits" className="text-sm">Balance Management</TabsTrigger>
-              <TabsTrigger value="wallets" className="text-sm">Wallet Settings</TabsTrigger>
-              <TabsTrigger value="contact" className="text-sm">Contact Info</TabsTrigger>
-              <TabsTrigger value="messages" className="text-sm">Messages</TabsTrigger>
-              <TabsTrigger value="analytics" className="text-sm">Analytics</TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs defaultValue="orders" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-8">
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
+            <TabsTrigger value="limits">Balance Management</TabsTrigger>
+            <TabsTrigger value="wallets">Wallet Settings</TabsTrigger>
+            <TabsTrigger value="contact">Contact Info</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
 
           {/* Orders Management */}
           <TabsContent value="orders" className="space-y-6">
@@ -1089,15 +754,10 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {ordersLoading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <span className="ml-3 text-gray-600">Loading orders...</span>
-                  </div>
+                  <p>Loading orders...</p>
                 ) : (
-                  <>
-                    {/* Desktop Table */}
-                    <div className="hidden lg:block overflow-x-auto">
-                      <Table>
+                  <div className="overflow-x-auto">
+                    <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Order ID</TableHead>
@@ -1224,142 +884,8 @@ export default function AdminDashboard() {
                           ));
                         })()}
                       </TableBody>
-                      </Table>
-                    </div>
-
-                    {/* Mobile Cards */}
-                    <div className="lg:hidden space-y-4">
-                      {(() => {
-                        const filteredOrders = orders.filter((order) => statusFilter === "all" || order.status === statusFilter);
-                        
-                        if (filteredOrders.length === 0) {
-                          return (
-                            <div className="text-center py-8 text-gray-500">
-                              {statusFilter === "all" 
-                                ? "No orders found" 
-                                : `No ${statusFilter} orders found`
-                              }
-                            </div>
-                          );
-                        }
-                        
-                        return filteredOrders.map((order) => (
-                          <Card key={order.orderId} className="bg-white border border-gray-200">
-                            <CardContent className="p-4">
-                              <div className="flex justify-between items-start mb-3">
-                                <div>
-                                  <h3 className="font-semibold text-sm text-gray-900">{order.orderId}</h3>
-                                  <p className="text-sm text-gray-600">{order.fullName}</p>
-                                </div>
-                                <Badge className={getStatusColor(order.status)}>
-                                  <div className="flex items-center">
-                                    {getStatusIcon(order.status)}
-                                    <span className="ml-1 capitalize text-xs">{order.status}</span>
-                                  </div>
-                                </Badge>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                                <div>
-                                  <p className="text-gray-500">Send</p>
-                                  <p className="font-medium">{formatCurrency(order.sendAmount, order.sendMethod)}</p>
-                                </div>
-                                <div>
-                                  <p className="text-gray-500">Receive</p>
-                                  <p className="font-medium">{formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
-                                </div>
-                              </div>
-                              
-                              <div className="text-xs text-gray-500 mb-3">
-                                {formatDate(order.createdAt)}
-                              </div>
-                              
-                              <div className="flex space-x-2">
-                                {order.status === "pending" || order.status === "paid" ? (
-                                  <>
-                                    {/* Mobile Accept Dialog */}
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          disabled={acceptOrderMutation.isPending}
-                                          className="bg-green-600 hover:bg-green-700 text-white flex-1"
-                                        >
-                                          <CheckCircle className="w-3 h-3 mr-1" />
-                                          Accept
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent className="mx-4">
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Accept Order</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Accept order {order.orderId}? This will mark as completed and cannot be undone.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <div className="mt-3 p-3 bg-gray-50 rounded">
-                                          <p><strong>Customer:</strong> {order.fullName}</p>
-                                          <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
-                                        </div>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => acceptOrderMutation.mutate(order.orderId)}
-                                            className="bg-green-600 hover:bg-green-700"
-                                          >
-                                            Accept Order
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-
-                                    {/* Mobile Cancel Dialog */}
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="destructive"
-                                          disabled={cancelOrderMutation.isPending}
-                                          className="flex-1"
-                                        >
-                                          <XCircle className="w-3 h-3 mr-1" />
-                                          Cancel
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent className="mx-4">
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Cancel Order</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Cancel order {order.orderId}? This action cannot be undone.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <div className="mt-3 p-3 bg-gray-50 rounded">
-                                          <p><strong>Customer:</strong> {order.fullName}</p>
-                                          <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
-                                        </div>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Keep Order</AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => cancelOrderMutation.mutate(order.orderId)}
-                                            className="bg-red-600 hover:bg-red-700"
-                                          >
-                                            Cancel Order
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  </>
-                                ) : (
-                                  <div className="text-center text-gray-500 text-sm py-2 flex-1">
-                                    No actions available
-                                  </div>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ));
-                      })()}
-                    </div>
-                  </>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1748,28 +1274,9 @@ export default function AdminDashboard() {
                               />
                               <Button
                                 onClick={async () => {
-                                  const minAmount = currencyMinimums[method.value];
-                                  
-                                  // Enhanced validation
-                                  if (!minAmount || minAmount <= 0) {
-                                    toast({
-                                      title: "Validation Error",
-                                      description: "Minimum amount must be greater than 0",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  
-                                  if (minAmount > 1000) {
-                                    toast({
-                                      title: "Validation Warning",
-                                      description: "Minimum amount seems high. Please verify the value",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  
                                   try {
+                                    const minAmount = currencyMinimums[method.value];
+                                    
                                     // Use the new coordinated endpoint that preserves exchange rates
                                     const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
                                       minAmount: minAmount,
@@ -1837,38 +1344,9 @@ export default function AdminDashboard() {
                               />
                               <Button
                                 onClick={async () => {
-                                  const maxAmount = currencyMaximums[method.value];
-                                  const minAmount = currencyMinimums[method.value];
-                                  
-                                  // Enhanced validation for maximum amounts
-                                  if (!maxAmount || maxAmount <= 0) {
-                                    toast({
-                                      title: "Validation Error",
-                                      description: "Maximum amount must be greater than 0",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  
-                                  if (maxAmount < minAmount) {
-                                    toast({
-                                      title: "Validation Error",
-                                      description: `Maximum amount ($${maxAmount}) cannot be less than minimum amount ($${minAmount})`,
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  
-                                  if (maxAmount > 1000000) {
-                                    toast({
-                                      title: "Validation Warning",
-                                      description: "Maximum amount seems very high. Please verify the value",
-                                      variant: "destructive",
-                                    });
-                                    return;
-                                  }
-                                  
                                   try {
+                                    const maxAmount = currencyMaximums[method.value];
+                                    
                                     // Use the new coordinated endpoint that preserves exchange rates
                                     const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
                                       minAmount: currencyMinimums[method.value], // Use admin-configured minimum
