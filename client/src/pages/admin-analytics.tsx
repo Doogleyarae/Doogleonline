@@ -268,76 +268,190 @@ export default function AdminAnalytics() {
               <CardContent className="space-y-4">
                 {topPairs.length > 0 ? (
                   topPairs.map(([pair, count], index) => (
-                <div key={pair} className="flex justify-between items-center">
-                  <span className="font-medium">{pair}</span>
-                  <Badge variant="outline">{count} orders</Badge>
+                    <div key={pair} className="flex justify-between items-center">
+                      <span className="font-medium">{pair}</span>
+                      <Badge variant="outline">{count} orders</Badge>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No currency pairs yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            {/* Recent Orders */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Orders</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentOrders.length > 0 ? (
+                    recentOrders.slice(0, 5).map((order) => (
+                      <div key={order.orderId} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                        <div>
+                          <p className="font-medium">{order.orderId}</p>
+                          <p className="text-sm text-gray-600">{order.fullName}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={getStatusColor(order.status)}>
+                            {order.status}
+                          </Badge>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {formatCurrency(order.sendAmount, order.sendMethod)}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No recent orders</p>
+                  )}
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-center py-4">No currency pairs yet</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentOrders.length > 0 ? (
-                recentOrders.slice(0, 5).map((order) => (
-                  <div key={order.orderId} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                    <div>
-                      <p className="font-medium">{order.orderId}</p>
-                      <p className="text-sm text-gray-600">{order.fullName}</p>
-                    </div>
-                    <div className="text-right">
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status}
-                      </Badge>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formatCurrency(order.sendAmount, order.sendMethod)}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-4">No recent orders</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            {/* Recent Messages */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Messages</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentMessages.length > 0 ? (
+                    recentMessages.slice(0, 5).map((message) => (
+                      <div key={message.id} className="py-2 border-b border-gray-100 last:border-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-medium">{message.name}</p>
+                          <Badge variant="outline">{message.subject}</Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 truncate">{message.message}</p>
+                        <p className="text-xs text-gray-500 mt-1">{formatDate(message.createdAt)}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No recent messages</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-        {/* Recent Messages */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Messages</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentMessages.length > 0 ? (
-                recentMessages.slice(0, 5).map((message) => (
-                  <div key={message.id} className="py-2 border-b border-gray-100 last:border-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="font-medium">{message.name}</p>
-                      <Badge variant="outline">{message.subject}</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 truncate">{message.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{formatDate(message.createdAt)}</p>
+        <TabsContent value="calendar" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Calendar */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5" />
+                  Daily Exchange Calendar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  className="rounded-md border"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Selected Date Analytics */}
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {selectedDate ? formatDate(selectedDate.toISOString()) : 'Select a Date'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedDate && (
+                  <div className="space-y-4">
+                    {(() => {
+                      const dayAnalytics = getDailyAnalytics(selectedDate);
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                              <div className="text-2xl font-bold text-blue-600">{dayAnalytics.orders}</div>
+                              <div className="text-sm text-blue-800">Orders</div>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                              <div className="text-2xl font-bold text-green-600">{dayAnalytics.completed}</div>
+                              <div className="text-sm text-green-800">Completed</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-4 bg-purple-50 rounded-lg">
+                              <div className="text-2xl font-bold text-purple-600">${dayAnalytics.volume.toFixed(2)}</div>
+                              <div className="text-sm text-purple-800">Volume</div>
+                            </div>
+                            <div className="text-center p-4 bg-emerald-50 rounded-lg">
+                              <div className="text-2xl font-bold text-emerald-600">${dayAnalytics.profit.toFixed(2)}</div>
+                              <div className="text-sm text-emerald-800">Profit</div>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-4">No recent messages</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="profits" className="space-y-6">
+          {/* Daily Profit Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Daily Profit Analysis (Last 30 Days)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">${totalProfit.toFixed(2)}</div>
+                    <div className="text-sm text-green-800">Total Profit</div>
+                  </div>
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">${avgProfit.toFixed(2)}</div>
+                    <div className="text-sm text-blue-800">Avg Per Order</div>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">{completedOrders}</div>
+                    <div className="text-sm text-purple-800">Profitable Orders</div>
+                  </div>
+                </div>
+                
+                {/* Daily Profit List */}
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="space-y-2">
+                    {dailyProfits.reverse().slice(0, 15).map((day, index) => (
+                      <div key={day.date} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <div className="font-medium">{new Date(day.date).toLocaleDateString()}</div>
+                          <div className="text-sm text-gray-600">{day.orders} orders</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-green-600">${day.profit.toFixed(2)}</div>
+                          <div className="text-sm text-gray-600">${day.volume.toFixed(2)} volume</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
