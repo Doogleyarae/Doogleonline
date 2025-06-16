@@ -7,8 +7,8 @@ export const orders = pgTable("orders", {
   orderId: text("order_id").notNull().unique(),
   fullName: text("full_name").notNull(),
   phoneNumber: text("phone_number").notNull(),
-
   walletAddress: text("wallet_address").notNull(),
+  senderAccountNumber: text("sender_account_number"),
   sendMethod: text("send_method").notNull(),
   receiveMethod: text("receive_method").notNull(),
   sendAmount: decimal("send_amount", { precision: 10, scale: 2 }).notNull(),
