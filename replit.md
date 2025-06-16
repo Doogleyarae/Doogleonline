@@ -152,6 +152,7 @@ Changelog:
 - June 16, 2025. Implemented comprehensive real-time order status synchronization system with bidirectional updates. Added dedicated OrderCompleted and OrderCancelled pages with automatic WebSocket-driven redirects. Customers see instant status changes when admin accepts/cancels orders, and admin dashboard immediately reflects customer-initiated cancellations. All status changes sync in real-time without page refreshes using WebSocket broadcasting and sessionStorage coordination
 - June 16, 2025. Enhanced customer order cancellation workflow - when customers click "Cancel Order" they immediately go to dedicated cancelled order page without redirecting to track page. System instantly updates database, releases hold amounts, and sends real-time WebSocket notifications to admin dashboard ensuring immediate synchronization of customer-initiated cancellations
 - June 16, 2025. Updated admin password to secure custom password per user request for enhanced security
+- June 16, 2025. Implemented cancelled order hiding system - all cancelled orders are automatically hidden from main admin dashboard view to reduce clutter and focus on active orders. Cancelled orders can still be accessed through dedicated cancelled orders page
 
 ## User Preferences
 
