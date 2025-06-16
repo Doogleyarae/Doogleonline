@@ -1695,9 +1695,38 @@ export default function AdminDashboard() {
                               />
                               <Button
                                 onClick={async () => {
+                                  const maxAmount = currencyMaximums[method.value];
+                                  const minAmount = currencyMinimums[method.value];
+                                  
+                                  // Enhanced validation for maximum amounts
+                                  if (!maxAmount || maxAmount <= 0) {
+                                    toast({
+                                      title: "Validation Error",
+                                      description: "Maximum amount must be greater than 0",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  if (maxAmount < minAmount) {
+                                    toast({
+                                      title: "Validation Error",
+                                      description: `Maximum amount ($${maxAmount}) cannot be less than minimum amount ($${minAmount})`,
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  if (maxAmount > 1000000) {
+                                    toast({
+                                      title: "Validation Warning",
+                                      description: "Maximum amount seems very high. Please verify the value",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
                                   try {
-                                    const maxAmount = currencyMaximums[method.value];
-                                    
                                     // Use the new coordinated endpoint that preserves exchange rates
                                     const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
                                       minAmount: currencyMinimums[method.value], // Use admin-configured minimum
