@@ -8,13 +8,30 @@ import { Badge } from '@/components/ui/badge';
 export default function FirebaseLogin() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleSignIn = async () => {
+    setAuthError(null);
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      console.error('Sign in failed:', error);
+      if (error.message.includes('domain not configured')) {
+        setAuthError('Firebase authentication needs to be configured. Please contact administrator.');
+      } else {
+        setAuthError('Sign in failed. Please try again.');
+      }
+    }
+  };
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
+    setAuthError(null);
     try {
       await signOut();
     } catch (error) {
       console.error('Sign out failed:', error);
+      setAuthError('Sign out failed. Please try again.');
     } finally {
       setIsSigningOut(false);
     }
@@ -101,9 +118,26 @@ export default function FirebaseLogin() {
           Access your DoogleOnline account securely with Google authentication
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {authError && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">{authError}</p>
+            {authError.includes('Firebase authentication') && (
+              <div className="mt-2 text-xs text-red-700">
+                <p>To complete Firebase setup:</p>
+                <ol className="list-decimal list-inside mt-1 space-y-1">
+                  <li>Go to Firebase Console</li>
+                  <li>Add Web App to your project</li>
+                  <li>Enable Google Sign-In</li>
+                  <li>Add your domain to Authorized domains</li>
+                </ol>
+              </div>
+            )}
+          </div>
+        )}
+        
         <Button 
-          onClick={signInWithGoogle}
+          onClick={handleSignIn}
           className="w-full bg-blue-600 hover:bg-blue-700"
         >
           <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

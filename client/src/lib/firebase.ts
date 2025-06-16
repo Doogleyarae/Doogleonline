@@ -16,7 +16,15 @@ export const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 export const loginWithGoogle = () => {
-  signInWithRedirect(auth, provider);
+  try {
+    signInWithRedirect(auth, provider);
+  } catch (error: any) {
+    if (error.code === 'auth/unauthorized-domain') {
+      console.error('Domain not authorized. Please add your domain to Firebase Console > Authentication > Settings > Authorized domains');
+      throw new Error('Authentication domain not configured. Please contact administrator.');
+    }
+    throw error;
+  }
 };
 
 export const handleRedirectResult = () => {
