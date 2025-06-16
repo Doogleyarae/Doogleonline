@@ -15,7 +15,7 @@ import {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: () => void;
+  signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signUpWithEmail: (email: string, password: string, fullName: string, rememberMe?: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -64,8 +64,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = () => {
-    loginWithGoogle();
+  const signInWithGoogle = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      throw error;
+    }
   };
 
   const handleSignInWithEmail = async (email: string, password: string, rememberMe: boolean = false) => {

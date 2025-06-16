@@ -121,17 +121,26 @@ export default function AuthForm() {
     }
   };
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
     setError(null);
     setSuccess(null);
+    
     try {
-      signInWithGoogle();
+      await signInWithGoogle();
+      setSuccess('Successfully signed in with Google!');
     } catch (error: any) {
-      if (error.code === 'auth/unauthorized-domain' || error.message.includes('domain not configured')) {
+      console.error('Google sign-in error:', error);
+      
+      if (error.code === 'auth/unauthorized-domain' || error.message.includes('domain not authorized')) {
         setError('Google sign-in requires Firebase setup. Please use email/password authentication or contact administrator to complete Firebase domain configuration.');
+      } else if (error.message.includes('popup')) {
+        setError('Popup was blocked or closed. Please allow popups and try again, or use email/password authentication.');
       } else {
-        setError('Google sign-in is temporarily unavailable. Please try email/password authentication.');
+        setError(getErrorMessage(error.code) || 'Google sign-in is temporarily unavailable. Please try email/password authentication.');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
