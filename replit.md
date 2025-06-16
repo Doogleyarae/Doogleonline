@@ -143,6 +143,7 @@ Changelog:
 - June 16, 2025. Implemented comprehensive admin contact information management system with privacy controls - added Contact Info tab to admin dashboard for managing email, WhatsApp, and Telegram details. Public Contact page only displays admin-controlled information (email only by default) while admin dashboard maintains full contact records. Database schema supports optional contact fields allowing admin to hide specific contact methods from public display
 - June 16, 2025. Added sender account field to exchange form with dynamic labels based on payment method selection - displays "Zaad Phone Number" for mobile money methods and "Premier Bank Account Number" for banking. Field is required and integrated with form memory system for data persistence
 - June 16, 2025. Restored all original payment methods after temporary reduction - platform now supports complete range: Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, TRX, TRC20, PEB20, and USDC. All payment methods available across exchange form, admin dashboard, home page, and services page. Default exchange form values restored to TRC20 → MoneyGo pairing
+- June 16, 2025. Restricted sender account field to only 5 specific payment methods (Zaad, Sahal, EVC Plus, eDahab, Premier Bank) per user request. Field only appears for these methods with dynamic labels (phone number for mobile money, account number for banking). Conditional form validation ensures sender account is required only for the specified methods
 
 ## User Preferences
 

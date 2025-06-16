@@ -233,9 +233,10 @@ export default function Exchange() {
       dynamicLimits.minSendAmount, 
       dynamicLimits.maxSendAmount,
       dynamicLimits.minReceiveAmount,
-      dynamicLimits.maxReceiveAmount
+      dynamicLimits.maxReceiveAmount,
+      sendMethod
     ));
-  }, [dynamicLimits]);
+  }, [dynamicLimits, sendMethod]);
 
   const form = useForm<ExchangeFormData>({
     resolver: getDynamicResolver(),
