@@ -249,7 +249,7 @@ export default function Exchange() {
       sendAmount: sendAmount,
       receiveAmount: receiveAmount,
       exchangeRate: exchangeRate.toString(),
-      fullName: savedData.fullName || "",
+      fullName: savedData.fullName || user?.displayName || "",
       phoneNumber: savedData.phoneNumber || "",
       senderAccount: savedData.senderAccount || "",
       walletAddress: savedData.walletAddress || "",
@@ -877,6 +877,16 @@ export default function Exchange() {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Currency Exchange</h1>
         <p className="text-lg text-gray-600">Complete your exchange in just a few steps</p>
+        
+        {/* User Authentication Status */}
+        {user && (
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-green-800 font-medium">
+              Signed in as {user.displayName || user.email}
+            </span>
+          </div>
+        )}
       </div>
 
       <Card className="shadow-lg">
