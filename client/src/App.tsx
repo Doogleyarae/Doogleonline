@@ -71,18 +71,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navigation />
-            <main className="flex-1">
-              <Router />
-            </main>
-            <Footer />
-          </div>
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
+      <TooltipProvider>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <Navigation />
+          <main className="flex-1">
+            <Router />
+          </main>
+          <Footer />
+        </div>
+        <Toaster />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
