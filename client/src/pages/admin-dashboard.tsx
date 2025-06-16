@@ -771,78 +771,76 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
         <Tabs defaultValue="orders" className="space-y-4 lg:space-y-6">
           {/* Mobile Navigation */}
-          <div className="lg:hidden">
-            {isMobileMenuOpen && (
-              <div className="bg-white rounded-lg shadow-lg border p-3 mb-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <TabsTrigger 
-                    value="orders" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Clock className="w-4 h-4 mb-1" />
-                    Orders
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="transactions" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <History className="w-4 h-4 mb-1" />
-                    Transactions
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="rates" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <TrendingUp className="w-4 h-4 mb-1" />
-                    Rates
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="limits" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <DollarSign className="w-4 h-4 mb-1" />
-                    Balance
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="wallets" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Settings className="w-4 h-4 mb-1" />
-                    Wallets
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="contact" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <MessageSquare className="w-4 h-4 mb-1" />
-                    Contact
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="messages" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Users className="w-4 h-4 mb-1" />
-                    Messages
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="analytics" 
-                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <TrendingUp className="w-4 h-4 mb-1" />
-                    Analytics
-                  </TabsTrigger>
-                </div>
-              </div>
-            )}
-          </div>
+          {isMobileMenuOpen && (
+            <div className="lg:hidden bg-white rounded-lg shadow-lg border p-3 mb-4">
+              <TabsList className="grid grid-cols-2 gap-2 h-auto bg-transparent">
+                <TabsTrigger 
+                  value="orders" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Clock className="w-4 h-4 mb-1" />
+                  Orders
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="transactions" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <History className="w-4 h-4 mb-1" />
+                  Transactions
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="rates" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <TrendingUp className="w-4 h-4 mb-1" />
+                  Rates
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="limits" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <DollarSign className="w-4 h-4 mb-1" />
+                  Balance
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="wallets" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Settings className="w-4 h-4 mb-1" />
+                  Wallets
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="contact" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <MessageSquare className="w-4 h-4 mb-1" />
+                  Contact
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="messages" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Users className="w-4 h-4 mb-1" />
+                  Messages
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="analytics" 
+                  className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <TrendingUp className="w-4 h-4 mb-1" />
+                  Analytics
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          )}
 
           {/* Desktop Navigation */}
           <div className="hidden lg:block">
@@ -1152,12 +1150,12 @@ export default function AdminDashboard() {
                                           <AlertDialogTitle>Accept Order</AlertDialogTitle>
                                           <AlertDialogDescription>
                                             Accept order {order.orderId}? This will mark as completed and cannot be undone.
-                                            <div className="mt-3 p-3 bg-gray-50 rounded">
-                                              <p><strong>Customer:</strong> {order.fullName}</p>
-                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
-                                            </div>
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
+                                        <div className="mt-3 p-3 bg-gray-50 rounded">
+                                          <p><strong>Customer:</strong> {order.fullName}</p>
+                                          <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                        </div>
                                         <AlertDialogFooter>
                                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                                           <AlertDialogAction
@@ -1188,12 +1186,12 @@ export default function AdminDashboard() {
                                           <AlertDialogTitle>Cancel Order</AlertDialogTitle>
                                           <AlertDialogDescription>
                                             Cancel order {order.orderId}? This action cannot be undone.
-                                            <div className="mt-3 p-3 bg-gray-50 rounded">
-                                              <p><strong>Customer:</strong> {order.fullName}</p>
-                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
-                                            </div>
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
+                                        <div className="mt-3 p-3 bg-gray-50 rounded">
+                                          <p><strong>Customer:</strong> {order.fullName}</p>
+                                          <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                        </div>
                                         <AlertDialogFooter>
                                           <AlertDialogCancel>Keep Order</AlertDialogCancel>
                                           <AlertDialogAction
