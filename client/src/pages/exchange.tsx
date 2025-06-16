@@ -53,13 +53,7 @@ const paymentMethods = [
   { value: "peb20", label: "PEB20", logo: peb20Logo },
 ];
 
-const senderMethods = [
-  { value: "zaad", label: "Zaad", logo: zaadLogo },
-  { value: "sahal", label: "Sahal", logo: golisLogo },
-  { value: "evc", label: "EVC Plus", logo: evcLogo },
-  { value: "premier", label: "Premier Bank", logo: premierLogo },
-  { value: "edahab", label: "eDahab", logo: edahabLogo },
-];
+
 
 const createExchangeFormSchema = (
   minSendAmount: number = 5, 
@@ -104,8 +98,6 @@ const createExchangeFormSchema = (
   exchangeRate: z.string(),
   fullName: z.string().min(1, "Full name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
-  senderAccount: z.string().min(1, "Sender's phone number or account number is required"),
-  senderMethod: z.string().min(1, "Please select your transfer method"),
   walletAddress: z.string().min(1, "Wallet address is required"),
   rememberDetails: z.boolean().optional(),
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
@@ -252,8 +244,6 @@ export default function Exchange() {
       exchangeRate: exchangeRate.toString(),
       fullName: savedData.fullName || "",
       phoneNumber: savedData.phoneNumber || "",
-      senderAccount: savedData.senderAccount || "",
-      senderMethod: savedData.senderMethod || "",
       walletAddress: savedData.walletAddress || "",
       rememberDetails: isReminded,
       agreeToTerms: false,
@@ -1095,66 +1085,7 @@ export default function Exchange() {
                       )}
                     />
                     
-                    <FormField
-                      control={form.control}
-                      name="senderMethod"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Select Transfer Method *</FormLabel>
-                          <Select onValueChange={(value) => {
-                            field.onChange(value);
-                            handleFieldChange('senderMethod', value);
-                          }} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose your transfer method" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {senderMethods.map((method) => (
-                                <SelectItem key={method.value} value={method.value}>
-                                  <div className="flex items-center space-x-2">
-                                    {method.logo && (
-                                      <img 
-                                        src={method.logo} 
-                                        alt={method.label} 
-                                        className="w-5 h-5 object-contain"
-                                      />
-                                    )}
-                                    <span>{method.label}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="senderAccount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Sender's Phone Number or Account Number *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Enter your account number or phone" 
-                              {...field} 
-                              onChange={(e) => {
-                                field.onChange(e);
-                                handleFieldChange('senderAccount', e.target.value);
-                              }}
-                            />
-                          </FormControl>
-                          <p className="text-xs text-gray-500">Enter the phone number or account you are sending money from</p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
-                  
                   <FormField
                     control={form.control}
                     name="walletAddress"
