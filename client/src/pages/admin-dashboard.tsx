@@ -379,26 +379,77 @@ export default function AdminDashboard() {
 
 
   const handleStatusUpdate = () => {
-    if (!selectedOrderId || !newStatus) {
+    // Enhanced validation with specific error messages
+    if (!selectedOrderId) {
       toast({
-        title: "Error",
-        description: "Please select an order and status",
+        title: "Validation Error",
+        description: "Please select an order from the dropdown",
         variant: "destructive",
       });
       return;
     }
+    
+    if (!newStatus) {
+      toast({
+        title: "Validation Error", 
+        description: "Please select a new status for the order",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     updateStatusMutation.mutate({ orderId: selectedOrderId, status: newStatus });
   };
 
   const handleRateUpdate = () => {
-    if (!fromCurrency || !toCurrency || !exchangeRate) {
+    // Enhanced validation with specific error messages
+    if (!fromCurrency) {
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: "Validation Error",
+        description: "Please select a 'From' currency",
         variant: "destructive",
       });
       return;
     }
+    
+    if (!toCurrency) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a 'To' currency",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!exchangeRate) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter an exchange rate",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate exchange rate is a positive number
+    const rate = parseFloat(exchangeRate);
+    if (isNaN(rate) || rate <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Exchange rate must be a positive number greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (rate > 10000) {
+      toast({
+        title: "Validation Error",
+        description: "Exchange rate seems too high. Please verify the value",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     updateRateMutation.mutate({ fromCurrency, toCurrency, rate: exchangeRate });
   };
 
@@ -896,10 +947,15 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {ordersLoading ? (
-                  <p>Loading orders...</p>
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="ml-3 text-gray-600">Loading orders...</span>
+                  </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
+                  <>
+                    {/* Desktop Table */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Order ID</TableHead>
@@ -1026,8 +1082,142 @@ export default function AdminDashboard() {
                           ));
                         })()}
                       </TableBody>
-                    </Table>
-                  </div>
+                      </Table>
+                    </div>
+
+                    {/* Mobile Cards */}
+                    <div className="lg:hidden space-y-4">
+                      {(() => {
+                        const filteredOrders = orders.filter((order) => statusFilter === "all" || order.status === statusFilter);
+                        
+                        if (filteredOrders.length === 0) {
+                          return (
+                            <div className="text-center py-8 text-gray-500">
+                              {statusFilter === "all" 
+                                ? "No orders found" 
+                                : `No ${statusFilter} orders found`
+                              }
+                            </div>
+                          );
+                        }
+                        
+                        return filteredOrders.map((order) => (
+                          <Card key={order.orderId} className="bg-white border border-gray-200">
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start mb-3">
+                                <div>
+                                  <h3 className="font-semibold text-sm text-gray-900">{order.orderId}</h3>
+                                  <p className="text-sm text-gray-600">{order.fullName}</p>
+                                </div>
+                                <Badge className={getStatusColor(order.status)}>
+                                  <div className="flex items-center">
+                                    {getStatusIcon(order.status)}
+                                    <span className="ml-1 capitalize text-xs">{order.status}</span>
+                                  </div>
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+                                <div>
+                                  <p className="text-gray-500">Send</p>
+                                  <p className="font-medium">{formatCurrency(order.sendAmount, order.sendMethod)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-500">Receive</p>
+                                  <p className="font-medium">{formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                </div>
+                              </div>
+                              
+                              <div className="text-xs text-gray-500 mb-3">
+                                {formatDate(order.createdAt)}
+                              </div>
+                              
+                              <div className="flex space-x-2">
+                                {order.status === "pending" || order.status === "paid" ? (
+                                  <>
+                                    {/* Mobile Accept Dialog */}
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          disabled={acceptOrderMutation.isPending}
+                                          className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                                        >
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Accept
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent className="mx-4">
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Accept Order</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Accept order {order.orderId}? This will mark as completed and cannot be undone.
+                                            <div className="mt-3 p-3 bg-gray-50 rounded">
+                                              <p><strong>Customer:</strong> {order.fullName}</p>
+                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                            </div>
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => acceptOrderMutation.mutate(order.orderId)}
+                                            className="bg-green-600 hover:bg-green-700"
+                                          >
+                                            Accept Order
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+
+                                    {/* Mobile Cancel Dialog */}
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          disabled={cancelOrderMutation.isPending}
+                                          className="flex-1"
+                                        >
+                                          <XCircle className="w-3 h-3 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent className="mx-4">
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Cancel order {order.orderId}? This action cannot be undone.
+                                            <div className="mt-3 p-3 bg-gray-50 rounded">
+                                              <p><strong>Customer:</strong> {order.fullName}</p>
+                                              <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                            </div>
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => cancelOrderMutation.mutate(order.orderId)}
+                                            className="bg-red-600 hover:bg-red-700"
+                                          >
+                                            Cancel Order
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </>
+                                ) : (
+                                  <div className="text-center text-gray-500 text-sm py-2 flex-1">
+                                    No actions available
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ));
+                      })()}
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -1416,9 +1606,28 @@ export default function AdminDashboard() {
                               />
                               <Button
                                 onClick={async () => {
+                                  const minAmount = currencyMinimums[method.value];
+                                  
+                                  // Enhanced validation
+                                  if (!minAmount || minAmount <= 0) {
+                                    toast({
+                                      title: "Validation Error",
+                                      description: "Minimum amount must be greater than 0",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
+                                  if (minAmount > 1000) {
+                                    toast({
+                                      title: "Validation Warning",
+                                      description: "Minimum amount seems high. Please verify the value",
+                                      variant: "destructive",
+                                    });
+                                    return;
+                                  }
+                                  
                                   try {
-                                    const minAmount = currencyMinimums[method.value];
-                                    
                                     // Use the new coordinated endpoint that preserves exchange rates
                                     const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
                                       minAmount: minAmount,
