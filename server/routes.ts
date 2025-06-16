@@ -488,7 +488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const rate = await storage.updateExchangeRate(validatedData);
       
-      // Broadcast exchange rate update to all connected clients via WebSocket
+      // Broadcast exchange rate update to all connected clients via WebSocket with forced refresh
       wsManager.broadcast({
         type: 'exchange_rate_update',
         data: {
@@ -496,6 +496,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           toCurrency: validatedData.toCurrency,
           rate: validatedData.rate,
           timestamp: Date.now(),
+          forceRefresh: true, // Force immediate cache invalidation
+          updateType: 'rate_change',
           preservedLimits: {
             fromCurrency: { min: fromLimits.min, max: fromLimits.max },
             toCurrency: { min: toLimits.min, max: toLimits.max }
@@ -503,6 +505,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         timestamp: new Date().toISOString()
       });
+      
+      console.log(`EXCHANGE RATE UPDATE BROADCAST: ${validatedData.fromCurrency} → ${validatedData.toCurrency} = ${validatedData.rate} (forced cache refresh)`);
       
       // Also send status notification
       wsManager.notifyStatusChange(
@@ -917,17 +921,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const postUpdateRates = await storage.getAllExchangeRates();
       console.log(`CONFIRMED: ${postUpdateRates.length} exchange rates preserved after ${currency.toUpperCase()} limit update`);
       
-      // Broadcast currency limit update with $10,000 maximum enforcement
+      // Broadcast currency limit update with $10,000 maximum enforcement and forced refresh
       wsManager.broadcast({
         type: 'currency_limit_update',
         data: { 
           currency: currency.toUpperCase(),
           minAmount: parseFloat(minAmount),
           maxAmount: enforceMaxAmount,
+          forceRefresh: true, // Force immediate cache invalidation
+          updateType: 'limit_change',
           message: `Maximum enforced at $10,000, exchange rates preserved`
         },
         timestamp: new Date().toISOString()
       });
+      
+      console.log(`CURRENCY LIMIT UPDATE BROADCAST: ${currency.toUpperCase()} min=$${minAmount}, max=$${enforceMaxAmount} (forced cache refresh)`);
       
       console.log(`${currency.toUpperCase()} limits updated with $10,000 maximum enforcement, exchange rates preserved`);
       res.json({

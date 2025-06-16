@@ -416,25 +416,57 @@ export default function Exchange() {
           // Handle exchange rate updates from admin dashboard  
           if (message.type === 'exchange_rate_update') {
             console.log('Real-time exchange rate update received:', message.data);
-            // Force refetch all rate-dependent queries
-            queryClient.removeQueries({ 
-              predicate: (query) => {
-                const key = query.queryKey[0];
-                return typeof key === 'string' && key.includes('/api/exchange-rate');
-              }
-            });
+            
+            // Force complete cache invalidation for immediate new data application
+            if (message.data.forceRefresh) {
+              queryClient.clear();
+              setTimeout(() => {
+                queryClient.invalidateQueries();
+                // Force immediate refetch of exchange rate data
+                queryClient.refetchQueries({ 
+                  predicate: (query) => {
+                    const key = query.queryKey[0];
+                    return typeof key === 'string' && key.includes('/api/exchange-rate');
+                  }
+                });
+              }, 100);
+            } else {
+              // Standard rate update handling
+              queryClient.removeQueries({ 
+                predicate: (query) => {
+                  const key = query.queryKey[0];
+                  return typeof key === 'string' && key.includes('/api/exchange-rate');
+                }
+              });
+            }
           }
           
           // Handle currency limit updates from admin dashboard
           if (message.type === 'currency_limit_update') {
             console.log('Real-time currency limit update received:', message.data);
-            // Force refetch all limit-dependent queries
-            queryClient.removeQueries({ 
-              predicate: (query) => {
-                const key = query.queryKey[0];
-                return typeof key === 'string' && key.includes('/api/currency-limits');
-              }
-            });
+            
+            // Force complete cache invalidation for immediate new data application
+            if (message.data.forceRefresh) {
+              queryClient.clear();
+              setTimeout(() => {
+                queryClient.invalidateQueries();
+                // Force immediate refetch of currency limit data
+                queryClient.refetchQueries({ 
+                  predicate: (query) => {
+                    const key = query.queryKey[0];
+                    return typeof key === 'string' && key.includes('/api/currency-limits');
+                  }
+                });
+              }, 100);
+            } else {
+              // Standard limit update handling
+              queryClient.removeQueries({ 
+                predicate: (query) => {
+                  const key = query.queryKey[0];
+                  return typeof key === 'string' && key.includes('/api/currency-limits');
+                }
+              });
+            }
           }
         } catch (error) {
           console.error('WebSocket message parsing error:', error);
