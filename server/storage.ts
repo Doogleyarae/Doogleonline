@@ -17,6 +17,7 @@ export interface IStorage {
   // Contact message methods
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
   getAllContactMessages(): Promise<ContactMessage[]>;
+  updateContactMessageResponse(messageId: number, response: string): Promise<ContactMessage | undefined>;
   
   // Exchange rate methods
   getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined>;

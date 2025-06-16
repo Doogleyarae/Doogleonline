@@ -27,6 +27,8 @@ export const contactMessages = pgTable("contact_messages", {
   email: text("email").notNull(),
   subject: text("subject").notNull(),
   message: text("message").notNull(),
+  adminResponse: text("admin_response"),
+  responseDate: timestamp("response_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

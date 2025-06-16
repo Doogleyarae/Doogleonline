@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Mail, Phone, Clock, Bell, BellOff, MessageCircle } from "lucide-react";
+import { Mail, Phone, Clock, Bell, BellOff, MessageCircle, Send, User, UserCheck } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 
 const contactFormSchema = z.object({
@@ -36,6 +36,12 @@ export default function Contact() {
   const { data: contactInfo } = useQuery({
     queryKey: ["/api/contact-info"],
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Fetch customer messages history
+  const { data: messages = [] } = useQuery({
+    queryKey: ["/api/contact"],
+    staleTime: 30 * 1000, // Cache for 30 seconds to show updates quickly
   });
 
   // Initialize form data memory for auto-save functionality
@@ -280,6 +286,84 @@ export default function Contact() {
             </Form>
           </CardContent>
         </Card>
+
+        {/* Message History */}
+        {messages.length > 0 && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MessageCircle className="w-5 h-5 mr-2" />
+                Message History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {messages.map((message: any) => (
+                  <div key={message.id} className="border-l-4 border-blue-500 pl-4 py-3 bg-gray-50 rounded-r-lg">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center">
+                        <User className="w-4 h-4 text-gray-600 mr-2" />
+                        <span className="font-medium text-gray-900">{message.name}</span>
+                        <span className="text-sm text-gray-500 ml-2">({message.email})</span>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(message.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    
+                    <div className="mb-2">
+                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                        {subjects.find(s => s.value === message.subject)?.label || message.subject}
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-700 whitespace-pre-wrap">{message.message}</p>
+                    
+                    {/* Admin Response Section */}
+                    {message.adminResponse && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center mb-2">
+                          <UserCheck className="w-4 h-4 text-green-600 mr-2" />
+                          <span className="font-medium text-green-800">Support Team Response</span>
+                        </div>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <p className="text-gray-700 whitespace-pre-wrap">{message.adminResponse}</p>
+                          {message.responseDate && (
+                            <p className="text-xs text-green-600 mt-2">
+                              Responded on {new Date(message.responseDate).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Pending Response Indicator */}
+                    {!message.adminResponse && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center text-yellow-600">
+                          <Clock className="w-4 h-4 mr-2" />
+                          <span className="text-sm font-medium">Awaiting response from support team</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
