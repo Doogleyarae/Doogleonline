@@ -23,14 +23,7 @@ export default function Navigation() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
