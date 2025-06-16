@@ -266,7 +266,7 @@ export default function Confirmation() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Date & Time:</span>
-                  <span className="text-sm text-gray-900">{formatDate(order.createdAt)}</span>
+                  <span className="text-sm text-gray-900">{order.createdAt ? formatDate(order.createdAt) : 'Just now'}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Amount:</span>

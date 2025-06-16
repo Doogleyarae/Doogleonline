@@ -77,7 +77,7 @@ export default function OrderCompleted() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Completed:</span>
-                <span className="font-medium">{order.createdAt ? formatDate(order.createdAt) : 'Just now'}</span>
+                <span className="font-medium">{order.updatedAt ? formatDate(order.updatedAt) : (order.createdAt ? formatDate(order.createdAt) : 'Just now')}</span>
               </div>
             </div>
           </div>

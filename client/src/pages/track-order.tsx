@@ -163,7 +163,7 @@ export default function TrackOrder() {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-200">
                 <span className="text-sm font-medium text-gray-700">Created:</span>
-                <span className="text-sm text-gray-900">{formatDate(order.createdAt)}</span>
+                <span className="text-sm text-gray-900">{order.createdAt ? formatDate(order.createdAt) : 'Recently'}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-200">
                 <span className="text-sm font-medium text-gray-700">From:</span>

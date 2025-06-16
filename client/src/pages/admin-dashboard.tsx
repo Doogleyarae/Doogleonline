@@ -94,7 +94,7 @@ function MessageResponseCard({ message, onResponseSent }: { message: ContactMess
           <Badge variant="outline">{message.subject}</Badge>
         </div>
         <p className="text-gray-700 mb-2">{message.message}</p>
-        <p className="text-xs text-gray-500 mb-3">{formatDate(message.createdAt)}</p>
+        <p className="text-xs text-gray-500 mb-3">{message.createdAt ? formatDate(message.createdAt) : 'Recently'}</p>
         
         {/* Admin Response Section */}
         {message.adminResponse ? (
