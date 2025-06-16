@@ -59,10 +59,7 @@ function MessageResponseCard({ message, onResponseSent }: { message: ContactMess
 
   const responseMutation = useMutation({
     mutationFn: async (data: ResponseFormData) => {
-      return await apiRequest(`/api/contact/${message.id}/response`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("PATCH", `/api/contact/${message.id}/response`, data);
     },
     onSuccess: () => {
       toast({
@@ -442,27 +439,7 @@ export default function AdminDashboard() {
     },
   });
 
-  // Cancel order mutation
-  const cancelOrderMutation = useMutation({
-    mutationFn: async (orderId: string) => {
-      const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "cancelled" });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Order Cancelled",
-        description: "Order has been cancelled successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to cancel order",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   // Update exchange rate mutation with real-time cache invalidation
   const updateRateMutation = useMutation({
