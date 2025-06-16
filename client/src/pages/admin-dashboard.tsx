@@ -769,63 +769,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
-        {/* Current Exchange Rates Section */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center text-blue-900">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Current Exchange Rates
-            </CardTitle>
-            <p className="text-sm text-blue-700">Live rates affecting all transaction calculations</p>
-          </CardHeader>
-          <CardContent>
-            {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allExchangeRates.slice(0, 6).map((rate: any, index: number) => (
-                  <div key={`current-rate-${rate.id || index}-${rate.fromCurrency}-${rate.toCurrency}`} className="bg-white border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-semibold text-sm text-gray-800">
-                          {rate.fromCurrency.toUpperCase()} → {rate.toCurrency.toUpperCase()}
-                        </p>
-                        <p className="text-xl font-bold text-blue-900">
-                          {parseFloat(rate.rate).toFixed(6)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Updated: {formatDate(rate.updatedAt)}
-                        </p>
-                      </div>
-                      <div className="flex flex-col space-y-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setFromCurrency(rate.fromCurrency);
-                            setToCurrency(rate.toCurrency);
-                            setExchangeRate(rate.rate);
-                            // Automatically switch to rates tab
-                            const ratesTab = document.querySelector('[value="rates"]') as HTMLElement;
-                            if (ratesTab) ratesTab.click();
-                          }}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs"
-                        >
-                          Quick Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-blue-600">
-                <TrendingUp className="w-10 h-10 mx-auto mb-3 text-blue-400" />
-                <p className="font-medium">No exchange rates configured</p>
-                <p className="text-sm text-blue-500">Configure rates in the Exchange Rates tab</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Update Exchange Rate Section */}
         <Card className="mb-8 bg-white border-gray-200 shadow-lg">
           <CardHeader className="pb-6">
@@ -899,6 +842,63 @@ export default function AdminDashboard() {
                 <p className="text-xs text-gray-600 mt-1">
                   This rate will immediately affect all live calculations and new transactions
                 </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Current Exchange Rates Section */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center text-blue-900">
+              <TrendingUp className="w-5 h-5 mr-2" />
+              Current Exchange Rates
+            </CardTitle>
+            <p className="text-sm text-blue-700">Live rates affecting all transaction calculations</p>
+          </CardHeader>
+          <CardContent>
+            {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {allExchangeRates.slice(0, 6).map((rate: any, index: number) => (
+                  <div key={`current-rate-${rate.id || index}-${rate.fromCurrency}-${rate.toCurrency}`} className="bg-white border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-sm text-gray-800">
+                          {rate.fromCurrency.toUpperCase()} → {rate.toCurrency.toUpperCase()}
+                        </p>
+                        <p className="text-xl font-bold text-blue-900">
+                          {parseFloat(rate.rate).toFixed(6)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Updated: {formatDate(rate.updatedAt)}
+                        </p>
+                      </div>
+                      <div className="flex flex-col space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setFromCurrency(rate.fromCurrency);
+                            setToCurrency(rate.toCurrency);
+                            setExchangeRate(rate.rate);
+                            // Automatically switch to rates tab
+                            const ratesTab = document.querySelector('[value="rates"]') as HTMLElement;
+                            if (ratesTab) ratesTab.click();
+                          }}
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs"
+                        >
+                          Quick Edit
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-blue-600">
+                <TrendingUp className="w-10 h-10 mx-auto mb-3 text-blue-400" />
+                <p className="font-medium">No exchange rates configured</p>
+                <p className="text-sm text-blue-500">Configure rates in the Exchange Rates tab</p>
               </div>
             )}
           </CardContent>
