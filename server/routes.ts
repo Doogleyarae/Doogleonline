@@ -9,9 +9,6 @@ import { z } from "zod";
 
 // NO DEFAULT RATES - Only admin-configured rates are allowed
 
-// Universal defaults for currency limits
-let universalDefaults = { min: 5, max: 10000 };
-
 // Database-backed currency limits storage using currency_limits table
 async function getCurrencyLimits(currency: string): Promise<{ min: number; max: number }> {
   try {
@@ -51,6 +48,8 @@ async function updateCurrencyLimits(currency: string, min: number, max: number):
 }
 
 // Function to update universal defaults
+let universalDefaults = { min: 5, max: 10000 };
+
 async function updateUniversalDefaults(min: number, max: number): Promise<void> {
   universalDefaults = { min, max };
   console.log(`Updated universal defaults: min=${min}, max=${max}`);

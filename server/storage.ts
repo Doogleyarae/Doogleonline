@@ -457,39 +457,15 @@ export class DatabaseStorage implements IStorage {
           })
           .where(eq(orders.orderId, orderId));
       } else if (status === "completed") {
-        // D. Admin "Completed" - Automatic balance adjustments for both currencies
-        const sendAmountNum = parseFloat(order.sendAmount);
-        const sendCurrency = order.sendMethod.toUpperCase();
+        // D. Admin "Completed" - Decrease exchange wallet, increase customer wallet
+        const currentBalance = await this.getBalance(receiveCurrency);
+        const currentAmount = currentBalance ? parseFloat(currentBalance.amount) : 0;
+        const newAmount = currentAmount - receiveAmountNum;
         
-        // 1. INCREASE send currency balance (amount received from customer)
-        const currentSendBalance = await this.getBalance(sendCurrency);
-        const currentSendAmount = currentSendBalance ? parseFloat(currentSendBalance.amount) : 0;
-        const newSendAmount = currentSendAmount + sendAmountNum;
-        
-        await this.updateBalance({
-          currency: sendCurrency.toLowerCase(),
-          amount: newSendAmount.toString()
-        });
-
-        // Log the receive transaction
-        await this.createTransaction({
-          orderId: order.orderId,
-          type: "RECEIVE",
-          currency: sendCurrency,
-          amount: sendAmountNum.toString(),
-          fromWallet: "customer_wallet",
-          toWallet: "exchange_wallet",
-          description: `Received ${sendAmountNum} ${sendCurrency} from customer - payment confirmed`
-        });
-
-        // 2. DECREASE receive currency balance (amount sent to customer)
-        const currentReceiveBalance = await this.getBalance(receiveCurrency);
-        const currentReceiveAmount = currentReceiveBalance ? parseFloat(currentReceiveBalance.amount) : 0;
-        const newReceiveAmount = currentReceiveAmount - receiveAmountNum;
-        
+        // Update exchange wallet balance
         await this.updateBalance({
           currency: receiveCurrency.toLowerCase(),
-          amount: newReceiveAmount.toString()
+          amount: newAmount.toString()
         });
 
         // Log the payout transaction

@@ -139,7 +139,7 @@ export type Balance = typeof balances.$inferSelect;
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   orderId: text("order_id").notNull(),
-  type: text("type").notNull(), // HOLD, RELEASE, PAYOUT, RECEIVE
+  type: text("type").notNull(), // HOLD, RELEASE, PAYOUT
   currency: text("currency").notNull(),
   amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
   fromWallet: text("from_wallet").notNull(), // exchange_wallet, customer_wallet

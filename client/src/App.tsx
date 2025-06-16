@@ -8,7 +8,6 @@ import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
 
-
 // Lazy load pages to improve initial loading
 const Home = lazy(() => import("@/pages/home"));
 const About = lazy(() => import("@/pages/about"));
@@ -26,7 +25,6 @@ const AdminAnalytics = lazy(() => import("@/pages/admin-analytics"));
 const OrderHistory = lazy(() => import("@/pages/order-history"));
 const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
 const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
-
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Loading component
@@ -58,7 +56,6 @@ function Router() {
         <Route path="/orders" component={OrderHistory} />
         <Route path="/completed" component={CompletedOrders} />
         <Route path="/cancelled" component={CancelledOrders} />
-
         <Route path="/admin" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
         <Route path="/admin/analytics" component={AdminAnalytics} />

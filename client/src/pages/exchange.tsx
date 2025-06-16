@@ -17,7 +17,6 @@ import { ArrowUpCircle, ArrowDownCircle, User, Send, Bell, BellOff } from "lucid
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
 
-
 interface ExchangeRateResponse {
   rate: number;
   from: string;
@@ -53,6 +52,8 @@ const paymentMethods = [
   { value: "trc20", label: "TRC20", logo: trc20Logo },
   { value: "peb20", label: "PEB20", logo: peb20Logo },
 ];
+
+
 
 const createExchangeFormSchema = (
   minSendAmount: number = 5, 
@@ -96,14 +97,14 @@ const createExchangeFormSchema = (
     }
   ),
   exchangeRate: z.string(),
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  phoneNumber: z.string().min(8, "Phone number must be at least 8 digits"),
-  senderAccount: z.string().optional(),
-  walletAddress: z.string().min(5, "Wallet address must be at least 5 characters"),
-  rememberDetails: z.boolean().default(false),
-  agreeToTerms: z.boolean().refine(val => val === true, {
-    message: "You must agree to the terms and conditions",
-  }),
+  fullName: z.string().min(1, "Full name is required"),
+  phoneNumber: z.string().min(1, "Phone number is required"),
+  senderAccount: ['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) 
+    ? z.string().min(1, "Sender account is required") 
+    : z.string().optional(),
+  walletAddress: z.string().min(1, "Wallet address is required"),
+  rememberDetails: z.boolean().optional(),
+  agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
 });
 
 type ExchangeFormData = z.infer<ReturnType<typeof createExchangeFormSchema>>;
@@ -112,9 +113,9 @@ export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
+
   const [exchangeRate, setExchangeRate] = useState<number>(0);
-  const [rateDisplay, setRateDisplay] = useState("Exchange rate loading...");
-  
+  const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
   // Load persisted exchange state from localStorage
   const loadPersistedExchangeState = () => {
     try {
@@ -165,7 +166,7 @@ export default function Exchange() {
       console.warn('Failed to save exchange state:', error);
     }
   };
-
+  const [formKey, setFormKey] = useState(0);
   const [calculatingFromSend, setCalculatingFromSend] = useState(false);
   const [calculatingFromReceive, setCalculatingFromReceive] = useState(false);
   const [dynamicLimits, setDynamicLimits] = useState({
@@ -261,43 +262,6 @@ export default function Exchange() {
     form.trigger(); // Re-validate all fields with new limits
   }, [dynamicLimits, form, getDynamicResolver]);
 
-  // Fetch exchange rate with NO CACHING - always use latest rates
-  const { data: rateData, refetch: refetchRate, error: rateError } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
-    enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    staleTime: 0, // No stale time - always fetch fresh
-    gcTime: 0, // No garbage collection time - don't cache
-    refetchOnWindowFocus: true, // Always refetch when user focuses
-    refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
-    retry: false, // Don't retry on 404 errors
-  });
-
-  // Update exchange rate and calculate initial receive amount
-  useEffect(() => {
-    if (rateData) {
-      const rate = rateData.rate;
-      setExchangeRate(rate);
-      form.setValue("exchangeRate", rate.toString());
-      setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
-      
-      // Force recalculation of receive amount whenever rate changes
-      if (sendAmount && parseFloat(sendAmount) > 0) {
-        const amount = parseFloat(sendAmount);
-        const converted = amount * rate;
-        const convertedAmount = formatAmount(converted);
-        setReceiveAmount(convertedAmount);
-        form.setValue("receiveAmount", convertedAmount);
-        saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
-      }
-    } else if (rateError && sendMethod && receiveMethod && sendMethod !== receiveMethod) {
-      // Handle case when no exchange rate is configured
-      setExchangeRate(0);
-      setRateDisplay(`Exchange rate not configured for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}`);
-      form.setValue("exchangeRate", "0");
-    }
-  }, [rateData, rateError, sendMethod, receiveMethod, form, sendAmount]);
-
   // Calculate dynamic limits using wallet balances and admin settings
   useEffect(() => {
     console.log('Checking balance calculation conditions:', {
@@ -387,7 +351,6 @@ export default function Exchange() {
         const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
         const receiveBalance = balances[balanceKey] || 0;
         console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${exchangeRate}`);
-        console.log(`RATE CALCULATION: ${receiveCurrencyLimits.minAmount} ÷ ${exchangeRate} = ${rateBasedMinSend.toFixed(2)}, using max(${sendCurrencyLimits.minAmount}, ${rateBasedMinSend.toFixed(2)}) = ${effectiveMinSend.toFixed(2)}`);
       }
     } else {
       // Use admin-configured limits when balance data not available
@@ -417,6 +380,270 @@ export default function Exchange() {
       receiveAmount
     });
   }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
+
+  // Set up WebSocket listeners for real-time admin updates (EVC Plus synchronization)
+  useEffect(() => {
+    const connectWebSocket = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected for real-time updates');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          
+          // Handle balance updates from admin dashboard
+          if (message.type === 'balance_update') {
+            console.log('Real-time balance update received:', message.data);
+            
+            // Force complete cache invalidation for immediate updates
+            if (message.data.forceRefresh) {
+              queryClient.clear();
+              setTimeout(() => {
+                queryClient.invalidateQueries();
+                queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+              }, 100);
+            } else {
+              // Standard balance update handling
+              queryClient.removeQueries({ queryKey: ["/api/admin/balances"] });
+              queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+            }
+          }
+          
+          // Handle exchange rate updates from admin dashboard  
+          if (message.type === 'exchange_rate_update') {
+            console.log('Real-time exchange rate update received:', message.data);
+            
+            // Force complete cache invalidation for immediate new data application
+            if (message.data.forceRefresh) {
+              queryClient.clear();
+              setTimeout(() => {
+                queryClient.invalidateQueries();
+                // Force immediate refetch of exchange rate data
+                queryClient.refetchQueries({ 
+                  predicate: (query) => {
+                    const key = query.queryKey[0];
+                    return typeof key === 'string' && key.includes('/api/exchange-rate');
+                  }
+                });
+              }, 100);
+            } else {
+              // Standard rate update handling
+              queryClient.removeQueries({ 
+                predicate: (query) => {
+                  const key = query.queryKey[0];
+                  return typeof key === 'string' && key.includes('/api/exchange-rate');
+                }
+              });
+            }
+          }
+          
+          // Handle currency limit updates from admin dashboard
+          if (message.type === 'currency_limit_update') {
+            console.log('Real-time currency limit update received:', message.data);
+            
+            // Force complete cache invalidation for immediate new data application
+            if (message.data.forceRefresh) {
+              queryClient.clear();
+              setTimeout(() => {
+                queryClient.invalidateQueries();
+                // Force immediate refetch of currency limit data
+                queryClient.refetchQueries({ 
+                  predicate: (query) => {
+                    const key = query.queryKey[0];
+                    return typeof key === 'string' && key.includes('/api/currency-limits');
+                  }
+                });
+              }, 100);
+            } else {
+              // Standard limit update handling
+              queryClient.removeQueries({ 
+                predicate: (query) => {
+                  const key = query.queryKey[0];
+                  return typeof key === 'string' && key.includes('/api/currency-limits');
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error('WebSocket message parsing error:', error);
+        }
+      };
+
+      ws.onclose = () => {
+        // Reduce reconnection frequency to prevent spam
+        setTimeout(connectWebSocket, 10000);
+      };
+
+      ws.onerror = () => {
+        // Silent error handling to reduce console spam
+      };
+
+      return ws;
+    };
+
+    const ws = connectWebSocket();
+    return () => ws.close();
+  }, [queryClient]);
+
+  // Fetch exchange rate with NO CACHING - always use latest rates
+  const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
+    enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
+    staleTime: 0, // No stale time - always fetch fresh
+    gcTime: 0, // No garbage collection time - don't cache
+    refetchOnWindowFocus: true, // Always refetch when user focuses
+    refetchOnReconnect: true, // Always refetch on reconnect
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+  });
+
+  // Update exchange rate and calculate initial receive amount
+  useEffect(() => {
+    if (rateData) {
+      const rate = rateData.rate;
+      setExchangeRate(rate);
+      form.setValue("exchangeRate", rate.toString());
+      setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
+      
+      // Force recalculation of receive amount whenever rate changes
+      if (sendAmount && parseFloat(sendAmount) > 0) {
+        const amount = parseFloat(sendAmount);
+        const converted = amount * rate;
+        const convertedAmount = formatAmount(converted);
+        setReceiveAmount(convertedAmount);
+        form.setValue("receiveAmount", convertedAmount);
+        saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
+      }
+      
+      // Immediately trigger balance-based limit calculation with new rate
+      if (sendCurrencyLimits && receiveCurrencyLimits && balances) {
+        // Map currency names to match admin dashboard balance keys
+        const currencyMapping: Record<string, string> = {
+          'evc': 'EVCPLUS',
+          'evcplus': 'EVCPLUS',
+          'trc20': 'TRC20',
+          'zaad': 'ZAAD',
+          'sahal': 'SAHAL',
+          'moneygo': 'MONEYGO',
+          'premier': 'PREMIER',
+          'edahab': 'EDAHAB',
+          'trx': 'TRX',
+          'peb20': 'PEB20'
+        };
+        
+        const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+        const receiveBalance = balances[balanceKey] || 0;
+        const balanceBasedMaxSend = receiveBalance / rate;
+        const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
+        const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+
+        // Calculate rate-based minimum send amount
+        const rateBasedMinSend = receiveCurrencyLimits.minAmount / rate;
+        // Use the higher of admin minimum or rate-based minimum to ensure both requirements are met
+        const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
+
+        const newLimits = {
+          minSendAmount: effectiveMinSend,
+          maxSendAmount: effectiveMaxSend,
+          minReceiveAmount: receiveCurrencyLimits.minAmount,
+          maxReceiveAmount: effectiveMaxReceive,
+        };
+
+        setDynamicLimits(newLimits);
+        console.log(`Balance-based limits recalculated: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
+        console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${rate}`);
+        console.log(`RATE CALCULATION: ${receiveCurrencyLimits.minAmount} ÷ ${rate} = ${rateBasedMinSend.toFixed(2)}, using max(${sendCurrencyLimits.minAmount}, ${rateBasedMinSend.toFixed(2)}) = ${effectiveMinSend.toFixed(2)}`);
+      }
+      
+      // Trigger validation to update max amount limits based on new rate
+      setTimeout(() => {
+        form.trigger(['sendAmount', 'receiveAmount']);
+      }, 100);
+    }
+  }, [rateData, sendMethod, receiveMethod, form, sendAmount, sendCurrencyLimits, receiveCurrencyLimits, balances]);
+
+  // Force refresh exchange rate when methods change (once per change)
+  useEffect(() => {
+    if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
+      refetchRate();
+    }
+  }, [sendMethod, receiveMethod]);
+
+  // WebSocket connection for real-time admin updates
+  useEffect(() => {
+    if (!sendMethod || !receiveMethod) return;
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      console.log('WebSocket connected for real-time updates');
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        
+        // Handle exchange rate updates from admin dashboard
+        if (message.type === 'exchange_rate_update') {
+          const { fromCurrency, toCurrency } = message.data;
+          
+          // Check if this rate update affects current currency pair
+          if ((fromCurrency === sendMethod && toCurrency === receiveMethod) ||
+              (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
+            
+            // Force immediate refresh of exchange rate data
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] 
+            });
+            refetchRate();
+            
+            // Force recalculation of dynamic limits
+            setTimeout(() => {
+              form.trigger(['sendAmount', 'receiveAmount']);
+            }, 200);
+          }
+        }
+        
+        // Handle currency limit updates
+        if (message.type === 'currency_limit_update') {
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/currency-limits/${sendMethod}`] 
+          });
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/currency-limits/${receiveMethod}`] 
+          });
+        }
+        
+        // Handle balance updates
+        if (message.type === 'balance_update') {
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/admin/balances`] 
+          });
+        }
+      } catch (error) {
+        console.error('WebSocket message parse error:', error);
+      }
+    };
+    
+    ws.onerror = (error) => {
+      console.error('WebSocket connection error:', error);
+    };
+    
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+    
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [sendMethod, receiveMethod, refetchRate, form]);
 
   // Handle amount calculations with prevention of loops
   const handleSendAmountChange = (value: string) => {
@@ -475,47 +702,94 @@ export default function Exchange() {
     }
   };
 
-  // Handle checkbox change for auto-save functionality
-  const handleRememberDetailsChange = (checked: boolean) => {
-    if (checked && !isReminded) {
-      updateSavedField('fullName', form.getValues('fullName'));
-      updateSavedField('phoneNumber', form.getValues('phoneNumber'));
-      updateSavedField('senderAccount', form.getValues('senderAccount'));
-      updateSavedField('walletAddress', form.getValues('walletAddress'));
+  // Handle form field changes and auto-save when remind is enabled
+  const handleFieldChange = (field: string, value: any) => {
+    if (isReminded) {
+      updateSavedField(field, value);
     }
+  };
+
+  // Toggle remind functionality with complete form control
+  const handleToggleRemind = () => {
+    const currentFormData = form.getValues();
+    const dataToSave = {
+      fullName: currentFormData.fullName,
+      phoneNumber: currentFormData.phoneNumber,
+      walletAddress: currentFormData.walletAddress,
+    };
     
-    // Call the toggle function which manages the reminded state
-    toggleRemind(form.getValues());
-    form.setValue('rememberDetails', checked);
+    const newRemindStatus = toggleRemind(dataToSave);
+    form.setValue("rememberDetails", newRemindStatus);
     
-    if (checked) {
+    if (newRemindStatus) {
+      // When turning ON - save current data
       toast({
-        title: "Details will be remembered",
-        description: "Your information will be saved for future exchanges",
+        title: "Data Saved",
+        description: "Your personal details will be remembered for future exchanges.",
+        variant: "default",
       });
     } else {
+      // When turning OFF - clear form fields immediately
+      form.setValue("fullName", "");
+      form.setValue("phoneNumber", "");
+      form.setValue("walletAddress", "");
+      
       toast({
-        title: "Details cleared",
-        description: "Your saved information has been removed",
+        title: "Data Cleared",
+        description: "Your saved personal details have been removed.",
+        variant: "default",
       });
     }
   };
 
-  // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (data: ExchangeFormData) => {
-      const orderData = {
-        ...data,
-        sendAmount: parseFloat(data.sendAmount),
-        receiveAmount: parseFloat(data.receiveAmount),
-        exchangeRate: parseFloat(data.exchangeRate),
-      };
+      // Use admin-configured limits for validation
+      const sendAmount = parseFloat(data.sendAmount);
+      const receiveAmount = parseFloat(data.receiveAmount);
       
-      const response = await apiRequest("POST", "/api/orders", orderData);
+      // Validate against current dynamic limits
+      if (sendAmount > dynamicLimits.maxSendAmount) {
+        throw new Error(`Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}. Please enter an amount less than or equal to $${dynamicLimits.maxSendAmount.toLocaleString()}.`);
+      }
+      
+      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+        throw new Error(`Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}. Please enter an amount less than or equal to $${dynamicLimits.maxReceiveAmount.toLocaleString()}.`);
+      }
+      
+      if (sendAmount < dynamicLimits.minSendAmount) {
+        throw new Error(`Send amount must be at least $${dynamicLimits.minSendAmount.toFixed(2)}`);
+      }
+      
+      if (receiveAmount < dynamicLimits.minReceiveAmount) {
+        throw new Error(`Receive amount must be at least $${dynamicLimits.minReceiveAmount.toFixed(2)}`);
+      }
+
+      // Get the live payment wallet address from admin dashboard
+      const paymentWallet = walletAddresses?.[data.receiveMethod] || '';
+      
+      if (!paymentWallet) {
+        throw new Error(`Payment wallet for ${data.receiveMethod.toUpperCase()} is not configured. Please contact support.`);
+      }
+
+      const response = await apiRequest("POST", "/api/orders", {
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
+        senderAccount: data.senderAccount,
+        walletAddress: data.walletAddress,
+        sendMethod: data.sendMethod,
+        receiveMethod: data.receiveMethod,
+        sendAmount: data.sendAmount,
+        receiveAmount: data.receiveAmount,
+        exchangeRate: data.exchangeRate,
+        paymentWallet: paymentWallet, // Use live wallet address from admin dashboard
+      });
       return response.json();
     },
     onSuccess: (order) => {
-      setLocation(`/confirmation?orderId=${order.orderId}`);
+      // Store order data in sessionStorage for confirmation page
+      sessionStorage.setItem("currentOrder", JSON.stringify(order));
+      setLocation("/confirmation");
     },
     onError: (error: any) => {
       toast({
@@ -527,51 +801,68 @@ export default function Exchange() {
   });
 
   const onSubmit = (data: ExchangeFormData) => {
-    console.log("Form submission started with data:", data);
-    console.log("Current form errors:", form.formState.errors);
+    if (sendMethod === receiveMethod) {
+      toast({
+        title: "Invalid Selection",
+        description: "Send and receive methods cannot be the same",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Validate exchange rate is configured
-    if (!exchangeRate || exchangeRate <= 0) {
-      toast({
-        title: "Exchange Rate Required",
-        description: `No exchange rate configured between ${sendMethod.toUpperCase()} and ${receiveMethod.toUpperCase()}. Please contact admin.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate amounts are within limits
-    const sendAmountNum = parseFloat(data.sendAmount);
-    const receiveAmountNum = parseFloat(data.receiveAmount);
-
-    if (sendAmountNum < dynamicLimits.minSendAmount || sendAmountNum > dynamicLimits.maxSendAmount) {
-      toast({
-        title: "Invalid Send Amount",
-        description: `Send amount must be between $${dynamicLimits.minSendAmount.toFixed(2)} and $${dynamicLimits.maxSendAmount.toLocaleString()}`,
-        variant: "destructive",
-      });
-      form.setFocus("sendAmount");
-      return;
-    }
-
-    if (receiveAmountNum < dynamicLimits.minReceiveAmount || receiveAmountNum > dynamicLimits.maxReceiveAmount) {
-      toast({
-        title: "Invalid Receive Amount", 
-        description: `Receive amount must be between $${dynamicLimits.minReceiveAmount.toFixed(2)} and $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
-        variant: "destructive",
-      });
-      form.setFocus("receiveAmount");
-      return;
-    }
-
-    // Find wallet address for receive method
-    const walletKey = receiveMethod.toUpperCase();
+    // Final validation with admin-configured limits
+    const sendAmount = parseFloat(data.sendAmount);
+    const receiveAmount = parseFloat(data.receiveAmount);
     
-    if (!walletAddresses || !walletAddresses[walletKey]) {
+    // Use dynamic limits from admin configuration
+    if (sendAmount > dynamicLimits.maxSendAmount) {
       toast({
-        title: "Wallet Address Missing",
-        description: `No wallet address configured for ${receiveMethod.toUpperCase()}. Please contact admin.`,
+        title: "Amount Exceeds Limit",
+        description: `You can place an order up to $${dynamicLimits.maxSendAmount.toLocaleString()} only. Please enter an amount less than or equal to $${dynamicLimits.maxSendAmount.toLocaleString()}.`,
         variant: "destructive",
+      });
+      form.setError('sendAmount', {
+        type: 'manual',
+        message: `Maximum send amount: $${dynamicLimits.maxSendAmount.toLocaleString()}`
+      });
+      return;
+    }
+    
+    if (receiveAmount > dynamicLimits.maxReceiveAmount) {
+      toast({
+        title: "Amount Exceeds Limit", 
+        description: `You can place an order up to $${dynamicLimits.maxReceiveAmount.toLocaleString()} only. Please enter an amount less than or equal to $${dynamicLimits.maxReceiveAmount.toLocaleString()}.`,
+        variant: "destructive",
+      });
+      form.setError('receiveAmount', {
+        type: 'manual',
+        message: `Maximum receive amount: $${dynamicLimits.maxReceiveAmount.toLocaleString()}`
+      });
+      return;
+    }
+    
+    if (sendAmount < dynamicLimits.minSendAmount) {
+      toast({
+        title: "Amount Below Minimum",
+        description: `Minimum send amount is $${dynamicLimits.minSendAmount.toFixed(2)}.`,
+        variant: "destructive",
+      });
+      form.setError('sendAmount', {
+        type: 'manual',
+        message: `Minimum send amount: $${dynamicLimits.minSendAmount.toFixed(2)}`
+      });
+      return;
+    }
+    
+    if (receiveAmount < dynamicLimits.minReceiveAmount) {
+      toast({
+        title: "Amount Below Minimum",
+        description: `Minimum receive amount is $${dynamicLimits.minReceiveAmount.toFixed(2)}.`,
+        variant: "destructive",
+      });
+      form.setError('receiveAmount', {
+        type: 'manual',
+        message: `Minimum receive amount: $${dynamicLimits.minReceiveAmount.toFixed(2)}`
       });
       return;
     }
@@ -580,69 +871,68 @@ export default function Exchange() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold text-gray-900">
-            Currency Exchange
-          </CardTitle>
-          <p className="text-center text-gray-600 mt-2">
-            Exchange between multiple payment methods securely and quickly
-          </p>
-        </CardHeader>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Currency Exchange</h1>
+        <p className="text-lg text-gray-600">Complete your exchange in just a few steps</p>
+      </div>
 
-        <CardContent>
+      <Card className="shadow-lg">
+        <CardContent className="p-8">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Exchange Rate Display */}
-              <div className="text-center py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg">
-                <div className="text-lg font-semibold">{rateDisplay}</div>
-                {exchangeRate === 0 && (
-                  <div className="text-sm opacity-90 mt-1">
-                    Contact admin to configure exchange rate
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-800">Current Rate:</span>
+                  <span className="text-lg font-bold text-blue-900">{rateDisplay}</span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <div className="text-xs text-center">
+                    <span className="text-blue-700 font-medium">Transaction Limits: </span>
+                    <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Send Section */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <ArrowUpCircle className="w-5 h-5 text-red-500" />
-                    <Label className="text-lg font-semibold">You Send</Label>
-                  </div>
-
+              <Card className="border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg font-semibold">
+                    <ArrowUpCircle className="w-5 h-5 mr-2 text-primary" />
+                    You Send
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="sendMethod"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Payment Method</FormLabel>
-                          <Select 
-                            value={sendMethod} 
-                            onValueChange={(value) => {
-                              setSendMethod(value);
-                              field.onChange(value);
-                              form.setValue("sendMethod", value);
-                              saveExchangeState({ sendMethod: value });
-                            }}
-                          >
+                          <FormLabel>Send Method</FormLabel>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            setSendMethod(value);
+                            saveExchangeState({ sendMethod: value });
+                          }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select method" />
+                                <SelectValue placeholder="Select payment method" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {paymentMethods.map((method) => (
                                 <SelectItem key={method.value} value={method.value}>
-                                  <div className="flex items-center gap-2">
-                                    <img 
-                                      src={method.logo} 
-                                      alt={method.label}
-                                      className="w-6 h-6 object-contain"
-                                    />
-                                    {method.label}
+                                  <div className="flex items-center space-x-2">
+                                    {method.logo && (
+                                      <img 
+                                        src={method.logo} 
+                                        alt={method.label} 
+                                        className="w-5 h-5 object-contain"
+                                      />
+                                    )}
+                                    <span>{method.label}</span>
                                   </div>
                                 </SelectItem>
                               ))}
@@ -652,104 +942,142 @@ export default function Exchange() {
                         </FormItem>
                       )}
                     />
-
+                    
                     <FormField
                       control={form.control}
                       name="sendAmount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Amount (USD)</FormLabel>
+                          <FormLabel>Amount</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
+                              placeholder="0.00"
                               step="0.01"
-                              min="0"
-                              placeholder="Enter amount"
-                              value={sendAmount}
+                              min="5"
+                              {...field}
                               onChange={(e) => {
-                                const value = e.target.value;
-                                handleSendAmountChange(value);
-                                field.onChange(value);
+                                field.onChange(e);
+                                handleSendAmountChange(e.target.value);
                               }}
                             />
                           </FormControl>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Minimum: ${dynamicLimits.minSendAmount.toFixed(2)}</span>
+                            <span>Maximum: ${dynamicLimits.maxSendAmount.toLocaleString()}</span>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+                  
+                  {/* Sender Account Field - Only for specific payment methods */}
+                  {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
+                    <FormField
+                      control={form.control}
+                      name="senderAccount"
+                      render={({ field }) => {
+                        const getSenderAccountLabel = () => {
+                          switch (sendMethod) {
+                            case 'zaad':
+                              return 'Zaad Phone Number *';
+                            case 'sahal':
+                              return 'Sahal Phone Number *';
+                            case 'evc':
+                              return 'EVC Plus Phone Number *';
+                            case 'edahab':
+                              return 'eDahab Phone Number *';
+                            case 'premier':
+                              return 'Premier Bank Account Number *';
+                            default:
+                              return 'Sender Account Number *';
+                          }
+                        };
 
-                  {/* Sender Account Field (conditional) */}
-                  {["zaad", "sahal", "evc", "edahab", "premier"].includes(sendMethod) && (
-                    <div className="mt-4">
-                      <FormField
-                        control={form.control}
-                        name="senderAccount"
-                        render={({ field }) => (
+                        const getSenderAccountPlaceholder = () => {
+                          switch (sendMethod) {
+                            case 'zaad':
+                              return 'Enter your Zaad phone number';
+                            case 'sahal':
+                              return 'Enter your Sahal phone number';
+                            case 'evc':
+                              return 'Enter your EVC Plus phone number';
+                            case 'edahab':
+                              return 'Enter your eDahab phone number';
+                            case 'premier':
+                              return 'Enter your Premier Bank account number';
+                            default:
+                              return 'Enter your account number';
+                          }
+                        };
+
+                        return (
                           <FormItem>
-                            <FormLabel>
-                              {sendMethod === "premier" ? "Premier Bank Account Number" : `${sendMethod.charAt(0).toUpperCase() + sendMethod.slice(1)} Phone Number`}
-                            </FormLabel>
+                            <FormLabel>{getSenderAccountLabel()}</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder={sendMethod === "premier" ? "Enter your account number" : "Enter your phone number"}
-                                {...field}
+                              <Input 
+                                placeholder={getSenderAccountPlaceholder()}
+                                {...field} 
                                 onChange={(e) => {
                                   field.onChange(e);
-                                  if (isReminded) {
-                                    updateSavedField('senderAccount', e.target.value);
-                                  }
+                                  handleFieldChange('senderAccount', e.target.value);
                                 }}
                               />
                             </FormControl>
+                            <p className="text-xs text-gray-500">
+                              {sendMethod === 'premier' 
+                                ? 'Enter the bank account number you are sending from'
+                                : 'Enter the phone number you are sending from'
+                              }
+                            </p>
                             <FormMessage />
                           </FormItem>
-                        )}
-                      />
-                    </div>
+                        );
+                      }}
+                    />
                   )}
                 </CardContent>
               </Card>
 
               {/* Receive Section */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <ArrowDownCircle className="w-5 h-5 text-green-500" />
-                    <Label className="text-lg font-semibold">You Receive</Label>
-                  </div>
-
+              <Card className="border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-lg font-semibold">
+                    <ArrowDownCircle className="w-5 h-5 mr-2 text-green-600" />
+                    You Receive
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="receiveMethod"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Payment Method</FormLabel>
-                          <Select 
-                            value={receiveMethod} 
-                            onValueChange={(value) => {
-                              setReceiveMethod(value);
-                              field.onChange(value);
-                              form.setValue("receiveMethod", value);
-                              saveExchangeState({ receiveMethod: value });
-                            }}
-                          >
+                          <FormLabel>Receive Method</FormLabel>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            setReceiveMethod(value);
+                            saveExchangeState({ receiveMethod: value });
+                          }} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select method" />
+                                <SelectValue placeholder="Select payment method" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {paymentMethods.map((method) => (
                                 <SelectItem key={method.value} value={method.value}>
-                                  <div className="flex items-center gap-2">
-                                    <img 
-                                      src={method.logo} 
-                                      alt={method.label}
-                                      className="w-6 h-6 object-contain"
-                                    />
-                                    {method.label}
+                                  <div className="flex items-center space-x-2">
+                                    {method.logo && (
+                                      <img 
+                                        src={method.logo} 
+                                        alt={method.label} 
+                                        className="w-5 h-5 object-contain"
+                                      />
+                                    )}
+                                    <span>{method.label}</span>
                                   </div>
                                 </SelectItem>
                               ))}
@@ -759,27 +1087,29 @@ export default function Exchange() {
                         </FormItem>
                       )}
                     />
-
+                    
                     <FormField
                       control={form.control}
                       name="receiveAmount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Amount (USD)</FormLabel>
+                          <FormLabel>Amount</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
+                              placeholder="0.00"
                               step="0.01"
-                              min="0"
-                              placeholder="Calculated amount"
-                              value={receiveAmount}
+                              {...field}
                               onChange={(e) => {
-                                const value = e.target.value;
-                                handleReceiveAmountChange(value);
-                                field.onChange(value);
+                                field.onChange(e);
+                                handleReceiveAmountChange(e.target.value);
                               }}
                             />
                           </FormControl>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Minimum receive amount: ${dynamicLimits.minReceiveAmount.toFixed(2)}</span>
+                            <span>Maximum: ${dynamicLimits.maxReceiveAmount.toLocaleString()}</span>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -788,30 +1118,59 @@ export default function Exchange() {
                 </CardContent>
               </Card>
 
-              {/* Personal Information */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <User className="w-5 h-5 text-blue-500" />
-                    <Label className="text-lg font-semibold">Personal Information</Label>
-                  </div>
-
+              {/* Customer Information */}
+              <Card className="border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-lg font-semibold">
+                    <div className="flex items-center">
+                      <User className="w-5 h-5 mr-2 text-gray-600" />
+                      Customer Information
+                    </div>
+                    <Button
+                      type="button"
+                      variant={isReminded ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleToggleRemind}
+                      className={`flex items-center space-x-2 transition-all ${
+                        isReminded 
+                          ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                          : "border-blue-600 text-blue-600 hover:bg-blue-50"
+                      }`}
+                    >
+                      {isReminded ? (
+                        <>
+                          <Bell className="w-4 h-4" />
+                          <span>ON</span>
+                        </>
+                      ) : (
+                        <>
+                          <BellOff className="w-4 h-4" />
+                          <span>Remind Me</span>
+                        </>
+                      )}
+                    </Button>
+                  </CardTitle>
+                  {isReminded && (
+                    <p className="text-sm text-blue-600 mt-2">
+                      Your personal details are being automatically saved and will be remembered for future exchanges.
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="fullName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel>Full Name *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Enter your full name"
-                              {...field}
+                            <Input 
+                              placeholder="Enter your full name" 
+                              {...field} 
                               onChange={(e) => {
                                 field.onChange(e);
-                                if (isReminded) {
-                                  updateSavedField('fullName', e.target.value);
-                                }
+                                handleFieldChange('fullName', e.target.value);
                               }}
                             />
                           </FormControl>
@@ -819,22 +1178,20 @@ export default function Exchange() {
                         </FormItem>
                       )}
                     />
-
+                    
                     <FormField
                       control={form.control}
                       name="phoneNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
+                          <FormLabel>Phone Number *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Enter your phone number"
-                              {...field}
+                            <Input 
+                              placeholder="+252 XX XXX XXXX" 
+                              {...field} 
                               onChange={(e) => {
                                 field.onChange(e);
-                                if (isReminded) {
-                                  updateSavedField('phoneNumber', e.target.value);
-                                }
+                                handleFieldChange('phoneNumber', e.target.value);
                               }}
                             />
                           </FormControl>
@@ -842,83 +1199,87 @@ export default function Exchange() {
                         </FormItem>
                       )}
                     />
-
-                    <FormField
-                      control={form.control}
-                      name="walletAddress"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel>Wallet Address</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter your wallet address"
-                              {...field}
-                              onChange={(e) => {
-                                field.onChange(e);
-                                if (isReminded) {
-                                  updateSavedField('walletAddress', e.target.value);
-                                }
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    
                   </div>
-
-                  {/* Auto-save Checkbox */}
-                  <div className="mt-4">
-                    <FormField
-                      control={form.control}
-                      name="rememberDetails"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={handleRememberDetailsChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="flex items-center gap-2">
-                              {isReminded ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                              Remember my details for future exchanges
-                            </FormLabel>
-                            <p className="text-sm text-muted-foreground">
-                              {isReminded 
-                                ? "Your details will be saved and auto-filled for 7 days" 
-                                : "Check this to save your information for future use"}
-                            </p>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Terms and Conditions */}
-                  <div className="mt-4">
-                    <FormField
-                      control={form.control}
-                      name="agreeToTerms"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                            I agree to the terms and conditions
-                          </FormLabel>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="walletAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Wallet Address / Account Number *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter wallet address or account number" 
+                            {...field} 
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleFieldChange('walletAddress', e.target.value);
+                            }}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-gray-500">Enter the destination wallet address or account number</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
+
+              {/* Terms and Options */}
+              <Card className="border-2">
+                <CardContent className="pt-6 space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="rememberDetails"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            Remember my details for future transactions
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="agreeToTerms"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            I agree to the{" "}
+                            <a href="/terms" className="text-primary hover:underline">
+                              Terms of Service
+                            </a>{" "}
+                            and{" "}
+                            <a href="/privacy" className="text-primary hover:underline">
+                              Privacy Policy
+                            </a>{" "}
+                            *
+                          </FormLabel>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+
 
               {/* Submit Button */}
               <div className="pt-6">

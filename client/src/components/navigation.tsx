@@ -6,7 +6,6 @@ import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import NotificationsPanel from "@/components/notifications";
 
-
 const navigationItems = [
   { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
@@ -15,15 +14,12 @@ const navigationItems = [
   { href: "/track", label: "Track Order" },
   { href: "/contact", label: "Contact" },
   { href: "/about", label: "About" },
-
   { href: "/admin", label: "Admin" },
 ];
 
 export default function Navigation() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-
-
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -44,7 +40,7 @@ export default function Navigation() {
           
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-4">
+            <div className="ml-10 flex items-baseline space-x-4">
               {navigationItems.map((item) => (
                 <Link key={item.href} href={item.href}>
                   <span className={cn(
@@ -57,11 +53,7 @@ export default function Navigation() {
                   </span>
                 </Link>
               ))}
-              
               <NotificationsPanel />
-              
-              {/* User Menu */}
-
             </div>
           </div>
 
