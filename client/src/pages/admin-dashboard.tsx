@@ -769,7 +769,87 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
-        {/* Top Exchange Rates Section */}
+        {/* Update Exchange Rate Section */}
+        <Card className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="flex items-center text-green-900">
+              <Settings className="w-5 h-5 mr-2" />
+              Update Exchange Rate
+            </CardTitle>
+            <p className="text-sm text-green-700">Quick rate updates - changes apply immediately to all calculations</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="quick-from-currency" className="text-sm font-medium">From Currency</Label>
+                <Select value={fromCurrency} onValueChange={setFromCurrency}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select from currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="quick-to-currency" className="text-sm font-medium">To Currency</Label>
+                <Select value={toCurrency} onValueChange={setToCurrency}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select to currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="quick-rate" className="text-sm font-medium">Exchange Rate</Label>
+                <Input
+                  id="quick-rate"
+                  type="number"
+                  step="0.000001"
+                  placeholder="0.000000"
+                  value={exchangeRate}
+                  onChange={(e) => setExchangeRate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div className="flex items-end">
+                <Button 
+                  onClick={handleRateUpdate} 
+                  disabled={updateRateMutation.isPending || !fromCurrency || !toCurrency || !exchangeRate}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  {updateRateMutation.isPending ? "Updating..." : "Update Rate Now"}
+                </Button>
+              </div>
+            </div>
+            
+            {fromCurrency && toCurrency && exchangeRate && (
+              <div className="mt-4 bg-white border border-green-200 rounded-lg p-4">
+                <p className="text-sm text-green-800">
+                  <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  This rate will immediately affect all live calculations and new transactions
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Current Exchange Rates Section */}
         <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
             <CardTitle className="flex items-center text-blue-900">
