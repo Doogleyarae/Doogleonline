@@ -59,7 +59,8 @@ const createExchangeFormSchema = (
   minSendAmount: number = 5, 
   maxSendAmount: number = 10000,
   minReceiveAmount: number = 5,
-  maxReceiveAmount: number = 10000
+  maxReceiveAmount: number = 10000,
+  sendMethod: string = ""
 ) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
   receiveMethod: z.string().min(1, "Please select a receive method"),
@@ -98,7 +99,9 @@ const createExchangeFormSchema = (
   exchangeRate: z.string(),
   fullName: z.string().min(1, "Full name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
-  senderAccount: z.string().min(1, "Sender account is required"),
+  senderAccount: ['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) 
+    ? z.string().min(1, "Sender account is required") 
+    : z.string().optional(),
   walletAddress: z.string().min(1, "Wallet address is required"),
   rememberDetails: z.boolean().optional(),
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
@@ -926,69 +929,71 @@ export default function Exchange() {
                     />
                   </div>
                   
-                  {/* Sender Account Field */}
-                  <FormField
-                    control={form.control}
-                    name="senderAccount"
-                    render={({ field }) => {
-                      const getSenderAccountLabel = () => {
-                        switch (sendMethod) {
-                          case 'zaad':
-                            return 'Zaad Phone Number *';
-                          case 'sahal':
-                            return 'Sahal Phone Number *';
-                          case 'evc':
-                            return 'EVC Plus Phone Number *';
-                          case 'edahab':
-                            return 'eDahab Phone Number *';
-                          case 'premier':
-                            return 'Premier Bank Account Number *';
-                          default:
-                            return 'Sender Account Number *';
-                        }
-                      };
+                  {/* Sender Account Field - Only for specific payment methods */}
+                  {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
+                    <FormField
+                      control={form.control}
+                      name="senderAccount"
+                      render={({ field }) => {
+                        const getSenderAccountLabel = () => {
+                          switch (sendMethod) {
+                            case 'zaad':
+                              return 'Zaad Phone Number *';
+                            case 'sahal':
+                              return 'Sahal Phone Number *';
+                            case 'evc':
+                              return 'EVC Plus Phone Number *';
+                            case 'edahab':
+                              return 'eDahab Phone Number *';
+                            case 'premier':
+                              return 'Premier Bank Account Number *';
+                            default:
+                              return 'Sender Account Number *';
+                          }
+                        };
 
-                      const getSenderAccountPlaceholder = () => {
-                        switch (sendMethod) {
-                          case 'zaad':
-                            return 'Enter your Zaad phone number';
-                          case 'sahal':
-                            return 'Enter your Sahal phone number';
-                          case 'evc':
-                            return 'Enter your EVC Plus phone number';
-                          case 'edahab':
-                            return 'Enter your eDahab phone number';
-                          case 'premier':
-                            return 'Enter your Premier Bank account number';
-                          default:
-                            return 'Enter your account number';
-                        }
-                      };
+                        const getSenderAccountPlaceholder = () => {
+                          switch (sendMethod) {
+                            case 'zaad':
+                              return 'Enter your Zaad phone number';
+                            case 'sahal':
+                              return 'Enter your Sahal phone number';
+                            case 'evc':
+                              return 'Enter your EVC Plus phone number';
+                            case 'edahab':
+                              return 'Enter your eDahab phone number';
+                            case 'premier':
+                              return 'Enter your Premier Bank account number';
+                            default:
+                              return 'Enter your account number';
+                          }
+                        };
 
-                      return (
-                        <FormItem>
-                          <FormLabel>{getSenderAccountLabel()}</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder={getSenderAccountPlaceholder()}
-                              {...field} 
-                              onChange={(e) => {
-                                field.onChange(e);
-                                handleFieldChange('senderAccount', e.target.value);
-                              }}
-                            />
-                          </FormControl>
-                          <p className="text-xs text-gray-500">
-                            {sendMethod === 'premier' 
-                              ? 'Enter the bank account number you are sending from'
-                              : 'Enter the phone number you are sending from'
-                            }
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
+                        return (
+                          <FormItem>
+                            <FormLabel>{getSenderAccountLabel()}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder={getSenderAccountPlaceholder()}
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  handleFieldChange('senderAccount', e.target.value);
+                                }}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-gray-500">
+                              {sendMethod === 'premier' 
+                                ? 'Enter the bank account number you are sending from'
+                                : 'Enter the phone number you are sending from'
+                              }
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  )}
                 </CardContent>
               </Card>
 
