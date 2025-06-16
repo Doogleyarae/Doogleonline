@@ -889,8 +889,7 @@ export default function AdminDashboard() {
                       </TableHeader>
                       <TableBody>
                         {(() => {
-                          const filteredOrders = orders.filter((order) => statusFilter === "all" || order.status === statusFilter);
-                          
+                          // Use the proper filteredOrders that includes search functionality
                           if (filteredOrders.length === 0) {
                             return (
                               <TableRow>
@@ -900,10 +899,8 @@ export default function AdminDashboard() {
                                       <Search className="w-6 h-6 text-gray-400" />
                                     </div>
                                     <div className="text-gray-500 dark:text-gray-400">
-                                      {statusFilter === "all" 
-                                        ? "No orders found" 
-                                        : `No ${statusFilter} orders found`
-                                      }
+                                      {searchTerm ? `No orders found for "${searchTerm}"` : 
+                                       statusFilter === "all" ? "No orders found" : `No ${statusFilter} orders found`}
                                     </div>
                                   </div>
                                 </TableCell>
