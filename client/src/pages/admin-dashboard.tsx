@@ -407,6 +407,51 @@ export default function AdminDashboard() {
     queryKey: ['/api/transactions'],
   });
 
+  // WebSocket connection for real-time order updates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('Admin dashboard WebSocket connected');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        
+        // Handle order updates (including customer cancellations)
+        if (message.type === 'order_update') {
+          console.log('Admin dashboard received order update:', message.data);
+          
+          // Force refresh orders list to show updated status
+          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+          queryClient.refetchQueries({ queryKey: ['/api/orders'] });
+        }
+        
+        // Handle new orders
+        if (message.type === 'new_order') {
+          console.log('Admin dashboard received new order:', message.data);
+          
+          // Refresh orders list to show new order
+          queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+          queryClient.refetchQueries({ queryKey: ['/api/orders'] });
+        }
+      } catch (error) {
+        console.error('Error parsing admin WebSocket message:', error);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('Admin dashboard WebSocket disconnected');
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
 
 
   // Calculate analytics data
