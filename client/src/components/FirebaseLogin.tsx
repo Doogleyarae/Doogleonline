@@ -17,7 +17,9 @@ export default function FirebaseLogin() {
       await signInWithGoogle();
     } catch (error: any) {
       console.error('Sign in failed:', error);
-      if (error.message.includes('domain not configured')) {
+      if (error.message.includes('Firebase setup required') || error.message.includes('unauthorized-domain')) {
+        setAuthError('Firebase setup required. Domain authorization needed for Google Sign-In.');
+      } else if (error.message.includes('domain not configured')) {
         setAuthError('Firebase authentication needs to be configured. Please contact administrator.');
       } else {
         setAuthError('Sign in failed. Please try again.');
@@ -123,11 +125,11 @@ export default function FirebaseLogin() {
         {authError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-800">{authError}</p>
-            {authError.includes('Firebase authentication') && (
-              <div className="mt-2 text-xs text-red-700">
-                <p>Firebase needs domain authorization.</p>
-                <Link href="/firebase-setup" className="text-xs text-red-700 underline hover:text-red-800">
-                  View Setup Guide →
+            {(authError.includes('Firebase') || authError.includes('domain')) && (
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-red-700">Firebase needs web app configuration.</p>
+                <Link href="/firebase-web-setup" className="inline-block text-xs text-red-700 underline hover:text-red-800">
+                  View Web Setup Guide →
                 </Link>
               </div>
             )}
