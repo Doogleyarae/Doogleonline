@@ -646,127 +646,219 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage orders, exchange rates, and transaction limits</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+        {/* Enhanced Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                Admin Dashboard
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                Manage orders, exchange rates, and transaction limits
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              Real-time sync active
+            </div>
+          </div>
         </div>
 
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
-            <TabsTrigger value="limits">Balance Management</TabsTrigger>
-            <TabsTrigger value="wallets">Wallet Settings</TabsTrigger>
-            <TabsTrigger value="contact">Contact Info</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="orders" className="space-y-4 sm:space-y-6">
+          {/* Mobile-Optimized Tab Navigation */}
+          <div className="overflow-x-auto">
+            <TabsList className="grid w-full min-w-[640px] grid-cols-8 h-auto p-1 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-sm">
+              <TabsTrigger value="orders" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Orders
+              </TabsTrigger>
+              <TabsTrigger value="transactions" className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Transactions
+              </TabsTrigger>
+              <TabsTrigger value="rates" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Rates
+              </TabsTrigger>
+              <TabsTrigger value="limits" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Balance
+              </TabsTrigger>
+              <TabsTrigger value="wallets" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Wallets
+              </TabsTrigger>
+              <TabsTrigger value="contact" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Contact
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="data-[state=active]:bg-pink-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Messages
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3 rounded-lg transition-all duration-200">
+                Analytics
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Orders Management */}
-          <TabsContent value="orders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
+          <TabsContent value="orders" className="space-y-4 sm:space-y-6">
+            {/* Order Status Update Card */}
+            <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                    <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
                   Update Order Status
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="orderId">Order ID</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="orderId" className="text-sm font-medium text-gray-700 dark:text-gray-300">Order ID</Label>
                     <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white/50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 rounded-xl h-11">
                         <SelectValue placeholder="Select order" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl border-0 shadow-xl">
                         {orders.map((order) => (
-                          <SelectItem key={order.orderId} value={order.orderId}>
-                            {order.orderId} - {order.fullName}
+                          <SelectItem key={order.orderId} value={order.orderId} className="rounded-lg">
+                            <div className="flex flex-col">
+                              <span className="font-medium">{order.orderId}</span>
+                              <span className="text-xs text-gray-500">{order.fullName}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="status">New Status</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="status" className="text-sm font-medium text-gray-700 dark:text-gray-300">New Status</Label>
                     <Select value={newStatus} onValueChange={setNewStatus}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white/50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 rounded-xl h-11">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectContent className="rounded-xl border-0 shadow-xl">
+                        <SelectItem value="pending" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-yellow-500" />
+                            Pending
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="processing" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Clock3 className="w-4 h-4 text-blue-500" />
+                            Processing
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="completed" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            Completed
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="cancelled" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <XCircle className="w-4 h-4 text-red-500" />
+                            Cancelled
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <div className="flex items-end">
+                  <div className="flex items-end sm:col-span-2 lg:col-span-1">
                     <Button 
                       onClick={handleStatusUpdate} 
                       disabled={updateStatusMutation.isPending}
-                      className="w-full"
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 rounded-xl h-11 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                     >
-                      {updateStatusMutation.isPending ? "Updating..." : "Update Status"}
+                      {updateStatusMutation.isPending ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          Updating...
+                        </div>
+                      ) : (
+                        "Update Status"
+                      )}
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-start">
+            {/* Order Management Table */}
+            <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-lg rounded-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                   <div>
-                    <CardTitle>Order Management</CardTitle>
-                    <p className="text-sm text-gray-600">
+                    <CardTitle className="flex items-center text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3">
+                        <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      Order Management
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.
                     </p>
                     {statusFilter !== "all" && (
-                      <p className="text-sm font-medium text-blue-600 mt-1">
-                        Showing {statusFilter} orders only ({orders.filter(order => order.status === statusFilter).length} found)
-                      </p>
+                      <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
+                        <Filter className="w-3 h-3" />
+                        Showing {statusFilter} orders ({orders.filter(order => order.status === statusFilter).length} found)
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="status-filter">Filter:</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="All Orders" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Orders</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  
+                  {/* Mobile-responsive controls */}
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter:</Label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full sm:w-40 bg-white/50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 rounded-xl h-10">
+                          <SelectValue placeholder="All Orders" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-0 shadow-xl">
+                          <SelectItem value="all" className="rounded-lg">All Orders</SelectItem>
+                          <SelectItem value="pending" className="rounded-lg">Pending</SelectItem>
+                          <SelectItem value="paid" className="rounded-lg">Paid</SelectItem>
+                          <SelectItem value="processing" className="rounded-lg">Processing</SelectItem>
+                          <SelectItem value="completed" className="rounded-lg">Completed</SelectItem>
+                          <SelectItem value="cancelled" className="rounded-lg">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <Button 
+                      onClick={exportToCSV}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export CSV
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
+              
               <CardContent>
                 {ordersLoading ? (
-                  <p>Loading orders...</p>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+                      <span className="text-gray-600 dark:text-gray-400">Loading orders...</span>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-xl border border-gray-200/50 dark:border-gray-700/50">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>From</TableHead>
-                          <TableHead>To</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Actions</TableHead>
+                        <TableRow className="bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-50/70 dark:hover:bg-gray-800/70">
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Order ID</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Customer</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">From</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">To</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Status</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Date</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -776,22 +868,44 @@ export default function AdminDashboard() {
                           if (filteredOrders.length === 0) {
                             return (
                               <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                                  {statusFilter === "all" 
-                                    ? "No orders found" 
-                                    : `No ${statusFilter} orders found`
-                                  }
+                                <TableCell colSpan={7} className="text-center py-12">
+                                  <div className="flex flex-col items-center gap-3">
+                                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                                      <Search className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                    <div className="text-gray-500 dark:text-gray-400">
+                                      {statusFilter === "all" 
+                                        ? "No orders found" 
+                                        : `No ${statusFilter} orders found`
+                                      }
+                                    </div>
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             );
                           }
                           
                           return filteredOrders.map((order) => (
-                            <TableRow key={order.orderId}>
-                              <TableCell className="font-medium">{order.orderId}</TableCell>
-                              <TableCell>{order.fullName}</TableCell>
-                              <TableCell>{formatCurrency(order.sendAmount, order.sendMethod)}</TableCell>
-                              <TableCell>{formatCurrency(order.receiveAmount, order.receiveMethod)}</TableCell>
+                            <TableRow key={order.orderId} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
+                              <TableCell className="font-medium text-blue-600 dark:text-blue-400">{order.orderId}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-gray-900 dark:text-gray-100">{order.fullName}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">{order.phoneNumber}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{formatCurrency(order.sendAmount, order.sendMethod)}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{order.sendMethod}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{formatCurrency(order.receiveAmount, order.receiveMethod)}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{order.receiveMethod}</span>
+                                </div>
+                              </TableCell>
                               <TableCell>
                                 <Badge className={getStatusColor(order.status)}>
                                   <div className="flex items-center">
@@ -802,7 +916,7 @@ export default function AdminDashboard() {
                               </TableCell>
                               <TableCell>{formatDate(order.createdAt)}</TableCell>
                               <TableCell>
-                                <div className="flex space-x-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                   {order.status === "pending" || order.status === "paid" ? (
                                     <>
                                       {/* Accept Order Confirmation Dialog */}
@@ -811,7 +925,7 @@ export default function AdminDashboard() {
                                           <Button
                                             size="sm"
                                             disabled={acceptOrderMutation.isPending}
-                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-xs"
                                           >
                                             <CheckCircle className="w-3 h-3 mr-1" />
                                             Accept
