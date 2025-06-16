@@ -25,6 +25,7 @@ const AdminAnalytics = lazy(() => import("@/pages/admin-analytics"));
 const OrderHistory = lazy(() => import("@/pages/order-history"));
 const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
 const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
+const FirebaseLoginPage = lazy(() => import("@/pages/firebase-login"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Loading component
