@@ -527,6 +527,9 @@ export default function Exchange() {
   });
 
   const onSubmit = (data: ExchangeFormData) => {
+    console.log("Form submission started with data:", data);
+    console.log("Current form errors:", form.formState.errors);
+    
     // Validate exchange rate is configured
     if (!exchangeRate || exchangeRate <= 0) {
       toast({
@@ -554,26 +557,6 @@ export default function Exchange() {
     if (receiveAmountNum < dynamicLimits.minReceiveAmount || receiveAmountNum > dynamicLimits.maxReceiveAmount) {
       toast({
         title: "Invalid Receive Amount", 
-        description: `Receive amount must be between $${dynamicLimits.minReceiveAmount.toFixed(2)} and $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
-        variant: "destructive",
-      });
-      form.setFocus("receiveAmount");
-      return;
-    }
-
-    if (receiveAmountNum < dynamicLimits.minReceiveAmount || receiveAmountNum > dynamicLimits.maxReceiveAmount) {
-      toast({
-        title: "Invalid Receive Amount",
-        description: `Receive amount must be between $${dynamicLimits.minReceiveAmount.toFixed(2)} and $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
-        variant: "destructive",
-      });
-      form.setFocus("receiveAmount");
-      return;
-    }
-
-    if (receiveAmountNum < dynamicLimits.minReceiveAmount || receiveAmountNum > dynamicLimits.maxReceiveAmount) {
-      toast({
-        title: "Invalid Receive Amount",
         description: `Receive amount must be between $${dynamicLimits.minReceiveAmount.toFixed(2)} and $${dynamicLimits.maxReceiveAmount.toLocaleString()}`,
         variant: "destructive",
       });
