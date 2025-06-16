@@ -1,260 +1,185 @@
-import { useState } from 'react';
-import { Link } from 'wouter';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  Copy, 
-  ExternalLink, 
-  Settings, 
-  Globe, 
-  Shield,
-  AlertTriangle
-} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Copy, ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
+import { Link } from "wouter";
 
 export default function FirebaseWebSetup() {
-  const [copiedText, setCopiedText] = useState('');
-
-  const copyToClipboard = (text: string, label: string) => {
+  const currentDomain = window.location.origin;
+  
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedText(label);
-    setTimeout(() => setCopiedText(''), 2000);
   };
 
-  const currentDomain = window.location.origin;
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="gap-2 mb-4">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Login
-            </Button>
-          </Link>
-          
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Firebase Web App Setup
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Firebase Web App Setup Guide
             </h1>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Complete these steps to enable Google Sign-In for your DoogleOnline platform.
-              Your Firebase project exists, but needs web app configuration.
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Configure your Firebase project for web authentication
             </p>
           </div>
-        </div>
 
-        {/* Current Status */}
-        <Alert className="mb-8 border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
-            <strong>Current Status:</strong> Your Firebase project "doogle-e-money" exists with Android configuration. 
-            Web app setup is needed for Google Sign-In to work in browsers.
-          </AlertDescription>
-        </Alert>
+          <div className="space-y-6">
+            {/* Current Domain Info */}
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Current domain: <strong>{currentDomain}</strong>
+                <br />
+                This domain needs to be added to Firebase authorized domains.
+              </AlertDescription>
+            </Alert>
 
-        <div className="space-y-6">
-          {/* Step 1: Add Web App */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                Step 1: Add Web App to Firebase
-              </CardTitle>
-              <CardDescription>
-                Add a web application to your existing Firebase project
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <p className="text-sm font-medium text-blue-800 mb-2">Project Details:</p>
-                <div className="space-y-1 text-sm text-blue-700">
-                  <p>• Project ID: <code className="bg-white px-1 rounded">doogle-e-money</code></p>
-                  <p>• Project Number: <code className="bg-white px-1 rounded">478312672914</code></p>
-                </div>
-              </div>
-              
-              <ol className="list-decimal list-inside space-y-2 text-sm">
-                <li>
-                  Go to{' '}
-                  <a 
-                    href="https://console.firebase.google.com/project/doogle-e-money" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-blue-600 hover:underline inline-flex items-center gap-1"
-                  >
-                    Firebase Console
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </li>
-                <li>Click the <strong>"Add app"</strong> button in the project overview</li>
-                <li>Select the <strong>Web platform</strong> (web icon)</li>
-                <li>Enter app nickname: <code className="bg-gray-100 px-1 rounded">DoogleOnline Web</code></li>
-                <li>Click <strong>"Register app"</strong></li>
-              </ol>
-            </CardContent>
-          </Card>
+            {/* Step 1: Add Web App */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                  Add Web App to Firebase Project
+                </CardTitle>
+                <CardDescription>
+                  Create a web app configuration in your Firebase Console
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ol className="list-decimal list-inside space-y-2 text-sm">
+                  <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Firebase Console</a></li>
+                  <li>Select your project: <strong>doogle-e-money</strong></li>
+                  <li>Click on "Project Overview" → "Add app" → Web icon (&lt;/&gt;)</li>
+                  <li>Enter app nickname: <strong>DoogleOnline Web</strong></li>
+                  <li>Check "Also set up Firebase Hosting" (optional)</li>
+                  <li>Click "Register app"</li>
+                </ol>
+                
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    After registration, you'll see the Firebase configuration object with your API keys.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
 
-          {/* Step 2: Get Configuration */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Step 2: Copy Web App Configuration
-              </CardTitle>
-              <CardDescription>
-                Get the configuration values for your web app
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm">After registering your web app, you'll see a configuration screen. Copy these values:</p>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <code className="text-sm font-mono">apiKey</code>
-                    <p className="text-xs text-gray-600">Firebase API Key</p>
-                  </div>
-                  <Badge variant="outline">Required</Badge>
+            {/* Step 2: Authorize Domain */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                  Authorize Domain for Google Sign-In
+                </CardTitle>
+                <CardDescription>
+                  Add your Replit domain to Firebase authorized domains
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ol className="list-decimal list-inside space-y-2 text-sm">
+                  <li>In Firebase Console, go to <strong>Authentication</strong> → <strong>Settings</strong></li>
+                  <li>Scroll down to <strong>Authorized domains</strong></li>
+                  <li>Click <strong>Add domain</strong></li>
+                  <li>Add this domain:
+                    <div className="flex items-center gap-2 mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                      <code className="flex-1">{currentDomain.replace('https://', '').replace('http://', '')}</code>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => copyToClipboard(currentDomain.replace('https://', '').replace('http://', ''))}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                  <li>Click <strong>Add</strong></li>
+                </ol>
+              </CardContent>
+            </Card>
+
+            {/* Step 3: Enable Google Sign-In */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                  Enable Google Authentication
+                </CardTitle>
+                <CardDescription>
+                  Configure Google as a sign-in provider
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ol className="list-decimal list-inside space-y-2 text-sm">
+                  <li>In Firebase Console, go to <strong>Authentication</strong> → <strong>Sign-in method</strong></li>
+                  <li>Find <strong>Google</strong> in the providers list</li>
+                  <li>Click on Google to configure it</li>
+                  <li>Toggle <strong>Enable</strong></li>
+                  <li>Add your project support email</li>
+                  <li>Click <strong>Save</strong></li>
+                </ol>
+              </CardContent>
+            </Card>
+
+            {/* Step 4: Configuration Values */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
+                  Get Configuration Values
+                </CardTitle>
+                <CardDescription>
+                  Copy the Firebase configuration for your web app
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  After creating the web app, you'll see a configuration object like this:
+                </p>
+                
+                <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+                  <pre className="text-xs overflow-x-auto">
+{`const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "doogle-e-money.firebaseapp.com",
+  projectId: "doogle-e-money",
+  storageBucket: "doogle-e-money.firebasestorage.app",
+  messagingSenderId: "478312672914",
+  appId: "1:478312672914:web:...",
+  measurementId: "G-..."
+};`}
+                  </pre>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <code className="text-sm font-mono">appId</code>
-                    <p className="text-xs text-gray-600">Web App ID (starts with 1:478312672914:web:)</p>
-                  </div>
-                  <Badge variant="outline">Required</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div>
-                    <code className="text-sm font-mono">projectId</code>
-                    <p className="text-xs text-green-700">Already configured: doogle-e-money</p>
-                  </div>
-                  <Badge variant="outline" className="text-green-700 border-green-300">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    Ready
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    You need to provide the <strong>apiKey</strong> and <strong>appId</strong> values to complete the setup.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
 
-          {/* Step 3: Enable Authentication */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Step 3: Enable Google Authentication
-              </CardTitle>
-              <CardDescription>
-                Configure Google Sign-In in Firebase Authentication
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ol className="list-decimal list-inside space-y-2 text-sm">
-                <li>In Firebase Console, go to <strong>Authentication</strong> → <strong>Sign-in method</strong></li>
-                <li>Click on <strong>Google</strong> provider</li>
-                <li>Toggle <strong>"Enable"</strong> switch</li>
-                <li>Set support email (your email address)</li>
-                <li>Click <strong>"Save"</strong></li>
-              </ol>
-            </CardContent>
-          </Card>
-
-          {/* Step 4: Authorize Domain */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                Step 4: Authorize Your Domain
-              </CardTitle>
-              <CardDescription>
-                Add your website domain to authorized domains list
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <p className="text-sm font-medium text-yellow-800 mb-2">Current Domain:</p>
-                <div className="flex items-center gap-2">
-                  <code className="bg-white px-2 py-1 rounded text-sm">{currentDomain}</code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(currentDomain, 'domain')}
-                    className="h-7"
-                  >
-                    <Copy className="w-3 h-3" />
-                    {copiedText === 'domain' ? 'Copied!' : 'Copy'}
-                  </Button>
-                </div>
-              </div>
+            {/* Navigation */}
+            <div className="flex justify-between items-center pt-6">
+              <Link href="/login">
+                <Button variant="outline">
+                  ← Back to Login
+                </Button>
+              </Link>
               
-              <ol className="list-decimal list-inside space-y-2 text-sm">
-                <li>In Firebase Console, go to <strong>Authentication</strong> → <strong>Settings</strong></li>
-                <li>Scroll to <strong>"Authorized domains"</strong> section</li>
-                <li>Click <strong>"Add domain"</strong></li>
-                <li>Paste your domain: <code className="bg-gray-100 px-1 rounded">{currentDomain}</code></li>
-                <li>Click <strong>"Add"</strong></li>
-              </ol>
-              
-              <Alert>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  <strong>Important:</strong> After deployment, you'll also need to add your production domain 
-                  (ending in .replit.app) to this list.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-
-          {/* Step 5: Provide Credentials */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Step 5: Configure Application
-              </CardTitle>
-              <CardDescription>
-                Provide the Firebase credentials to enable Google Sign-In
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm">
-                Once you have the configuration values from Step 2, you'll need to provide them as environment variables:
-              </p>
-              
-              <div className="space-y-2">
-                <div className="p-3 bg-gray-50 rounded-lg font-mono text-sm">
-                  <div>VITE_FIREBASE_API_KEY=your_api_key_here</div>
-                  <div>VITE_FIREBASE_APP_ID=your_app_id_here</div>
-                  <div className="text-green-600">VITE_FIREBASE_PROJECT_ID=doogle-e-money ✓</div>
-                </div>
-              </div>
-              
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  After completing all steps and providing the credentials, Google Sign-In will work alongside 
-                  email/password authentication.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <Link href="/login">
-            <Button>
-              Back to Login
-            </Button>
-          </Link>
+              <a 
+                href="https://console.firebase.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button>
+                  Open Firebase Console
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Button>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

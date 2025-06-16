@@ -78,6 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await loginWithGoogle();
     } catch (error: any) {
+      if (error.code === 'auth/unauthorized-domain') {
+        throw new Error('Firebase setup required. Please configure your domain in Firebase Console or contact support for assistance.');
+      }
       console.error('Google sign-in error:', error);
       throw error;
     }

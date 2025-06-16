@@ -98,20 +98,7 @@ const createExchangeFormSchema = (
   exchangeRate: z.string(),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   phoneNumber: z.string().min(8, "Phone number must be at least 8 digits"),
-  senderAccount: z.string().optional().refine((val, ctx) => {
-    const sendMethod = ctx.path[0] === 'senderAccount' ? 
-      (ctx.parent as any)?.sendMethod : undefined;
-    
-    // Only require sender account for these specific methods
-    const requiresSenderAccount = ["zaad", "sahal", "evc", "edahab", "premier"];
-    
-    if (requiresSenderAccount.includes(sendMethod)) {
-      return val && val.length >= 5;
-    }
-    return true;
-  }, {
-    message: "Sender account is required for this payment method"
-  }),
+  senderAccount: z.string().optional(),
   walletAddress: z.string().min(5, "Wallet address must be at least 5 characters"),
   rememberDetails: z.boolean().default(false),
   agreeToTerms: z.boolean().refine(val => val === true, {
