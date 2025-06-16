@@ -38,30 +38,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle redirect result when user returns from Google auth
-    handleRedirectResult()
-      .then((result) => {
+    let unsubscribe: () => void;
+
+    const initializeAuth = async () => {
+      try {
+        // Handle redirect result when user returns from Google auth
+        const result = await handleRedirectResult();
         if (result?.user) {
           console.log('User signed in via redirect:', result.user);
+          setUser(result.user);
         }
-      })
-      .catch((error) => {
+      } catch (error: any) {
         // Silently handle domain authorization errors - they're expected until Firebase is configured
         if (error.code !== 'auth/unauthorized-domain') {
           console.error('Error handling redirect result:', error);
         }
-      });
-
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChange((user) => {
-      setUser(user);
-      setLoading(false);
-      if (user) {
-        console.log('User authenticated:', user.displayName || user.email);
       }
-    });
 
-    return unsubscribe;
+      // Listen for auth state changes
+      unsubscribe = onAuthStateChange((user) => {
+        setUser(user);
+        setLoading(false);
+        if (user) {
+          console.log('User authenticated:', user.displayName || user.email);
+        }
+      });
+    };
+
+    initializeAuth();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const signInWithGoogle = async () => {

@@ -79,8 +79,15 @@ export default function FirebaseLoginPage() {
       </div>
 
       {/* Footer */}
-      <div className="p-4 text-center text-xs text-gray-500">
-        <p>© 2025 DoogleOnline. Secure by design.</p>
+      <div className="p-4 text-center space-y-2">
+        <div className="text-xs text-gray-500">
+          <p>© 2025 DoogleOnline. Secure by design.</p>
+        </div>
+        <div className="text-xs">
+          <Link href="/firebase-web-setup" className="text-blue-600 hover:underline">
+            Having issues with Google Sign-In? View setup guide →
+          </Link>
+        </div>
       </div>
     </div>
   );

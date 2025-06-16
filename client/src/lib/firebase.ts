@@ -75,15 +75,21 @@ export const resetPassword = async (email: string) => {
   }
 };
 
-// Google Authentication - using popup method for better compatibility
-export const loginWithGoogle = async () => {
+// Google Authentication - hybrid approach with fallback
+export const loginWithGoogle = async (useRedirect = false) => {
   try {
     // Set persistence for Google sign-in
     await setPersistence(auth, browserLocalPersistence);
     
-    // Try popup method first (better for domain issues)
-    const result = await signInWithPopup(auth, provider);
-    return result;
+    if (useRedirect) {
+      // Use redirect method as fallback
+      await signInWithRedirect(auth, provider);
+      return null; // Redirect doesn't return immediately
+    } else {
+      // Try popup method first
+      const result = await signInWithPopup(auth, provider);
+      return result;
+    }
   } catch (error: any) {
     console.error('Google sign-in error:', error);
     
@@ -91,7 +97,13 @@ export const loginWithGoogle = async () => {
       throw new Error('Domain not authorized for Google Sign-In. Please add this domain to Firebase Console > Authentication > Settings > Authorized domains');
     }
     if (error.code === 'auth/popup-blocked') {
-      throw new Error('Popup was blocked by browser. Please allow popups and try again.');
+      // Automatically fallback to redirect if popup is blocked
+      try {
+        await signInWithRedirect(auth, provider);
+        return null;
+      } catch (redirectError: any) {
+        throw new Error('Both popup and redirect methods failed. Please check Firebase configuration.');
+      }
     }
     if (error.code === 'auth/popup-closed-by-user') {
       throw new Error('Sign-in was cancelled. Please try again.');
