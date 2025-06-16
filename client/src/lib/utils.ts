@@ -18,7 +18,13 @@ export function formatCurrency(amount: string | number, currency: string): strin
 }
 
 export function formatDate(date: Date | string): string {
+  if (!date) return 'N/A';
+  
   const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Check if the date is valid
+  if (isNaN(d.getTime())) return 'Invalid Date';
+  
   return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
