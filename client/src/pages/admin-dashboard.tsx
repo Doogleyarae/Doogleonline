@@ -795,18 +795,23 @@ export default function AdminDashboard() {
                           Updated: {formatDate(rate.updatedAt)}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setFromCurrency(rate.fromCurrency);
-                          setToCurrency(rate.toCurrency);
-                          setExchangeRate(rate.rate);
-                        }}
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                      >
-                        Edit
-                      </Button>
+                      <div className="flex flex-col space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setFromCurrency(rate.fromCurrency);
+                            setToCurrency(rate.toCurrency);
+                            setExchangeRate(rate.rate);
+                            // Automatically switch to rates tab
+                            const ratesTab = document.querySelector('[value="rates"]') as HTMLElement;
+                            if (ratesTab) ratesTab.click();
+                          }}
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs"
+                        >
+                          Quick Edit
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
