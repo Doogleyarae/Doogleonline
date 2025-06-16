@@ -490,7 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
       
-      if (username === "admin" && password === "admin123") {
+      if (username === "admin" && password === "@Aa121322@Doogle143") {
         res.json({ success: true, token: "admin-token-123" });
       } else {
         res.status(401).json({ success: false, message: "Invalid credentials" });
