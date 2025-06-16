@@ -492,7 +492,7 @@ export default function Exchange() {
   }, [queryClient]);
 
   // Fetch exchange rate with NO CACHING - always use latest rates
-  const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
+  const { data: rateData, refetch: refetchRate, error: rateError } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
     staleTime: 0, // No stale time - always fetch fresh
@@ -500,6 +500,7 @@ export default function Exchange() {
     refetchOnWindowFocus: true, // Always refetch when user focuses
     refetchOnReconnect: true, // Always refetch on reconnect
     refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    retry: false, // Don't retry on 404 errors
   });
 
   // Update exchange rate and calculate initial receive amount
@@ -519,9 +520,16 @@ export default function Exchange() {
         form.setValue("receiveAmount", convertedAmount);
         saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
       }
+    } else if (rateError && sendMethod && receiveMethod && sendMethod !== receiveMethod) {
+      // Handle case when no exchange rate is configured
+      setExchangeRate(0);
+      setRateDisplay(`Exchange rate not configured for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}`);
+      form.setValue("exchangeRate", "0");
+    }
       
-      // Immediately trigger balance-based limit calculation with new rate
-      if (sendCurrencyLimits && receiveCurrencyLimits && balances) {
+    // Immediately trigger balance-based limit calculation with new rate
+    if (rateData && sendCurrencyLimits && receiveCurrencyLimits && balances) {
+        const rate = rateData.rate;
         // Map currency names to match admin dashboard balance keys
         const currencyMapping: Record<string, string> = {
           'evc': 'EVCPLUS',
@@ -561,9 +569,11 @@ export default function Exchange() {
       }
       
       // Trigger validation to update max amount limits based on new rate
-      setTimeout(() => {
-        form.trigger(['sendAmount', 'receiveAmount']);
-      }, 100);
+      if (rateData) {
+        setTimeout(() => {
+          form.trigger(['sendAmount', 'receiveAmount']);
+        }, 100);
+      }
     }
   }, [rateData, sendMethod, receiveMethod, form, sendAmount, sendCurrencyLimits, receiveCurrencyLimits, balances]);
 
