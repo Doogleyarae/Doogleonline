@@ -156,6 +156,7 @@ Changelog:
 - June 16, 2025. Confirmed complete bidirectional order cancellation system - admin cancel function works via red Cancel button with confirmation dialog for manual order cancellation, and customer-initiated cancellations from confirmation page automatically update admin dashboard in real-time with WebSocket notifications and immediate order list refresh
 - June 16, 2025. Fixed admin cancel functionality - resolved storage layer status update issue ensuring admin cancellations properly save to database with correct status and timestamps. Enhanced customer redirection system ensuring immediate redirect to cancelled order page when admin cancels their order via WebSocket real-time synchronization
 - June 16, 2025. Confirmed accessibility compliance maintained - all Dialog and AlertDialog components properly implement required DialogTitle and DialogDescription elements with sr-only classes for screen reader support. Browser extension warnings verified as false positives with actual accessibility implementation meeting standards
+- June 16, 2025. Implemented admin-controlled balance deduction system - removed balance deduction from order creation and configured system so balance deduction only occurs when admin accepts orders (marks as completed). This gives admin full control over when exchange wallet funds are committed to customer transactions
 
 ## User Preferences
 
