@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Mail, Phone, Clock, Bell, BellOff } from "lucide-react";
+import { Mail, Phone, Clock, Bell, BellOff, MessageCircle } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 
 const contactFormSchema = z.object({
@@ -135,7 +135,29 @@ export default function Contact() {
                 <Mail className="w-5 h-5 text-primary mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-700">Email</p>
-                  <p className="text-sm text-gray-900">{(contactInfo as any).email}</p>
+                  <a 
+                    href={`mailto:${(contactInfo as any).email}`}
+                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  >
+                    {(contactInfo as any).email}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {contactInfo && (contactInfo as any).whatsapp && (contactInfo as any).whatsapp.trim() && (
+              <div className="flex items-center">
+                <MessageCircle className="w-5 h-5 text-green-600 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">WhatsApp</p>
+                  <a 
+                    href={`https://wa.me/${(contactInfo as any).whatsapp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-green-600 hover:text-green-800 hover:underline"
+                  >
+                    +{(contactInfo as any).whatsapp}
+                  </a>
                 </div>
               </div>
             )}
