@@ -442,6 +442,28 @@ export default function AdminDashboard() {
     },
   });
 
+  // Cancel order mutation
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "cancelled" });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Order Cancelled",
+        description: "Order has been cancelled successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel order",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Update exchange rate mutation with real-time cache invalidation
   const updateRateMutation = useMutation({
     mutationFn: async (data: { fromCurrency: string; toCurrency: string; rate: string }) => {
