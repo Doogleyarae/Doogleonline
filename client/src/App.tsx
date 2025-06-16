@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
-import { AuthProvider } from "@/contexts/AuthContext";
+
 
 // Lazy load pages to improve initial loading
 const Home = lazy(() => import("@/pages/home"));
@@ -26,10 +26,7 @@ const AdminAnalytics = lazy(() => import("@/pages/admin-analytics"));
 const OrderHistory = lazy(() => import("@/pages/order-history"));
 const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
 const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
-const FirebaseLoginPage = lazy(() => import("@/pages/firebase-login"));
-const FirebaseSetupPage = lazy(() => import("@/pages/firebase-setup"));
-const FirebaseWebSetup = lazy(() => import("@/pages/firebase-web-setup"));
-const UserDashboard = lazy(() => import("@/pages/user-dashboard"));
+
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Loading component
@@ -61,10 +58,7 @@ function Router() {
         <Route path="/orders" component={OrderHistory} />
         <Route path="/completed" component={CompletedOrders} />
         <Route path="/cancelled" component={CancelledOrders} />
-        <Route path="/login" component={FirebaseLoginPage} />
-        <Route path="/firebase-setup" component={FirebaseSetupPage} />
-        <Route path="/firebase-web-setup" component={FirebaseWebSetup} />
-        <Route path="/dashboard" component={UserDashboard} />
+
         <Route path="/admin" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
