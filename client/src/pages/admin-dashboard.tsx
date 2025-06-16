@@ -968,15 +968,15 @@ export default function AdminDashboard() {
                       </div>
                       Order Management
                     </CardTitle>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.
-                      <Link href="/cancelled" className="ml-2">
-                        <Button variant="outline" size="sm" className="text-xs ml-2">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="mb-2">Accept orders to mark as completed or cancel pending/paid orders. Completed and cancelled orders cannot be modified.</p>
+                      <Link href="/cancelled">
+                        <Button variant="outline" size="sm" className="text-xs">
                           <XCircle className="w-3 h-3 mr-1" />
                           View Cancelled Orders
                         </Button>
                       </Link>
-                    </p>
+                    </div>
                     {statusFilter !== "all" && (
                       <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
                         <Filter className="w-3 h-3" />
