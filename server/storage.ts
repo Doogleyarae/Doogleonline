@@ -1,6 +1,6 @@
 import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -129,7 +129,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllContactMessages(): Promise<ContactMessage[]> {
-    return await db.select().from(contactMessages);
+    return await db.select().from(contactMessages).orderBy(desc(contactMessages.createdAt));
+  }
+
+  async updateContactMessageResponse(messageId: number, response: string): Promise<ContactMessage | undefined> {
+    const [message] = await db
+      .update(contactMessages)
+      .set({
+        adminResponse: response,
+        responseDate: new Date()
+      })
+      .where(eq(contactMessages.id, messageId))
+      .returning();
+    return message || undefined;
   }
 
   async getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined> {

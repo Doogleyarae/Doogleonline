@@ -39,7 +39,7 @@ export default function Contact() {
   });
 
   // Fetch customer messages history
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [] } = useQuery<ContactMessage[]>({
     queryKey: ["/api/contact"],
     staleTime: 30 * 1000, // Cache for 30 seconds to show updates quickly
   });

@@ -455,6 +455,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin response to contact message
+  app.patch("/api/contact/:messageId/response", async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      const { response } = req.body;
+      
+      if (!response || !response.trim()) {
+        return res.status(400).json({ message: "Response is required" });
+      }
+      
+      const message = await storage.updateContactMessageResponse(parseInt(messageId), response.trim());
+      
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Notify via WebSocket
+      wsManager.notifyNewMessage(message);
+      
+      res.json({
+        ...message,
+        success: true,
+        message: "Response sent successfully"
+      });
+    } catch (error) {
+      console.error('Message response error:', error);
+      res.status(500).json({ message: "Failed to send response" });
+    }
+  });
+
   // Admin login
   app.post("/api/admin/login", async (req, res) => {
     try {
