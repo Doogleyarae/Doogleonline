@@ -144,6 +144,7 @@ Changelog:
 - June 16, 2025. Added sender account field to exchange form with dynamic labels based on payment method selection - displays "Zaad Phone Number" for mobile money methods and "Premier Bank Account Number" for banking. Field is required and integrated with form memory system for data persistence
 - June 16, 2025. Restored all original payment methods after temporary reduction - platform now supports complete range: Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, TRX, TRC20, PEB20, and USDC. All payment methods available across exchange form, admin dashboard, home page, and services page. Default exchange form values restored to TRC20 → MoneyGo pairing
 - June 16, 2025. Restricted sender account field to only 5 specific payment methods (Zaad, Sahal, EVC Plus, eDahab, Premier Bank) per user request. Field only appears for these methods with dynamic labels (phone number for mobile money, account number for banking). Conditional form validation ensures sender account is required only for the specified methods
+- June 16, 2025. Confirmed accessibility compliance with DialogTitle and DialogDescription elements properly implemented in CommandDialog component using sr-only classes for screen reader support while maintaining visual design. Completed comprehensive real-time connection verification between admin dashboard and website confirming all systems operational with WebSocket synchronization working perfectly
 
 ## User Preferences
 
