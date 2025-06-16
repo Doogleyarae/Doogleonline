@@ -127,7 +127,11 @@ export default function AuthForm() {
     try {
       signInWithGoogle();
     } catch (error: any) {
-      setError('Google sign-in is not available. Please use email/password or contact administrator.');
+      if (error.code === 'auth/unauthorized-domain' || error.message.includes('domain not configured')) {
+        setError('Google sign-in requires Firebase setup. Please use email/password authentication or contact administrator to complete Firebase domain configuration.');
+      } else {
+        setError('Google sign-in is temporarily unavailable. Please try email/password authentication.');
+      }
     }
   };
 

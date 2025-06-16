@@ -46,7 +46,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       })
       .catch((error) => {
-        console.error('Error handling redirect result:', error);
+        // Silently handle domain authorization errors - they're expected until Firebase is configured
+        if (error.code !== 'auth/unauthorized-domain') {
+          console.error('Error handling redirect result:', error);
+        }
       });
 
     // Listen for auth state changes
