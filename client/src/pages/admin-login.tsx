@@ -33,10 +33,14 @@ export default function AdminLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
+      console.log("Frontend - Sending login data:", data);
       const response = await apiRequest("POST", "/api/admin/login", data);
-      return response.json();
+      const result = await response.json();
+      console.log("Frontend - Received response:", result);
+      return result;
     },
     onSuccess: (data) => {
+      console.log("Frontend - Login success:", data);
       if (data.success) {
         sessionStorage.setItem("adminToken", data.token);
         setLocation("/admin/dashboard");
@@ -53,6 +57,7 @@ export default function AdminLogin() {
       }
     },
     onError: (error: any) => {
+      console.error("Frontend - Login error:", error);
       toast({
         title: "Error",
         description: error.message || "Login failed",
@@ -62,6 +67,7 @@ export default function AdminLogin() {
   });
 
   const onSubmit = (data: LoginFormData) => {
+    console.log("Frontend - Form submitted with:", data);
     loginMutation.mutate(data);
   };
 
