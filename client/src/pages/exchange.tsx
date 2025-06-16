@@ -98,6 +98,7 @@ const createExchangeFormSchema = (
   exchangeRate: z.string(),
   fullName: z.string().min(1, "Full name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
+  senderAccount: z.string().min(1, "Sender account is required"),
   walletAddress: z.string().min(1, "Wallet address is required"),
   rememberDetails: z.boolean().optional(),
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
@@ -244,6 +245,7 @@ export default function Exchange() {
       exchangeRate: exchangeRate.toString(),
       fullName: savedData.fullName || "",
       phoneNumber: savedData.phoneNumber || "",
+      senderAccount: savedData.senderAccount || "",
       walletAddress: savedData.walletAddress || "",
       rememberDetails: isReminded,
       agreeToTerms: false,
@@ -727,6 +729,7 @@ export default function Exchange() {
       const response = await apiRequest("POST", "/api/orders", {
         fullName: data.fullName,
         phoneNumber: data.phoneNumber,
+        senderAccount: data.senderAccount,
         walletAddress: data.walletAddress,
         sendMethod: data.sendMethod,
         receiveMethod: data.receiveMethod,
@@ -922,6 +925,70 @@ export default function Exchange() {
                       )}
                     />
                   </div>
+                  
+                  {/* Sender Account Field */}
+                  <FormField
+                    control={form.control}
+                    name="senderAccount"
+                    render={({ field }) => {
+                      const getSenderAccountLabel = () => {
+                        switch (sendMethod) {
+                          case 'zaad':
+                            return 'Zaad Phone Number *';
+                          case 'sahal':
+                            return 'Sahal Phone Number *';
+                          case 'evc':
+                            return 'EVC Plus Phone Number *';
+                          case 'edahab':
+                            return 'eDahab Phone Number *';
+                          case 'premier':
+                            return 'Premier Bank Account Number *';
+                          default:
+                            return 'Sender Account Number *';
+                        }
+                      };
+
+                      const getSenderAccountPlaceholder = () => {
+                        switch (sendMethod) {
+                          case 'zaad':
+                            return 'Enter your Zaad phone number';
+                          case 'sahal':
+                            return 'Enter your Sahal phone number';
+                          case 'evc':
+                            return 'Enter your EVC Plus phone number';
+                          case 'edahab':
+                            return 'Enter your eDahab phone number';
+                          case 'premier':
+                            return 'Enter your Premier Bank account number';
+                          default:
+                            return 'Enter your account number';
+                        }
+                      };
+
+                      return (
+                        <FormItem>
+                          <FormLabel>{getSenderAccountLabel()}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder={getSenderAccountPlaceholder()}
+                              {...field} 
+                              onChange={(e) => {
+                                field.onChange(e);
+                                handleFieldChange('senderAccount', e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-gray-500">
+                            {sendMethod === 'premier' 
+                              ? 'Enter the bank account number you are sending from'
+                              : 'Enter the phone number you are sending from'
+                            }
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
                 </CardContent>
               </Card>
 

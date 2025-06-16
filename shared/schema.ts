@@ -7,7 +7,7 @@ export const orders = pgTable("orders", {
   orderId: text("order_id").notNull().unique(),
   fullName: text("full_name").notNull(),
   phoneNumber: text("phone_number").notNull(),
-
+  senderAccount: text("sender_account").notNull(),
   walletAddress: text("wallet_address").notNull(),
   sendMethod: text("send_method").notNull(),
   receiveMethod: text("receive_method").notNull(),
