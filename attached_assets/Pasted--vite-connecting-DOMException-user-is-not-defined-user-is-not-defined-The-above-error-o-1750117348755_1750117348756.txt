@@ -1,0 +1,32 @@
+[vite] connecting...
+DOMException {}
+
+user is not defined
+user is not defined
+The above error occurred in the <Exchange> component:
+
+    at Exchange (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/src/pages/exchange.tsx:103:27)
+    at Route (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=ceb08487:323:16)
+    at Switch (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=ceb08487:379:17)
+    at Suspense
+    at Router (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/src/App.tsx?v=WPGiqdCGhhOisn8OY_vxm:75:3)
+    at main
+    at div
+    at Provider (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SG7MREQ6.js?v=ceb08487:38:15)
+    at TooltipProvider (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=ceb08487:59:5)
+    at QueryClientProvider (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=ceb08487:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+user is not defined
+at Exchange (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/src/pages/exchange.tsx:232:39)
+at renderWithHooks (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:11548:26)
+at updateFunctionComponent (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:14582:28)
+at mountLazyComponent (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:14833:23)
+at beginWork (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:15918:22)
+at beginWork$1 (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:19753:22)
+at performUnitOfWork (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:19198:20)
+at workLoopSync (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:19137:13)
+at renderRootSync (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:19116:15)
+at recoverFromConcurrentError (https://8e5d9b38-9089-4e98-9e9e-7f00aabb35b1-00-29cyodx8spplt.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WERSD76P.js?v=ceb08487:18736:28)

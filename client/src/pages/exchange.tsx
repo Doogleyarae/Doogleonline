@@ -246,7 +246,7 @@ export default function Exchange() {
       sendAmount: sendAmount,
       receiveAmount: receiveAmount,
       exchangeRate: exchangeRate.toString(),
-      fullName: savedData.fullName || user?.displayName || "",
+      fullName: savedData.fullName || "",
       phoneNumber: savedData.phoneNumber || "",
       senderAccount: savedData.senderAccount || "",
       walletAddress: savedData.walletAddress || "",
