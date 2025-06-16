@@ -1,5 +1,6 @@
 // Real-time connection test between admin dashboard and website
-const WebSocket = require('ws');
+import WebSocket from 'ws';
+import fetch from 'node-fetch';
 
 async function testRealTimeConnection() {
   console.log("🔄 Testing real-time connection between admin dashboard and website...\n");
@@ -117,8 +118,5 @@ async function testRealTimeConnection() {
     console.log("\n🔚 Connection test completed");
   }, 10000);
 }
-
-// Add fetch polyfill for Node.js
-global.fetch = require('node-fetch');
 
 testRealTimeConnection().catch(console.error);
