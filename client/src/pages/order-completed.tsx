@@ -77,7 +77,7 @@ export default function OrderCompleted() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Completed:</span>
-                <span className="font-medium">{formatDate(order.createdAt)}</span>
+                <span className="font-medium">{order.createdAt ? formatDate(order.createdAt) : 'Just now'}</span>
               </div>
             </div>
           </div>
@@ -90,10 +90,12 @@ export default function OrderCompleted() {
                 <span className="text-gray-600">Name:</span>
                 <span className="font-medium">{order.fullName}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Email:</span>
-                <span className="font-medium">{order.email}</span>
-              </div>
+              {order.email && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Email:</span>
+                  <span className="font-medium">{order.email}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">Phone:</span>
                 <span className="font-medium">{order.phoneNumber}</span>
