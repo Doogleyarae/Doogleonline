@@ -727,12 +727,12 @@ export default function AdminDashboard() {
       <div className="lg:hidden bg-white shadow-sm border-b">
         <div className="flex items-center justify-between px-4 py-3">
           <h1 className="text-lg font-bold text-gray-900">Admin Dashboard</h1>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2 h-9 w-9 flex items-center justify-center"
             >
               <LogOut className="w-4 h-4" />
             </Button>
@@ -740,7 +740,7 @@ export default function AdminDashboard() {
               variant="ghost"
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="px-2"
+              className="p-2 h-9 w-9 flex items-center justify-center hover:bg-gray-100"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
