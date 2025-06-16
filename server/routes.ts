@@ -492,21 +492,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const expectedPassword = "@Aa121322@Doogle143";
       
-      console.log("Login DEBUG - Username:", username);
-      console.log("Login DEBUG - Password received:", password);
-      console.log("Login DEBUG - Expected password:", expectedPassword);
-      console.log("Login DEBUG - Password match:", password === expectedPassword);
-      console.log("Login DEBUG - Username match:", username === "admin");
-      
       if (username === "admin" && password === expectedPassword) {
-        console.log("Login SUCCESS");
         res.json({ success: true, token: "admin-token-123" });
       } else {
-        console.log("Login FAILED - Credentials don't match");
         res.status(401).json({ success: false, message: "Invalid credentials" });
       }
     } catch (error) {
-      console.error("Login ERROR:", error);
       res.status(500).json({ message: "Login failed" });
     }
   });

@@ -577,7 +577,7 @@ export default function AdminDashboard() {
     updateStatusMutation.mutate({ orderId: selectedOrderId, status: newStatus });
   };
 
-  const handleRateUpdate = () => {
+  const handleRateUpdate = async () => {
     if (!fromCurrency || !toCurrency || !exchangeRate) {
       toast({
         title: "Error",
@@ -586,6 +586,24 @@ export default function AdminDashboard() {
       });
       return;
     }
+
+    // Validate exchange rate value
+    const rateValue = parseFloat(exchangeRate);
+    if (isNaN(rateValue) || rateValue <= 0) {
+      toast({
+        title: "Error",
+        description: "Exchange rate must be a positive number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show confirmation that min/max limits will be preserved
+    toast({
+      title: "Updating Exchange Rate",
+      description: `Setting ${fromCurrency.toUpperCase()} → ${toCurrency.toUpperCase()} = ${exchangeRate}. All minimum and maximum limits will be preserved.`,
+    });
+
     updateRateMutation.mutate({ fromCurrency, toCurrency, rate: exchangeRate });
   };
 
@@ -785,8 +803,13 @@ export default function AdminDashboard() {
 
 
 
-  // Filter orders with precise Order ID matching
+  // Filter orders with precise Order ID matching (hide cancelled orders by default)
   const filteredOrders = orders.filter(order => {
+    // Hide cancelled orders from main dashboard view
+    if (order.status === 'cancelled') {
+      return false;
+    }
+    
     // Apply search filter
     let matchesSearch = true;
     if (searchTerm !== "") {
