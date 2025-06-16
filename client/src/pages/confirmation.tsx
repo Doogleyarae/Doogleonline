@@ -84,9 +84,13 @@ export default function Confirmation() {
       
       // Redirect to cancelled orders page if order was cancelled
       if (updatedOrder.status === "cancelled") {
+        toast({
+          title: "Redirecting...",
+          description: "Taking you to cancelled orders page",
+        });
         setTimeout(() => {
-          setLocation("/cancelled");
-        }, 2000); // 2 second delay to show the toast message
+          window.location.href = "/cancelled";
+        }, 1500); // 1.5 second delay to show the toast message
       }
     },
     onError: () => {
