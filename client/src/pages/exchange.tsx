@@ -88,8 +88,8 @@ export default function Exchange() {
   });
 
   useEffect(() => {
-    if (rateData?.rate) {
-      setRate(rateData.rate);
+    if (rateData && typeof rateData === 'object' && 'rate' in rateData) {
+      setRate(rateData.rate as number);
     }
   }, [rateData]);
 

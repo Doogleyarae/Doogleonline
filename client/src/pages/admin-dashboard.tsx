@@ -14,6 +14,19 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { DollarSign, TrendingUp, Clock, CheckCircle, XCircle, Settings, Users } from "lucide-react";
 import type { Order, ContactMessage, Transaction } from "@shared/schema";
 
+interface AdminOrder extends Order {
+  id: number;
+  orderId: string;
+  fullName: string;
+  sendAmount: string;
+  receiveAmount: string;
+  status: string;
+}
+
+interface AdminContactMessage extends ContactMessage {
+  response?: string;
+}
+
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("orders");
@@ -42,28 +55,28 @@ export default function AdminDashboard() {
   }, [toast]);
 
   // Fetch data with forced cache removal for immediate updates
-  const { data: orders = [] } = useQuery({
+  const { data: orders = [] } = useQuery<AdminOrder[]>({
     queryKey: ['/api/orders', Date.now()],
     staleTime: 0,
     refetchInterval: 2000
   });
 
-  const { data: contactMessages = [] } = useQuery({
+  const { data: contactMessages = [] } = useQuery<AdminContactMessage[]>({
     queryKey: ['/api/contact', Date.now()],
     staleTime: 0
   });
 
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ['/api/transactions', Date.now()],
     staleTime: 0
   });
 
-  const { data: balances = {} } = useQuery({
+  const { data: balances = {} } = useQuery<Record<string, number>>({
     queryKey: ['/api/admin/balances', Date.now()],
     staleTime: 0
   });
 
-  const { data: exchangeRates = [] } = useQuery({
+  const { data: exchangeRates = [] } = useQuery<any[]>({
     queryKey: ['/api/admin/exchange-rates', Date.now()],
     staleTime: 0
   });
@@ -125,11 +138,11 @@ export default function AdminDashboard() {
     }
   });
 
-  const pendingOrders = orders.filter((order: Order) => order.status === 'pending');
-  const paidOrders = orders.filter((order: Order) => order.status === 'paid');
-  const completedOrders = orders.filter((order: Order) => order.status === 'completed');
+  const pendingOrders = orders.filter((order) => order.status === 'pending');
+  const paidOrders = orders.filter((order) => order.status === 'paid');
+  const completedOrders = orders.filter((order) => order.status === 'completed');
 
-  const totalVolume = orders.reduce((sum: number, order: Order) => {
+  const totalVolume = orders.reduce((sum: number, order) => {
     return sum + parseFloat(order.sendAmount || '0');
   }, 0);
 
@@ -405,7 +418,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {contactMessages.map((message: ContactMessage) => (
+                  {contactMessages.map((message) => (
                     <Card key={message.id}>
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-2">
@@ -418,10 +431,10 @@ export default function AdminDashboard() {
                           </Badge>
                         </div>
                         <p className="text-gray-800 mb-3">{message.message}</p>
-                        {message.response && (
+                        {message.adminResponse && (
                           <div className="bg-blue-50 p-3 rounded-lg">
                             <p className="text-sm font-medium text-blue-900">Admin Response:</p>
-                            <p className="text-blue-800">{message.response}</p>
+                            <p className="text-blue-800">{message.adminResponse}</p>
                           </div>
                         )}
                       </CardContent>
