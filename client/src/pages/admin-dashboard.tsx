@@ -748,6 +748,88 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Update Exchange Rate Section - Highest Priority */}
+      <div className="bg-gray-50 border-b-2 border-blue-200">
+        <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
+          <Card className="bg-white border-gray-200 shadow-lg">
+            <CardHeader className="pb-6">
+              <CardTitle className="flex items-center text-gray-900 text-2xl">
+                <Settings className="w-6 h-6 mr-3" />
+                Update Exchange Rate
+              </CardTitle>
+              <p className="text-gray-600 mt-2">Changes apply immediately to all live calculations</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-6">
+                <div>
+                  <Label htmlFor="main-from-currency" className="text-base font-medium text-gray-700 mb-3 block">From Currency</Label>
+                  <Select value={fromCurrency} onValueChange={setFromCurrency}>
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue placeholder="Select from currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="main-to-currency" className="text-base font-medium text-gray-700 mb-3 block">To Currency</Label>
+                  <Select value={toCurrency} onValueChange={setToCurrency}>
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue placeholder="Select to currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((method) => (
+                        <SelectItem key={method.value} value={method.value}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="main-rate" className="text-base font-medium text-gray-700 mb-3 block">Exchange Rate</Label>
+                  <Input
+                    id="main-rate"
+                    type="number"
+                    step="0.000001"
+                    placeholder="0.000000"
+                    value={exchangeRate}
+                    onChange={(e) => setExchangeRate(e.target.value)}
+                    className="h-12 text-base"
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleRateUpdate} 
+                  disabled={updateRateMutation.isPending || !fromCurrency || !toCurrency || !exchangeRate}
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-base"
+                >
+                  {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
+                </Button>
+              </div>
+              
+              {fromCurrency && toCurrency && exchangeRate && (
+                <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-800">
+                    <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    This rate will immediately affect all live calculations and new transactions
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       {/* Desktop Header */}
       <div className="hidden lg:block bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -769,83 +851,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
-        {/* Update Exchange Rate Section */}
-        <Card className="mb-8 bg-white border-gray-200 shadow-lg">
-          <CardHeader className="pb-6">
-            <CardTitle className="flex items-center text-gray-900 text-2xl">
-              <Settings className="w-6 h-6 mr-3" />
-              Update Exchange Rate
-            </CardTitle>
-            <p className="text-gray-600 mt-2">Changes apply immediately to all live calculations</p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-6">
-              <div>
-                <Label htmlFor="main-from-currency" className="text-base font-medium text-gray-700 mb-3 block">From Currency</Label>
-                <Select value={fromCurrency} onValueChange={setFromCurrency}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Select from currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.value} value={method.value}>
-                        {method.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="main-to-currency" className="text-base font-medium text-gray-700 mb-3 block">To Currency</Label>
-                <Select value={toCurrency} onValueChange={setToCurrency}>
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Select to currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((method) => (
-                      <SelectItem key={method.value} value={method.value}>
-                        {method.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="main-rate" className="text-base font-medium text-gray-700 mb-3 block">Exchange Rate</Label>
-                <Input
-                  id="main-rate"
-                  type="number"
-                  step="0.000001"
-                  placeholder="0.000000"
-                  value={exchangeRate}
-                  onChange={(e) => setExchangeRate(e.target.value)}
-                  className="h-12 text-base"
-                />
-              </div>
-              
-              <Button 
-                onClick={handleRateUpdate} 
-                disabled={updateRateMutation.isPending || !fromCurrency || !toCurrency || !exchangeRate}
-                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-base"
-              >
-                {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
-              </Button>
-            </div>
-            
-            {fromCurrency && toCurrency && exchangeRate && (
-              <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-800">
-                  <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  This rate will immediately affect all live calculations and new transactions
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Current Exchange Rates Section */}
         <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
