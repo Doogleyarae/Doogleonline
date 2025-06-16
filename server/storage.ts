@@ -201,7 +201,7 @@ export class DatabaseStorage implements IStorage {
     const existing = await this.getCurrencyLimit(insertLimit.fromCurrency, insertLimit.toCurrency);
     
     // Enforce $10,000 maximum limit at database level
-    const enforceMaxAmount = Math.min(parseFloat(insertLimit.maxAmount), 10000).toString();
+    const enforceMaxAmount = Math.min(parseFloat(insertLimit.maxAmount || "10000"), 10000).toString();
     
     if (existing) {
       // Force replace old limit data with new data - complete replacement with $10,000 enforcement

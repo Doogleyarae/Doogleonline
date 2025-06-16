@@ -145,6 +145,7 @@ Changelog:
 - June 16, 2025. Restored all original payment methods after temporary reduction - platform now supports complete range: Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, TRX, TRC20, PEB20, and USDC. All payment methods available across exchange form, admin dashboard, home page, and services page. Default exchange form values restored to TRC20 → MoneyGo pairing
 - June 16, 2025. Restricted sender account field to only 5 specific payment methods (Zaad, Sahal, EVC Plus, eDahab, Premier Bank) per user request. Field only appears for these methods with dynamic labels (phone number for mobile money, account number for banking). Conditional form validation ensures sender account is required only for the specified methods
 - June 16, 2025. Confirmed accessibility compliance with DialogTitle and DialogDescription elements properly implemented in CommandDialog component using sr-only classes for screen reader support while maintaining visual design. Completed comprehensive real-time connection verification between admin dashboard and website confirming all systems operational with WebSocket synchronization working perfectly
+- June 16, 2025. Implemented robust $10,000 maximum limit enforcement system for balance management with exchange rate preservation. Database-level enforcement ensures no currency can exceed $10,000 maximum while maintaining all exchange rates during updates. Admin dashboard "Set Max ($10K)" button enforces limits with real-time WebSocket synchronization ensuring platform-wide consistency
 
 ## User Preferences
 
