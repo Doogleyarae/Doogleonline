@@ -147,6 +147,7 @@ Changelog:
 - June 16, 2025. Completed comprehensive admin dashboard with all requested features: Orders management with approve/reject functionality and sender account display, Transactions history with filtering capabilities, Balance management with real-time updates, Exchange rates configuration with min/max settings, Wallet address management for all payment methods, Customer messages system, Contact information management, and Analytics dashboard with charts showing daily/weekly/monthly summaries, order status breakdowns, payment method usage, and revenue tracking
 - June 16, 2025. Restructured admin dashboard page layout per user request - moved "Update Exchange Rate" form to first position and "Current Exchange Rates" to second position. This creates an action-first workflow where administrators can immediately update rates, then view the results below for confirmation
 - June 16, 2025. Elevated "Update Exchange Rate" section to highest priority position - moved above dashboard header with distinctive gray background and blue border styling. Form now appears at absolute top of page for maximum visibility and immediate access to rate management functionality
+- June 16, 2025. Cleaned up admin dashboard exchange rate sections per user request - removed descriptive text "Changes apply immediately to all live calculations" and "Live rates affecting all transaction calculations" for cleaner, more concise headers
 
 ## User Preferences
 

@@ -761,7 +761,6 @@ export default function AdminDashboard() {
                 <Settings className="w-6 h-6 mr-3" />
                 Update Exchange Rate
               </CardTitle>
-              <p className="text-gray-600 mt-2">Changes apply immediately to all live calculations</p>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-6">
@@ -863,7 +862,6 @@ export default function AdminDashboard() {
               <TrendingUp className="w-5 h-5 mr-2" />
               Current Exchange Rates
             </CardTitle>
-            <p className="text-sm text-blue-700">Live rates affecting all transaction calculations</p>
           </CardHeader>
           <CardContent>
             {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
