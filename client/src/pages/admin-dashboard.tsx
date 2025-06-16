@@ -12,6 +12,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Settings,
   TrendingUp,
@@ -27,8 +32,160 @@ import {
   XCircle,
   Clock3,
   AlertCircle,
+  UserCheck,
+  Send,
 } from "lucide-react";
 import type { Order, ContactMessage, Transaction } from "@shared/schema";
+
+// Schema for message response form
+const responseSchema = z.object({
+  response: z.string().min(5, "Response must be at least 5 characters"),
+});
+
+type ResponseFormData = z.infer<typeof responseSchema>;
+
+// Component for message response card
+function MessageResponseCard({ message, onResponseSent }: { message: ContactMessage; onResponseSent: () => void }) {
+  const { toast } = useToast();
+  const [isResponding, setIsResponding] = useState(false);
+  
+  const form = useForm<ResponseFormData>({
+    resolver: zodResolver(responseSchema),
+    defaultValues: {
+      response: "",
+    },
+  });
+
+  const responseMutation = useMutation({
+    mutationFn: async (data: ResponseFormData) => {
+      return await apiRequest(`/api/contact/${message.id}/response`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Response sent successfully",
+        description: "Customer will see your response on the contact page",
+      });
+      form.reset();
+      setIsResponding(false);
+      onResponseSent();
+    },
+    onError: () => {
+      toast({
+        title: "Failed to send response",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: ResponseFormData) => {
+    responseMutation.mutate(data);
+  };
+
+  return (
+    <Card className="border-l-4 border-l-primary">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h4 className="font-semibold">{message.name}</h4>
+            <p className="text-sm text-gray-600">{message.email}</p>
+          </div>
+          <Badge variant="outline">{message.subject}</Badge>
+        </div>
+        <p className="text-gray-700 mb-2">{message.message}</p>
+        <p className="text-xs text-gray-500 mb-3">{formatDate(message.createdAt)}</p>
+        
+        {/* Admin Response Section */}
+        {message.adminResponse ? (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center mb-2">
+              <UserCheck className="w-4 h-4 text-green-600 mr-2" />
+              <span className="font-medium text-green-800">Your Response</span>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-gray-700">{message.adminResponse}</p>
+              {message.responseDate && (
+                <p className="text-xs text-green-600 mt-2">
+                  Sent on {formatDate(message.responseDate)}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            {!isResponding ? (
+              <Button 
+                onClick={() => setIsResponding(true)}
+                size="sm"
+                className="flex items-center"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Send Response
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="response"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Your Response</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Type your response to the customer..."
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex gap-2">
+                      <Button 
+                        type="submit" 
+                        size="sm"
+                        disabled={responseMutation.isPending}
+                      >
+                        {responseMutation.isPending ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Send Response
+                          </>
+                        )}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setIsResponding(false);
+                          form.reset();
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 const paymentMethods = [
   { value: "zaad", label: "Zaad" },
@@ -2042,19 +2199,13 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {messages.map((message) => (
-                      <Card key={message.id} className="border-l-4 border-l-primary">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h4 className="font-semibold">{message.name}</h4>
-                              <p className="text-sm text-gray-600">{message.email}</p>
-                            </div>
-                            <Badge variant="outline">{message.subject}</Badge>
-                          </div>
-                          <p className="text-gray-700 mb-2">{message.message}</p>
-                          <p className="text-xs text-gray-500">{formatDate(message.createdAt)}</p>
-                        </CardContent>
-                      </Card>
+                      <MessageResponseCard 
+                        key={message.id} 
+                        message={message} 
+                        onResponseSent={() => {
+                          queryClient.invalidateQueries({ queryKey: ["/api/contact"] });
+                        }} 
+                      />
                     ))}
                     {messages.length === 0 && (
                       <p className="text-center text-gray-500 py-8">No messages yet</p>

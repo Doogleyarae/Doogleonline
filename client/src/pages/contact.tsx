@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Mail, Phone, Clock, Bell, BellOff, MessageCircle, Send, User, UserCheck } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
+import { type ContactMessage } from "@shared/schema";
 
 const contactFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -39,10 +40,10 @@ export default function Contact() {
   });
 
   // Fetch customer messages history
-  const { data: messages = [] } = useQuery<ContactMessage[]>({
+  const { data: messages = [] } = useQuery({
     queryKey: ["/api/contact"],
     staleTime: 30 * 1000, // Cache for 30 seconds to show updates quickly
-  });
+  }) as { data: ContactMessage[] };
 
   // Initialize form data memory for auto-save functionality
   const { 
