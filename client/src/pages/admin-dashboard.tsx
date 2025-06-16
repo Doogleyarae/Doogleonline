@@ -107,7 +107,7 @@ function MessageResponseCard({ message, onResponseSent }: { message: ContactMess
               <p className="text-gray-700">{message.adminResponse}</p>
               {message.responseDate && (
                 <p className="text-xs text-green-600 mt-2">
-                  Sent on {formatDate(message.responseDate)}
+                  Sent on {message.responseDate ? formatDate(message.responseDate) : 'Recently'}
                 </p>
               )}
             </div>
@@ -848,7 +848,7 @@ export default function AdminDashboard() {
         order.sendAmount,
         order.receiveAmount,
         order.status,
-        formatDate(order.createdAt)
+        order.createdAt ? formatDate(order.createdAt) : 'Recently'
       ].join(','))
     ].join('\n');
 
@@ -1159,7 +1159,7 @@ export default function AdminDashboard() {
                                   </div>
                                 </Badge>
                               </TableCell>
-                              <TableCell>{formatDate(order.createdAt)}</TableCell>
+                              <TableCell>{order.createdAt ? formatDate(order.createdAt) : 'Recently'}</TableCell>
                               <TableCell>
                                 <div className="flex flex-col sm:flex-row gap-2">
                                   {order.status === "pending" || order.status === "paid" ? (
@@ -1376,7 +1376,7 @@ export default function AdminDashboard() {
                                 {transaction.description}
                               </TableCell>
                               <TableCell className="text-sm text-gray-500">
-                                {formatDate(transaction.createdAt)}
+                                {transaction.createdAt ? formatDate(transaction.createdAt) : 'Recently'}
                               </TableCell>
                             </TableRow>
                           ))}
