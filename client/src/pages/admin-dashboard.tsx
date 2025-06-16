@@ -191,10 +191,11 @@ export default function AdminDashboard() {
   // Update contact info state when data is loaded
   useEffect(() => {
     if (contactData && typeof contactData === 'object') {
+      const data = contactData as any;
       setAdminContact({
-        email: contactData.email || "dadayare3@gmail.com",
-        whatsapp: contactData.whatsapp || "252611681818", 
-        telegram: contactData.telegram || "@doogle143"
+        email: data.email || "dadayare3@gmail.com",
+        whatsapp: data.whatsapp || "252611681818", 
+        telegram: data.telegram || "@doogle143"
       });
     }
   }, [contactData]);

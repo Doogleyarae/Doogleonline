@@ -857,8 +857,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'currency_limit_update',
         data: { 
           currency: validatedData.fromCurrency.toUpperCase(),
-          minAmount: parseFloat(validatedData.minAmount),
-          maxAmount: parseFloat(validatedData.maxAmount)
+          minAmount: parseFloat(validatedData.minAmount || "0"),
+          maxAmount: parseFloat(validatedData.maxAmount || "0")
         },
         timestamp: new Date().toISOString()
       });
