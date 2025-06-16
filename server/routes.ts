@@ -292,6 +292,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get admin contact information
+  app.get("/api/admin/contact-info", async (req, res) => {
+    try {
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
+      const contactInfo = await storage.getAdminContactInfo();
+      // Return your contact information if nothing is stored
+      res.json(contactInfo || { 
+        email: "dadayare3@gmail.com", 
+        whatsapp: "252611681818", 
+        telegram: "@doogle143" 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get admin contact information" });
+    }
+  });
+
+  // Update admin contact information
+  app.post("/api/admin/contact-info", async (req, res) => {
+    try {
+      const { email, whatsapp, telegram } = req.body;
+      
+      if (!email || !whatsapp || !telegram) {
+        return res.status(400).json({ message: "Email, WhatsApp, and Telegram are required" });
+      }
+
+      const contactInfo = await storage.updateAdminContactInfo({ 
+        email, 
+        whatsapp, 
+        telegram 
+      });
+
+      res.json({
+        ...contactInfo,
+        message: "NEW CONTACT INFO PERSISTED: Admin contact information updated successfully"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update admin contact information" });
+    }
+  });
+
   // Update universal transaction limits
   app.post("/api/admin/universal-limits", async (req, res) => {
     try {

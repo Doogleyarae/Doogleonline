@@ -148,6 +148,13 @@ export default function AdminDashboard() {
   const [balances, setBalances] = useState<Record<string, number>>({});
   const [recentlyUpdatedBalance, setRecentlyUpdatedBalance] = useState<string>('');
   
+  // State for admin contact information
+  const [adminContact, setAdminContact] = useState({
+    email: "dadayare3@gmail.com",
+    whatsapp: "252611681818", 
+    telegram: "@doogle143"
+  });
+  
   // Fetch wallet addresses
   const { data: walletData } = useQuery({
     queryKey: ["/api/admin/wallet-addresses"],
@@ -175,6 +182,22 @@ export default function AdminDashboard() {
   const { data: backendLimits } = useQuery({
     queryKey: ["/api/admin/balance-limits"],
   });
+
+  // Fetch admin contact information
+  const { data: contactData } = useQuery({
+    queryKey: ["/api/admin/contact-info"],
+  });
+
+  // Update contact info state when data is loaded
+  useEffect(() => {
+    if (contactData && typeof contactData === 'object') {
+      setAdminContact({
+        email: contactData.email || "dadayare3@gmail.com",
+        whatsapp: contactData.whatsapp || "252611681818", 
+        telegram: contactData.telegram || "@doogle143"
+      });
+    }
+  }, [contactData]);
 
 
 
@@ -452,6 +475,29 @@ export default function AdminDashboard() {
     },
   });
 
+  // Admin contact information update mutation
+  const updateContactMutation = useMutation({
+    mutationFn: async (contactInfo: { email: string; whatsapp: string; telegram: string }) => {
+      const response = await apiRequest("POST", "/api/admin/contact-info", contactInfo);
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/contact-info"] });
+      toast({
+        title: "✓ NEW CONTACT INFO PERSISTED - Old Data Replaced",
+        description: "Contact information updated successfully (NEW DATA KEPT)",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Contact update error:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update contact information",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Universal limits update mutation
   const updateLimitsMutation = useMutation({
     mutationFn: async ({ min, max }: { min: number; max: number }) => {
@@ -607,12 +653,13 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
             <TabsTrigger value="limits">Balance Management</TabsTrigger>
             <TabsTrigger value="wallets">Wallet Settings</TabsTrigger>
+            <TabsTrigger value="contact">Contact Info</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
@@ -1650,6 +1697,149 @@ export default function AdminDashboard() {
                     </ul>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Contact Information Tab */}
+          <TabsContent value="contact" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Admin Contact Information
+                </CardTitle>
+                <p className="text-sm text-gray-600">
+                  Manage your business contact details for customer support
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Email Configuration */}
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email" className="text-sm font-semibold flex items-center gap-2">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      value={adminContact.email}
+                      onChange={(e) => setAdminContact(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="your-email@example.com"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Primary email for customer inquiries and notifications
+                    </p>
+                  </div>
+
+                  {/* WhatsApp Configuration */}
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-whatsapp" className="text-sm font-semibold flex items-center gap-2">
+                      WhatsApp Number
+                    </Label>
+                    <Input
+                      id="admin-whatsapp"
+                      type="text"
+                      value={adminContact.whatsapp}
+                      onChange={(e) => setAdminContact(prev => ({ ...prev, whatsapp: e.target.value }))}
+                      placeholder="252611681818"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-gray-500">
+                      WhatsApp number for instant customer support
+                    </p>
+                  </div>
+
+                  {/* Telegram Configuration */}
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-telegram" className="text-sm font-semibold flex items-center gap-2">
+                      Telegram Username
+                    </Label>
+                    <Input
+                      id="admin-telegram"
+                      type="text"
+                      value={adminContact.telegram}
+                      onChange={(e) => setAdminContact(prev => ({ ...prev, telegram: e.target.value }))}
+                      placeholder="@doogle143"
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Telegram username for secure communications
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-center pt-4">
+                  <Button 
+                    onClick={() => updateContactMutation.mutate(adminContact)}
+                    disabled={updateContactMutation.isPending}
+                    className="px-6"
+                  >
+                    {updateContactMutation.isPending ? "Updating..." : "Update Contact Information"}
+                  </Button>
+                </div>
+
+                {/* Current Contact Overview */}
+                <Card className="bg-gray-50">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Current Contact Configuration</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-white rounded-lg border">
+                        <h4 className="font-semibold text-gray-800 mb-2">Email Support</h4>
+                        <p className="text-sm text-gray-600 break-all">{adminContact.email}</p>
+                        <Badge variant="outline" className="mt-2 bg-blue-50 text-blue-700 border-blue-200">
+                          Primary Contact
+                        </Badge>
+                      </div>
+                      <div className="p-4 bg-white rounded-lg border">
+                        <h4 className="font-semibold text-gray-800 mb-2">WhatsApp</h4>
+                        <p className="text-sm text-gray-600 font-mono">{adminContact.whatsapp}</p>
+                        <Badge variant="outline" className="mt-2 bg-green-50 text-green-700 border-green-200">
+                          Instant Messaging
+                        </Badge>
+                      </div>
+                      <div className="p-4 bg-white rounded-lg border">
+                        <h4 className="font-semibold text-gray-800 mb-2">Telegram</h4>
+                        <p className="text-sm text-gray-600 font-mono">{adminContact.telegram}</p>
+                        <Badge variant="outline" className="mt-2 bg-purple-50 text-purple-700 border-purple-200">
+                          Secure Chat
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Usage Guidelines */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Contact Management Guidelines</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h4 className="font-semibold text-blue-800 mb-2">Best Practices</h4>
+                        <ul className="text-sm text-blue-700 space-y-1">
+                          <li>• Use business email addresses for professional communication</li>
+                          <li>• Keep WhatsApp number active for instant support</li>
+                          <li>• Verify Telegram username is correct and accessible</li>
+                          <li>• Update contact info immediately if any details change</li>
+                        </ul>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <h4 className="font-semibold text-green-800 mb-2">Customer Experience</h4>
+                        <ul className="text-sm text-green-700 space-y-1">
+                          <li>• Customers see these details on exchange forms</li>
+                          <li>• Contact information appears in email notifications</li>
+                          <li>• Multiple channels provide support flexibility</li>
+                          <li>• Clear contact options build customer trust</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </CardContent>
             </Card>
           </TabsContent>
