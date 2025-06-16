@@ -151,3 +151,20 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
+
+// Admin contact information table
+export const adminContactInfo = pgTable("admin_contact_info", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  whatsapp: text("whatsapp").notNull(),
+  telegram: text("telegram").notNull(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertAdminContactInfoSchema = createInsertSchema(adminContactInfo).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertAdminContactInfo = z.infer<typeof insertAdminContactInfoSchema>;
+export type AdminContactInfo = typeof adminContactInfo.$inferSelect;

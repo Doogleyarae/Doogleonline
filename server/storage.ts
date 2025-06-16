@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 
@@ -44,6 +44,10 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getTransactionsByOrder(orderId: string): Promise<Transaction[]>;
   getAllTransactions(): Promise<Transaction[]>;
+  
+  // Admin contact information methods
+  getAdminContactInfo(): Promise<AdminContactInfo | undefined>;
+  updateAdminContactInfo(info: InsertAdminContactInfo): Promise<AdminContactInfo>;
   
   // Order workflow methods with balance management
   updateOrderStatusWithBalanceLogic(orderId: string, status: string): Promise<Order | undefined>;
@@ -354,6 +358,39 @@ export class DatabaseStorage implements IStorage {
 
   async getAllTransactions(): Promise<Transaction[]> {
     return await db.select().from(transactions);
+  }
+
+  async getAdminContactInfo(): Promise<AdminContactInfo | undefined> {
+    const [info] = await db.select().from(adminContactInfo).limit(1);
+    return info || undefined;
+  }
+
+  async updateAdminContactInfo(insertInfo: InsertAdminContactInfo): Promise<AdminContactInfo> {
+    const existing = await this.getAdminContactInfo();
+    
+    if (existing) {
+      // Force replace old contact data with new data - complete replacement
+      const [info] = await db
+        .update(adminContactInfo)
+        .set({ 
+          email: insertInfo.email,
+          whatsapp: insertInfo.whatsapp,
+          telegram: insertInfo.telegram,
+          updatedAt: new Date()
+        })
+        .where(eq(adminContactInfo.id, existing.id))
+        .returning();
+      console.log(`REPLACED old admin contact info: Email ${existing.email} → ${insertInfo.email}, WhatsApp ${existing.whatsapp} → ${insertInfo.whatsapp}, Telegram ${existing.telegram} → ${insertInfo.telegram}`);
+      return info;
+    } else {
+      // Insert completely new contact info
+      const [info] = await db
+        .insert(adminContactInfo)
+        .values(insertInfo)
+        .returning();
+      console.log(`INSERTED new admin contact info: Email ${insertInfo.email}, WhatsApp ${insertInfo.whatsapp}, Telegram ${insertInfo.telegram}`);
+      return info;
+    }
   }
 
   async updateOrderStatusWithBalanceLogic(orderId: string, status: string): Promise<Order | undefined> {
