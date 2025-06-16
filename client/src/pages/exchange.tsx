@@ -732,6 +732,7 @@ export default function Exchange() {
         fullName: data.fullName,
         phoneNumber: data.phoneNumber,
         walletAddress: data.walletAddress,
+        senderAccountNumber: data.senderAccountNumber || "",
         sendMethod: data.sendMethod,
         receiveMethod: data.receiveMethod,
         sendAmount: data.sendAmount,
