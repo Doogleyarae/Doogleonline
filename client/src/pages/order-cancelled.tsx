@@ -17,10 +17,8 @@ export default function OrderCancelled() {
       const orderData = JSON.parse(storedOrder);
       setOrder(orderData);
       
-      // If order is not cancelled, redirect to tracking page
-      if (orderData.status !== "cancelled") {
-        setLocation("/track");
-      }
+      // Allow customers to view cancelled orders regardless of status
+      // No redirect needed - customer deliberately navigated here
     } else {
       // No order data, redirect to homepage
       setLocation("/");
