@@ -133,7 +133,14 @@ export default function AuthForm() {
       console.error('Google sign-in error:', error);
       
       if (error.code === 'auth/unauthorized-domain' || error.message.includes('domain not authorized')) {
-        setError('Google sign-in requires Firebase setup. Please use email/password authentication or contact administrator to complete Firebase domain configuration.');
+        setError(
+          <div className="space-y-2">
+            <p>Google sign-in requires web app configuration in Firebase Console.</p>
+            <Link href="/firebase-web-setup" className="text-blue-600 hover:underline text-sm">
+              → View setup guide
+            </Link>
+          </div>
+        );
       } else if (error.message.includes('popup')) {
         setError('Popup was blocked or closed. Please allow popups and try again, or use email/password authentication.');
       } else {

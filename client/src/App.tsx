@@ -28,6 +28,7 @@ const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
 const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
 const FirebaseLoginPage = lazy(() => import("@/pages/firebase-login"));
 const FirebaseSetupPage = lazy(() => import("@/pages/firebase-setup"));
+const FirebaseWebSetup = lazy(() => import("@/pages/firebase-web-setup"));
 const UserDashboard = lazy(() => import("@/pages/user-dashboard"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/cancelled" component={CancelledOrders} />
         <Route path="/login" component={FirebaseLoginPage} />
         <Route path="/firebase-setup" component={FirebaseSetupPage} />
+        <Route path="/firebase-web-setup" component={FirebaseWebSetup} />
         <Route path="/dashboard" component={UserDashboard} />
         <Route path="/admin" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />

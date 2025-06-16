@@ -18,11 +18,11 @@ import {
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA7jy7FNlH--Rkpd627WRvq5bikM1r7xVc",
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID || "doogle-e-money"}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "doogle-e-money",
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID || "doogle-e-money"}.firebasestorage.app`,
+  authDomain: "doogle-e-money.firebaseapp.com",
+  projectId: "doogle-e-money",
+  storageBucket: "doogle-e-money.firebasestorage.app",
   messagingSenderId: "478312672914",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:478312672914:web:placeholder-app-id",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:478312672914:web:web-app-id-needed",
 };
 
 const app = initializeApp(firebaseConfig);
