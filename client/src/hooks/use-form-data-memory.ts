@@ -4,6 +4,7 @@ interface FormData {
   fullName?: string;
   email?: string;
   phoneNumber?: string;
+  senderAccount?: string;
   walletAddress?: string;
   sendMethod?: string;
   receiveMethod?: string;

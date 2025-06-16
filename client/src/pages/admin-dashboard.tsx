@@ -824,6 +824,8 @@ export default function AdminDashboard() {
                                               Are you sure you want to accept order {order.orderId}? This will mark the order as completed and cannot be undone.
                                               <div className="mt-3 p-3 bg-gray-50 rounded">
                                                 <p><strong>Customer:</strong> {order.fullName}</p>
+                                                <p><strong>Phone:</strong> {order.phoneNumber}</p>
+                                                <p><strong>Sender Account:</strong> {order.senderAccount || 'Not provided'}</p>
                                                 <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
                                               </div>
                                             </AlertDialogDescription>
@@ -859,6 +861,8 @@ export default function AdminDashboard() {
                                               Are you sure you want to cancel order {order.orderId}? This action cannot be undone and the customer will be notified.
                                               <div className="mt-3 p-3 bg-gray-50 rounded">
                                                 <p><strong>Customer:</strong> {order.fullName}</p>
+                                                <p><strong>Phone:</strong> {order.phoneNumber}</p>
+                                                <p><strong>Sender Account:</strong> {order.senderAccount || 'Not provided'}</p>
                                                 <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
                                               </div>
                                             </AlertDialogDescription>
