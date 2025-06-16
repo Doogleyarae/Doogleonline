@@ -99,6 +99,7 @@ const createExchangeFormSchema = (
   fullName: z.string().min(1, "Full name is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
   walletAddress: z.string().min(1, "Wallet address is required"),
+  senderAccountNumber: z.string().optional(),
   rememberDetails: z.boolean().optional(),
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
 });
@@ -245,6 +246,7 @@ export default function Exchange() {
       fullName: savedData.fullName || "",
       phoneNumber: savedData.phoneNumber || "",
       walletAddress: savedData.walletAddress || "",
+      senderAccountNumber: savedData.senderAccountNumber || "",
       rememberDetails: isReminded,
       agreeToTerms: false,
     },
@@ -668,6 +670,7 @@ export default function Exchange() {
       fullName: currentFormData.fullName,
       phoneNumber: currentFormData.phoneNumber,
       walletAddress: currentFormData.walletAddress,
+      senderAccountNumber: currentFormData.senderAccountNumber,
     };
     
     const newRemindStatus = toggleRemind(dataToSave);
@@ -685,6 +688,7 @@ export default function Exchange() {
       form.setValue("fullName", "");
       form.setValue("phoneNumber", "");
       form.setValue("walletAddress", "");
+      form.setValue("senderAccountNumber", "");
       
       toast({
         title: "Data Cleared",
@@ -922,6 +926,37 @@ export default function Exchange() {
                       )}
                     />
                   </div>
+                  
+                  {/* Account Number Field - Only show for specific payment methods */}
+                  {(['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod.toLowerCase())) && (
+                    <FormField
+                      control={form.control}
+                      name="senderAccountNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {sendMethod.toLowerCase() === 'premier' ? 'Account Number' : 'Phone Number'}
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder={
+                                sendMethod.toLowerCase() === 'premier' 
+                                  ? "Enter your account number" 
+                                  : "Enter your phone number (e.g., 061XXXXXXX)"
+                              }
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                handleFieldChange('senderAccountNumber', e.target.value);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </CardContent>
               </Card>
 
