@@ -6,6 +6,7 @@ export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   orderId: text("order_id").notNull().unique(),
   fullName: text("full_name").notNull(),
+  email: text("email").notNull().default(""),
   phoneNumber: text("phone_number").notNull(),
   senderAccount: text("sender_account").notNull().default(""),
   walletAddress: text("wallet_address").notNull(),
