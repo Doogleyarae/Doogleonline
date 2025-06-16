@@ -1373,12 +1373,14 @@ export default function AdminDashboard() {
                                   variant={
                                     transaction.type === 'HOLD' ? 'secondary' :
                                     transaction.type === 'RELEASE' ? 'outline' :
-                                    transaction.type === 'PAYOUT' ? 'default' : 'destructive'
+                                    transaction.type === 'PAYOUT' ? 'default' :
+                                    transaction.type === 'RECEIVE' ? 'default' : 'destructive'
                                   }
                                   className={
                                     transaction.type === 'HOLD' ? 'bg-yellow-100 text-yellow-800' :
                                     transaction.type === 'RELEASE' ? 'bg-orange-100 text-orange-800' :
-                                    transaction.type === 'PAYOUT' ? 'bg-green-100 text-green-800' : ''
+                                    transaction.type === 'PAYOUT' ? 'bg-green-100 text-green-800' :
+                                    transaction.type === 'RECEIVE' ? 'bg-blue-100 text-blue-800' : ''
                                   }
                                 >
                                   {transaction.type}
