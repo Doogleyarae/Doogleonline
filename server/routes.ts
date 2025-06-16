@@ -314,19 +314,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get public contact information for Contact page
+  app.get("/api/contact-info", async (req, res) => {
+    try {
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
+      const contactInfo = await storage.getAdminContactInfo();
+      // Return your contact information with proper formatting
+      const info = contactInfo || { 
+        email: "dadayare3@gmail.com", 
+        whatsapp: "252611681818", 
+        telegram: "@doogle143" 
+      };
+      
+      res.json({
+        email: info.email || "dadayare3@gmail.com",
+        phone: info.whatsapp ? `+${info.whatsapp}` : "+252611681818",
+        whatsapp: info.whatsapp || "252611681818",
+        telegram: info.telegram || "@doogle143"
+      });
+    } catch (error) {
+      // Fallback to your default contact information
+      res.json({
+        email: "dadayare3@gmail.com",
+        phone: "+252611681818", 
+        whatsapp: "252611681818",
+        telegram: "@doogle143"
+      });
+    }
+  });
+
   // Update admin contact information
   app.post("/api/admin/contact-info", async (req, res) => {
     try {
       const { email, whatsapp, telegram } = req.body;
       
-      if (!email || !whatsapp || !telegram) {
-        return res.status(400).json({ message: "Email, WhatsApp, and Telegram are required" });
+      if (!email && !whatsapp && !telegram) {
+        return res.status(400).json({ message: "At least one contact method is required" });
       }
 
       const contactInfo = await storage.updateAdminContactInfo({ 
-        email, 
-        whatsapp, 
-        telegram 
+        email: email || "", 
+        whatsapp: whatsapp || "", 
+        telegram: telegram || "" 
       });
 
       res.json({

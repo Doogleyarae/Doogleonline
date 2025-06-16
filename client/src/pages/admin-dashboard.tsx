@@ -1779,6 +1779,9 @@ export default function AdminDashboard() {
                   >
                     {updateContactMutation.isPending ? "Updating..." : "Update Contact Information"}
                   </Button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Leave fields empty to hide that contact method on the Contact page
+                  </p>
                 </div>
 
                 {/* Current Contact Overview */}

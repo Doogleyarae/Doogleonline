@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,12 @@ const subjects = [
 
 export default function Contact() {
   const { toast } = useToast();
+
+  // Fetch contact information from admin settings
+  const { data: contactInfo } = useQuery({
+    queryKey: ["/api/contact-info"],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 
   // Initialize form data memory for auto-save functionality
   const { 
@@ -124,21 +130,25 @@ export default function Contact() {
             <CardTitle>Get in Touch</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center">
-              <Mail className="w-5 h-5 text-primary mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-700">Email</p>
-                <p className="text-sm text-gray-900">support@doogleonline.com</p>
+            {contactInfo && (contactInfo as any).email && (contactInfo as any).email.trim() && (
+              <div className="flex items-center">
+                <Mail className="w-5 h-5 text-primary mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Email</p>
+                  <p className="text-sm text-gray-900">{(contactInfo as any).email}</p>
+                </div>
               </div>
-            </div>
+            )}
             
-            <div className="flex items-center">
-              <Phone className="w-5 h-5 text-primary mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-700">Phone</p>
-                <p className="text-sm text-gray-900">+252 61 234 5678</p>
+            {contactInfo && (contactInfo as any).phone && (contactInfo as any).phone.trim() && (
+              <div className="flex items-center">
+                <Phone className="w-5 h-5 text-primary mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Phone</p>
+                  <p className="text-sm text-gray-900">{(contactInfo as any).phone}</p>
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="flex items-center">
               <Clock className="w-5 h-5 text-primary mr-3" />
