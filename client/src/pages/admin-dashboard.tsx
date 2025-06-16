@@ -1113,7 +1113,7 @@ export default function AdminDashboard() {
                                 <div className="flex flex-col sm:flex-row gap-2">
                                   {order.status === "pending" || order.status === "paid" ? (
                                     <>
-                                      {/* Accept Order Confirmation Dialog */}
+                                      {/* Regular Accept Order Button */}
                                       <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                           <Button
@@ -1149,6 +1149,50 @@ export default function AdminDashboard() {
                                           </AlertDialogFooter>
                                         </AlertDialogContent>
                                       </AlertDialog>
+
+                                      {/* Duplicate Accept Deposit Button - Only shows when customer makes deposit */}
+                                      {order.status === "paid" && (
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              size="sm"
+                                              disabled={acceptOrderMutation.isPending}
+                                              className="bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white border-0 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-xs"
+                                            >
+                                              <CheckCircle className="w-3 h-3 mr-1" />
+                                              Accept Deposit
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Accept Deposit Confirmation</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Customer has made a deposit for order {order.orderId}. Confirm to complete the order.
+                                                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                                                  <div className="flex items-center mb-2">
+                                                    <CheckCircle className="w-4 h-4 text-blue-600 mr-2" />
+                                                    <span className="font-medium text-blue-800">Deposit Received</span>
+                                                  </div>
+                                                  <p><strong>Customer:</strong> {order.fullName}</p>
+                                                  <p><strong>Phone:</strong> {order.phoneNumber}</p>
+                                                  <p><strong>Sender Account:</strong> {order.senderAccount || 'Not provided'}</p>
+                                                  <p><strong>Deposit Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)}</p>
+                                                  <p><strong>To Send:</strong> {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                                </div>
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => acceptOrderMutation.mutate(order.orderId)}
+                                                className="bg-blue-600 hover:bg-blue-700"
+                                              >
+                                                Accept Deposit & Complete
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
 
                                       {/* Cancel Order Confirmation Dialog */}
                                       <AlertDialog>
