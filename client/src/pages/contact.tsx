@@ -161,6 +161,23 @@ export default function Contact() {
                 </div>
               </div>
             )}
+
+            {contactInfo && (contactInfo as any).telegram && (contactInfo as any).telegram.trim() && (
+              <div className="flex items-center">
+                <Phone className="w-5 h-5 text-blue-500 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Telegram</p>
+                  <a 
+                    href={`https://t.me/${(contactInfo as any).telegram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-500 hover:text-blue-700 hover:underline"
+                  >
+                    {(contactInfo as any).telegram}
+                  </a>
+                </div>
+              </div>
+            )}
             
             <div className="flex items-center">
               <Clock className="w-5 h-5 text-primary mr-3" />

@@ -325,28 +325,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const contactInfo = await storage.getAdminContactInfo();
-      // Only return email by default - phone numbers are admin-only for privacy
+      // Return all admin-configured contact information for public display
       const info = contactInfo || { 
         email: "dadayare3@gmail.com", 
-        whatsapp: "", 
-        telegram: "" 
+        whatsapp: "252616451011", 
+        telegram: "@doogle143" 
       };
       
-      // Only show contact methods that have values and are meant to be public
+      // Show all contact methods that have values
       const publicInfo: any = {};
       
       if (info.email && info.email.trim()) {
         publicInfo.email = info.email;
       }
       
-      // Phone/WhatsApp numbers are not shown publicly for security
-      // Only email is displayed on the Contact page
+      if (info.whatsapp && info.whatsapp.trim()) {
+        publicInfo.whatsapp = info.whatsapp;
+      }
+      
+      if (info.telegram && info.telegram.trim()) {
+        publicInfo.telegram = info.telegram;
+      }
       
       res.json(publicInfo);
     } catch (error) {
-      // Fallback to just email for public display
+      // Fallback with all contact methods
       res.json({
-        email: "dadayare3@gmail.com"
+        email: "dadayare3@gmail.com",
+        whatsapp: "252616451011",
+        telegram: "@doogle143"
       });
     }
   });
