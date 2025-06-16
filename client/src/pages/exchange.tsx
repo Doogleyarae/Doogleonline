@@ -106,6 +106,12 @@ type ExchangeFormData = z.infer<ReturnType<typeof createExchangeFormSchema>>;
 export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Fetch admin contact information for display
+  const { data: adminContact } = useQuery({
+    queryKey: ["/api/admin/contact-info"],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
   // Load persisted exchange state from localStorage
@@ -1159,6 +1165,60 @@ export default function Exchange() {
                   />
                 </CardContent>
               </Card>
+
+              {/* Contact Information */}
+              {adminContact && (
+                <Card className="border-2 bg-blue-50 border-blue-200">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-blue-800">Need Help?</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {(adminContact as any)?.email && (
+                        <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
+                          <p className="text-sm font-medium text-gray-700">Email Support</p>
+                          <a 
+                            href={`mailto:${(adminContact as any).email}`}
+                            className="text-sm text-blue-600 hover:text-blue-800 font-mono break-all"
+                          >
+                            {(adminContact as any).email}
+                          </a>
+                        </div>
+                      )}
+                      {(adminContact as any)?.whatsapp && (
+                        <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
+                          <p className="text-sm font-medium text-gray-700">WhatsApp</p>
+                          <a 
+                            href={`https://wa.me/${(adminContact as any).whatsapp}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-green-600 hover:text-green-800 font-mono"
+                          >
+                            +{(adminContact as any).whatsapp}
+                          </a>
+                        </div>
+                      )}
+                      {(adminContact as any)?.telegram && (
+                        <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
+                          <p className="text-sm font-medium text-gray-700">Telegram</p>
+                          <a 
+                            href={`https://t.me/${(adminContact as any).telegram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 font-mono"
+                          >
+                            {(adminContact as any).telegram}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-center text-gray-600 mt-3">
+                      Contact us for assistance with your exchange or if you have any questions
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Submit Button */}
               <div className="pt-6">
