@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ export default function Confirmation() {
   const [order, setOrder] = useState<Order | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const storedOrder = sessionStorage.getItem("currentOrder");
@@ -80,6 +81,13 @@ export default function Confirmation() {
         title: "Order Updated",
         description: `Order status changed to ${updatedOrder.status}`,
       });
+      
+      // Redirect to cancelled orders page if order was cancelled
+      if (updatedOrder.status === "cancelled") {
+        setTimeout(() => {
+          setLocation("/cancelled");
+        }, 2000); // 2 second delay to show the toast message
+      }
     },
     onError: () => {
       toast({
