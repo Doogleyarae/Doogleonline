@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,9 @@ import {
   XCircle,
   Clock3,
   AlertCircle,
+  LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import type { Order, ContactMessage, Transaction } from "@shared/schema";
 
@@ -45,6 +49,27 @@ const paymentMethods = [
 
 export default function AdminDashboard() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Authentication check
+  useEffect(() => {
+    const token = sessionStorage.getItem("adminToken");
+    if (!token) {
+      setLocation("/admin/login");
+      return;
+    }
+  }, [setLocation]);
+
+  // Logout function
+  const handleLogout = () => {
+    sessionStorage.removeItem("adminToken");
+    setLocation("/admin/login");
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+  };
   
   // State for order management
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
@@ -646,24 +671,141 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Manage orders, exchange rates, and transaction limits</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-white shadow-sm border-b">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h1 className="text-lg font-bold text-gray-900">Admin Dashboard</h1>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="px-2"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
+      </div>
 
-        <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
-            <TabsTrigger value="limits">Balance Management</TabsTrigger>
-            <TabsTrigger value="wallets">Wallet Settings</TabsTrigger>
-            <TabsTrigger value="contact">Contact Info</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+      {/* Desktop Header */}
+      <div className="hidden lg:block bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-gray-600 mt-1">Manage orders, exchange rates, and transaction limits</p>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
+        <Tabs defaultValue="orders" className="space-y-4 lg:space-y-6">
+          {/* Mobile Navigation */}
+          <div className="lg:hidden">
+            {isMobileMenuOpen && (
+              <div className="bg-white rounded-lg shadow-lg border p-3 mb-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <TabsTrigger 
+                    value="orders" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Clock className="w-4 h-4 mb-1" />
+                    Orders
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="transactions" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <History className="w-4 h-4 mb-1" />
+                    Transactions
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="rates" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <TrendingUp className="w-4 h-4 mb-1" />
+                    Rates
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="limits" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <DollarSign className="w-4 h-4 mb-1" />
+                    Balance
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="wallets" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Settings className="w-4 h-4 mb-1" />
+                    Wallets
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="contact" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <MessageSquare className="w-4 h-4 mb-1" />
+                    Contact
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="messages" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Users className="w-4 h-4 mb-1" />
+                    Messages
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="analytics" 
+                    className="flex flex-col items-center justify-center h-14 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <TrendingUp className="w-4 h-4 mb-1" />
+                    Analytics
+                  </TabsTrigger>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:block">
+            <TabsList className="grid w-full grid-cols-8 h-11">
+              <TabsTrigger value="orders" className="text-sm">Orders</TabsTrigger>
+              <TabsTrigger value="transactions" className="text-sm">Transactions</TabsTrigger>
+              <TabsTrigger value="rates" className="text-sm">Exchange Rates</TabsTrigger>
+              <TabsTrigger value="limits" className="text-sm">Balance Management</TabsTrigger>
+              <TabsTrigger value="wallets" className="text-sm">Wallet Settings</TabsTrigger>
+              <TabsTrigger value="contact" className="text-sm">Contact Info</TabsTrigger>
+              <TabsTrigger value="messages" className="text-sm">Messages</TabsTrigger>
+              <TabsTrigger value="analytics" className="text-sm">Analytics</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Orders Management */}
           <TabsContent value="orders" className="space-y-6">
