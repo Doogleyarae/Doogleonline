@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -6,48 +7,61 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
-import Home from "@/pages/home";
-import About from "@/pages/about";
-import Services from "@/pages/services";
-import HowItWorks from "@/pages/how-it-works";
-import Exchange from "@/pages/exchange";
-import Confirmation from "@/pages/confirmation";
-import OrderCompleted from "@/pages/order-completed";
-import OrderCancelled from "@/pages/order-cancelled";
-import TrackOrder from "@/pages/track-order";
-import Contact from "@/pages/contact";
-import AdminLogin from "@/pages/admin-login";
-import AdminDashboard from "@/pages/admin-dashboard";
-import AdminAnalytics from "@/pages/admin-analytics";
-import OrderHistory from "@/pages/order-history";
-import CompletedOrders from "@/pages/completed-orders";
-import CancelledOrders from "@/pages/cancelled-orders";
-import NotFound from "@/pages/not-found";
+
+// Lazy load pages to improve initial loading
+const Home = lazy(() => import("@/pages/home"));
+const About = lazy(() => import("@/pages/about"));
+const Services = lazy(() => import("@/pages/services"));
+const HowItWorks = lazy(() => import("@/pages/how-it-works"));
+const Exchange = lazy(() => import("@/pages/exchange"));
+const Confirmation = lazy(() => import("@/pages/confirmation"));
+const OrderCompleted = lazy(() => import("@/pages/order-completed"));
+const OrderCancelled = lazy(() => import("@/pages/order-cancelled"));
+const TrackOrder = lazy(() => import("@/pages/track-order"));
+const Contact = lazy(() => import("@/pages/contact"));
+const AdminLogin = lazy(() => import("@/pages/admin-login"));
+const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
+const AdminAnalytics = lazy(() => import("@/pages/admin-analytics"));
+const OrderHistory = lazy(() => import("@/pages/order-history"));
+const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
+const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+// Loading component
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+    </div>
+  );
+}
 
 function Router() {
   // Initialize scroll memory for the entire app
   useScrollMemory();
   
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/about" component={About} />
-      <Route path="/services" component={Services} />
-      <Route path="/how-it-works" component={HowItWorks} />
-      <Route path="/exchange" component={Exchange} />
-      <Route path="/confirmation" component={Confirmation} />
-      <Route path="/order-completed" component={OrderCompleted} />
-      <Route path="/order-cancelled" component={OrderCancelled} />
-      <Route path="/track" component={TrackOrder} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/orders" component={OrderHistory} />
-      <Route path="/completed" component={CompletedOrders} />
-      <Route path="/cancelled" component={CancelledOrders} />
-      <Route path="/admin" component={AdminLogin} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/analytics" component={AdminAnalytics} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<LoadingSpinner />}>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/about" component={About} />
+        <Route path="/services" component={Services} />
+        <Route path="/how-it-works" component={HowItWorks} />
+        <Route path="/exchange" component={Exchange} />
+        <Route path="/confirmation" component={Confirmation} />
+        <Route path="/order-completed" component={OrderCompleted} />
+        <Route path="/order-cancelled" component={OrderCancelled} />
+        <Route path="/track" component={TrackOrder} />
+        <Route path="/contact" component={Contact} />
+        <Route path="/orders" component={OrderHistory} />
+        <Route path="/completed" component={CompletedOrders} />
+        <Route path="/cancelled" component={CancelledOrders} />
+        <Route path="/admin" component={AdminLogin} />
+        <Route path="/admin/dashboard" component={AdminDashboard} />
+        <Route path="/admin/analytics" component={AdminAnalytics} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
