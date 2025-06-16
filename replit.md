@@ -157,6 +157,7 @@ Changelog:
 - June 16, 2025. Fixed admin cancel functionality - resolved storage layer status update issue ensuring admin cancellations properly save to database with correct status and timestamps. Enhanced customer redirection system ensuring immediate redirect to cancelled order page when admin cancels their order via WebSocket real-time synchronization
 - June 16, 2025. Confirmed accessibility compliance maintained - all Dialog and AlertDialog components properly implement required DialogTitle and DialogDescription elements with sr-only classes for screen reader support. Browser extension warnings verified as false positives with actual accessibility implementation meeting standards
 - June 16, 2025. Implemented Firebase authentication system with Google Sign-In - added Firebase SDK integration, authentication context provider, login page, and navigation integration. System uses doogle-e-money Firebase project with comprehensive user authentication workflow including sign-in, sign-out, and authentication state management
+- June 16, 2025. Added comprehensive Firebase setup guide and error handling - created detailed setup instructions page, improved authentication error handling with domain authorization guidance, and integrated setup guide links. System provides clear feedback when Firebase needs domain configuration in Console
 
 ## User Preferences
 

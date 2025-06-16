@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -124,13 +125,10 @@ export default function FirebaseLogin() {
             <p className="text-sm text-red-800">{authError}</p>
             {authError.includes('Firebase authentication') && (
               <div className="mt-2 text-xs text-red-700">
-                <p>To complete Firebase setup:</p>
-                <ol className="list-decimal list-inside mt-1 space-y-1">
-                  <li>Go to Firebase Console</li>
-                  <li>Add Web App to your project</li>
-                  <li>Enable Google Sign-In</li>
-                  <li>Add your domain to Authorized domains</li>
-                </ol>
+                <p>Firebase needs domain authorization.</p>
+                <Link href="/firebase-setup" className="text-xs text-red-700 underline hover:text-red-800">
+                  View Setup Guide →
+                </Link>
               </div>
             )}
           </div>
