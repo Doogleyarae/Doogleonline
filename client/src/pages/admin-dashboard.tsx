@@ -425,7 +425,17 @@ export default function AdminDashboard() {
         if (message.type === 'order_update') {
           console.log('Admin dashboard received order update:', message.data);
           
-          // Force refresh orders list to show updated status
+          // Show toast notification for customer cancellations
+          if (message.data.status === 'cancelled') {
+            toast({
+              title: "Order Cancelled by Customer",
+              description: `Order ${message.data.orderId} has been cancelled by the customer`,
+              variant: "destructive",
+            });
+          }
+          
+          // Force complete refresh of orders list with cache clearing
+          queryClient.removeQueries({ queryKey: ['/api/orders'] });
           queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
           queryClient.refetchQueries({ queryKey: ['/api/orders'] });
         }

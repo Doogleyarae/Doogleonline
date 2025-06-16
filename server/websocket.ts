@@ -91,11 +91,7 @@ export class WebSocketManager {
   notifyOrderUpdate(order: Order) {
     this.broadcast({
       type: 'order_update',
-      data: {
-        orderId: order.orderId,
-        status: order.status,
-        updatedAt: order.updatedAt
-      },
+      data: order, // Send complete order data for full UI updates
       timestamp: new Date().toISOString()
     });
   }
