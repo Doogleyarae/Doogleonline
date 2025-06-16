@@ -770,20 +770,20 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto p-4 lg:px-8 lg:py-6">
         {/* Update Exchange Rate Section */}
-        <Card className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="flex items-center text-green-900">
-              <Settings className="w-5 h-5 mr-2" />
+        <Card className="mb-8 bg-white border-gray-200 shadow-lg">
+          <CardHeader className="pb-6">
+            <CardTitle className="flex items-center text-gray-900 text-2xl">
+              <Settings className="w-6 h-6 mr-3" />
               Update Exchange Rate
             </CardTitle>
-            <p className="text-sm text-green-700">Quick rate updates - changes apply immediately to all calculations</p>
+            <p className="text-gray-600 mt-2">Changes apply immediately to all live calculations</p>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <CardContent className="space-y-6">
+            <div className="space-y-6">
               <div>
-                <Label htmlFor="quick-from-currency" className="text-sm font-medium">From Currency</Label>
+                <Label htmlFor="main-from-currency" className="text-base font-medium text-gray-700 mb-3 block">From Currency</Label>
                 <Select value={fromCurrency} onValueChange={setFromCurrency}>
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="h-12 text-base">
                     <SelectValue placeholder="Select from currency" />
                   </SelectTrigger>
                   <SelectContent>
@@ -797,9 +797,9 @@ export default function AdminDashboard() {
               </div>
               
               <div>
-                <Label htmlFor="quick-to-currency" className="text-sm font-medium">To Currency</Label>
+                <Label htmlFor="main-to-currency" className="text-base font-medium text-gray-700 mb-3 block">To Currency</Label>
                 <Select value={toCurrency} onValueChange={setToCurrency}>
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="h-12 text-base">
                     <SelectValue placeholder="Select to currency" />
                   </SelectTrigger>
                   <SelectContent>
@@ -813,35 +813,33 @@ export default function AdminDashboard() {
               </div>
               
               <div>
-                <Label htmlFor="quick-rate" className="text-sm font-medium">Exchange Rate</Label>
+                <Label htmlFor="main-rate" className="text-base font-medium text-gray-700 mb-3 block">Exchange Rate</Label>
                 <Input
-                  id="quick-rate"
+                  id="main-rate"
                   type="number"
                   step="0.000001"
                   placeholder="0.000000"
                   value={exchangeRate}
                   onChange={(e) => setExchangeRate(e.target.value)}
-                  className="mt-1"
+                  className="h-12 text-base"
                 />
               </div>
               
-              <div className="flex items-end">
-                <Button 
-                  onClick={handleRateUpdate} 
-                  disabled={updateRateMutation.isPending || !fromCurrency || !toCurrency || !exchangeRate}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  {updateRateMutation.isPending ? "Updating..." : "Update Rate Now"}
-                </Button>
-              </div>
+              <Button 
+                onClick={handleRateUpdate} 
+                disabled={updateRateMutation.isPending || !fromCurrency || !toCurrency || !exchangeRate}
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-base"
+              >
+                {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
+              </Button>
             </div>
             
             {fromCurrency && toCurrency && exchangeRate && (
-              <div className="mt-4 bg-white border border-green-200 rounded-lg p-4">
-                <p className="text-sm text-green-800">
+              <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-800">
                   <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
                 </p>
-                <p className="text-xs text-green-600 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   This rate will immediately affect all live calculations and new transactions
                 </p>
               </div>
@@ -861,8 +859,8 @@ export default function AdminDashboard() {
           <CardContent>
             {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allExchangeRates.slice(0, 6).map((rate: any) => (
-                  <div key={`top-${rate.fromCurrency}-${rate.toCurrency}`} className="bg-white border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow">
+                {allExchangeRates.slice(0, 6).map((rate: any, index: number) => (
+                  <div key={`current-rate-${rate.id || index}-${rate.fromCurrency}-${rate.toCurrency}`} className="bg-white border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-semibold text-sm text-gray-800">
