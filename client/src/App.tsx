@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Lazy load pages to improve initial loading
 const Home = lazy(() => import("@/pages/home"));
@@ -57,6 +58,7 @@ function Router() {
         <Route path="/orders" component={OrderHistory} />
         <Route path="/completed" component={CompletedOrders} />
         <Route path="/cancelled" component={CancelledOrders} />
+        <Route path="/login" component={FirebaseLoginPage} />
         <Route path="/admin" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
@@ -69,16 +71,18 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Navigation />
-          <main className="flex-1">
-            <Router />
-          </main>
-          <Footer />
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <div className="min-h-screen bg-gray-50 flex flex-col">
+            <Navigation />
+            <main className="flex-1">
+              <Router />
+            </main>
+            <Footer />
+          </div>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

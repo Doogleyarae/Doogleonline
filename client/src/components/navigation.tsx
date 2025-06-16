@@ -14,6 +14,7 @@ const navigationItems = [
   { href: "/track", label: "Track Order" },
   { href: "/contact", label: "Contact" },
   { href: "/about", label: "About" },
+  { href: "/login", label: "Sign In" },
   { href: "/admin", label: "Admin" },
 ];
 
