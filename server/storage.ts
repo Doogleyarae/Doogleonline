@@ -445,17 +445,17 @@ export class DatabaseStorage implements IStorage {
             toWallet: "exchange_wallet",
             description: `Released ${order.holdAmount} ${receiveCurrency} from hold - order cancelled`
           });
-
-          // Update order to clear hold amount
-          await db
-            .update(orders)
-            .set({ 
-              status: status, 
-              holdAmount: "0",
-              updatedAt: new Date() 
-            })
-            .where(eq(orders.orderId, orderId));
         }
+
+        // Always update order status to cancelled (whether there was hold amount or not)
+        await db
+          .update(orders)
+          .set({ 
+            status: status, 
+            holdAmount: "0",
+            updatedAt: new Date() 
+          })
+          .where(eq(orders.orderId, orderId));
       } else if (status === "completed") {
         // D. Admin "Completed" - Decrease exchange wallet, increase customer wallet
         const currentBalance = await this.getBalance(receiveCurrency);
