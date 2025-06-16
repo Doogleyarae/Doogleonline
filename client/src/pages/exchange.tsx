@@ -16,7 +16,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ArrowUpCircle, ArrowDownCircle, User, Send, Bell, BellOff } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
+
 
 interface ExchangeRateResponse {
   rate: number;
@@ -111,7 +111,6 @@ type ExchangeFormData = z.infer<ReturnType<typeof createExchangeFormSchema>>;
 export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
   
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("Exchange rate loading...");
