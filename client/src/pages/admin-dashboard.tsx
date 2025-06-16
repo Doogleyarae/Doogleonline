@@ -740,9 +740,13 @@ export default function AdminDashboard() {
               variant="ghost"
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 h-9 w-9 flex items-center justify-center hover:bg-gray-100"
+              className="p-2 h-10 w-10 flex items-center justify-center hover:bg-gray-100 border-0"
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6 text-gray-700" />
+              ) : (
+                <Menu className="w-6 h-6 text-gray-700" />
+              )}
             </Button>
           </div>
         </div>
