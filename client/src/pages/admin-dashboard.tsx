@@ -809,6 +809,31 @@ export default function AdminDashboard() {
                   
                   {/* Mobile-responsive controls */}
                   <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                    {/* Search Input */}
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="search-orders" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Search:</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          id="search-orders"
+                          type="text"
+                          placeholder="Order ID, name, phone..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 w-full sm:w-48 bg-white/50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 rounded-xl h-10 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        />
+                        {searchTerm && (
+                          <button
+                            onClick={() => setSearchTerm("")}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Status Filter */}
                     <div className="flex items-center gap-2">
                       <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter:</Label>
                       <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -826,6 +851,7 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                     
+                    {/* Export Button */}
                     <Button 
                       onClick={exportToCSV}
                       variant="outline"
