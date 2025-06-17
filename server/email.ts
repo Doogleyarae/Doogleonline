@@ -22,20 +22,28 @@ export class EmailService {
 
   async sendOrderConfirmation(order: Order, customerEmail?: string): Promise<boolean> {
     try {
+      const emailAddress = customerEmail || order.email;
+      
+      // Skip email if no valid email address provided
+      if (!emailAddress || emailAddress.trim() === "") {
+        console.log("No email address provided for order:", order.orderId, "- skipping email notification");
+        return false;
+      }
+      
       const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
       
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
-        to: customerEmail || order.email || "customer@example.com",
+        to: emailAddress,
         subject: `Exchange Request Submitted – Pending Payment`,
         html: this.generateOrderConfirmationHTML(order, trackingLink)
       };
 
       if (resend) {
         await resend.emails.send(emailConfig);
-        console.log("Order confirmation email sent via Resend:", emailConfig.subject);
+        console.log("Order confirmation email sent via Resend to:", emailAddress);
       } else {
-        console.log("Mock order confirmation email sent:", emailConfig.subject);
+        console.log("Mock order confirmation email sent to:", emailAddress);
       }
       return true;
     } catch (error) {
@@ -114,6 +122,12 @@ export class EmailService {
 
   async sendPaymentConfirmation(order: Order): Promise<boolean> {
     try {
+      // Skip email if no valid email address provided
+      if (!order.email || order.email.trim() === "") {
+        console.log("No email address provided for order:", order.orderId, "- skipping payment confirmation email");
+        return false;
+      }
+      
       const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
       
       const emailConfig = {
@@ -125,9 +139,9 @@ export class EmailService {
 
       if (resend) {
         await resend.emails.send(emailConfig);
-        console.log("Payment confirmation email sent via Resend:", emailConfig.subject);
+        console.log("Payment confirmation email sent via Resend to:", order.email);
       } else {
-        console.log("Mock payment confirmation email sent:", emailConfig.subject);
+        console.log("Mock payment confirmation email sent to:", order.email);
       }
       return true;
     } catch (error) {
@@ -138,6 +152,12 @@ export class EmailService {
 
   async sendOrderCompletion(order: Order): Promise<boolean> {
     try {
+      // Skip email if no valid email address provided
+      if (!order.email || order.email.trim() === "") {
+        console.log("No email address provided for order:", order.orderId, "- skipping order completion email");
+        return false;
+      }
+      
       const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
       
       const emailConfig = {
@@ -149,9 +169,9 @@ export class EmailService {
 
       if (resend) {
         await resend.emails.send(emailConfig);
-        console.log("Order completion email sent via Resend:", emailConfig.subject);
+        console.log("Order completion email sent via Resend to:", order.email);
       } else {
-        console.log("Mock order completion email sent:", emailConfig.subject);
+        console.log("Mock order completion email sent to:", order.email);
       }
       return true;
     } catch (error) {
