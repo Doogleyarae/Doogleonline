@@ -192,3 +192,23 @@ export const insertCustomerRestrictionSchema = createInsertSchema(customerRestri
 
 export type InsertCustomerRestriction = z.infer<typeof insertCustomerRestrictionSchema>;
 export type CustomerRestriction = typeof customerRestrictions.$inferSelect;
+
+export const emailLogs = pgTable("email_logs", {
+  id: serial("id").primaryKey(),
+  orderId: text("order_id").notNull(),
+  emailAddress: text("email_address").notNull(),
+  emailType: text("email_type").notNull(), // order_confirmation, payment_confirmation, order_completion, test_email
+  subject: text("subject").notNull(),
+  deliveryStatus: text("delivery_status").notNull().default("sent"), // sent, failed, delivered
+  resendId: text("resend_id"), // Resend.com message ID for tracking
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+});
+
+export const insertEmailLogSchema = createInsertSchema(emailLogs).omit({
+  id: true,
+  sentAt: true,
+});
+
+export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
+export type EmailLog = typeof emailLogs.$inferSelect;

@@ -1,5 +1,7 @@
 import { Resend } from 'resend';
-import type { Order, ContactMessage } from "@shared/schema";
+import type { Order, ContactMessage, InsertEmailLog } from "@shared/schema";
+import { db } from './db';
+import { emailLogs } from '@shared/schema';
 
 interface EmailConfig {
   from: string;
@@ -18,6 +20,15 @@ export class EmailService {
       EmailService.instance = new EmailService();
     }
     return EmailService.instance;
+  }
+
+  private async logEmailDelivery(log: InsertEmailLog): Promise<void> {
+    try {
+      await db.insert(emailLogs).values(log);
+      console.log(`[EMAIL LOG] ${log.emailType} logged for ${log.emailAddress} (Order: ${log.orderId})`);
+    } catch (error) {
+      console.error('[EMAIL LOG ERROR] Failed to log email delivery:', error);
+    }
   }
 
   async sendOrderConfirmation(order: Order, customerEmail?: string): Promise<boolean> {
