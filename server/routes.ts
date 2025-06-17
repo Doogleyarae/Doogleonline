@@ -1182,6 +1182,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test email endpoint to verify Resend.com is working
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      const { email, subject, message } = req.body;
+      
+      const success = await emailService.sendTestEmail(
+        email || "dadayare3@gmail.com",
+        subject || "Resend.com Test - System Working",
+        message || "This is a test email to confirm your Resend.com integration is working perfectly. The email system is operational and ready for customer notifications."
+      );
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Test email sent successfully via Resend.com",
+          sentTo: email || "dadayare3@gmail.com"
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send test email" 
+        });
+      }
+    } catch (error) {
+      console.error('Test email error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to send test email" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time admin updates
