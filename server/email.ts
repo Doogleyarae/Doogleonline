@@ -26,28 +26,29 @@ export class EmailService {
       
       // Skip email if no valid email address provided
       if (!emailAddress || emailAddress.trim() === "") {
-        console.log("No email address provided for order:", order.orderId, "- skipping email notification");
+        console.log(`[ORDER ${order.orderId}] No email address provided - skipping order confirmation email`);
         return false;
       }
       
       const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
       
+      const timestamp = Date.now();
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: emailAddress,
-        subject: `Exchange Request Submitted – Pending Payment`,
-        html: this.generateOrderConfirmationHTML(order, trackingLink)
+        subject: `Exchange Request Submitted – Pending Payment (Order ${order.orderId}) - ${timestamp}`,
+        html: this.generateOrderConfirmationHTML(order, trackingLink, timestamp)
       };
 
       if (resend) {
         await resend.emails.send(emailConfig);
-        console.log("Order confirmation email sent via Resend to:", emailAddress);
+        console.log(`[ORDER ${order.orderId}] Fresh order confirmation email sent via Resend to: ${emailAddress}`);
       } else {
-        console.log("Mock order confirmation email sent to:", emailAddress);
+        console.log(`[ORDER ${order.orderId}] Mock order confirmation email sent to: ${emailAddress}`);
       }
       return true;
     } catch (error) {
-      console.error("Failed to send order confirmation email:", error);
+      console.error(`[ORDER ${order.orderId}] Failed to send order confirmation email:`, error);
       return false;
     }
   }
@@ -124,7 +125,7 @@ export class EmailService {
     try {
       // Skip email if no valid email address provided
       if (!order.email || order.email.trim() === "") {
-        console.log("No email address provided for order:", order.orderId, "- skipping payment confirmation email");
+        console.log(`[ORDER ${order.orderId}] No email address provided - skipping payment confirmation email`);
         return false;
       }
       
@@ -133,19 +134,19 @@ export class EmailService {
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: order.email,
-        subject: `Payment Confirmation Received`,
+        subject: `Payment Confirmation Received (Order ${order.orderId})`,
         html: this.generatePaymentConfirmationHTML(order, trackingLink)
       };
 
       if (resend) {
         await resend.emails.send(emailConfig);
-        console.log("Payment confirmation email sent via Resend to:", order.email);
+        console.log(`[ORDER ${order.orderId}] Fresh payment confirmation email sent via Resend to: ${order.email}`);
       } else {
-        console.log("Mock payment confirmation email sent to:", order.email);
+        console.log(`[ORDER ${order.orderId}] Mock payment confirmation email sent to: ${order.email}`);
       }
       return true;
     } catch (error) {
-      console.error("Failed to send payment confirmation email:", error);
+      console.error(`[ORDER ${order.orderId}] Failed to send payment confirmation email:`, error);
       return false;
     }
   }
@@ -154,7 +155,7 @@ export class EmailService {
     try {
       // Skip email if no valid email address provided
       if (!order.email || order.email.trim() === "") {
-        console.log("No email address provided for order:", order.orderId, "- skipping order completion email");
+        console.log(`[ORDER ${order.orderId}] No email address provided - skipping order completion email`);
         return false;
       }
       
@@ -163,19 +164,19 @@ export class EmailService {
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: order.email,
-        subject: `Order Completed Successfully`,
+        subject: `Order Completed Successfully (Order ${order.orderId})`,
         html: this.generateOrderCompletionHTML(order, trackingLink)
       };
 
       if (resend) {
         await resend.emails.send(emailConfig);
-        console.log("Order completion email sent via Resend to:", order.email);
+        console.log(`[ORDER ${order.orderId}] Fresh order completion email sent via Resend to: ${order.email}`);
       } else {
-        console.log("Mock order completion email sent to:", order.email);
+        console.log(`[ORDER ${order.orderId}] Mock order completion email sent to: ${order.email}`);
       }
       return true;
     } catch (error) {
-      console.error("Failed to send order completion email:", error);
+      console.error(`[ORDER ${order.orderId}] Failed to send order completion email:`, error);
       return false;
     }
   }
@@ -267,8 +268,9 @@ export class EmailService {
             <p>Order Confirmation</p>
           </div>
           <div class="content">
-            <h2>Exchange Request Submitted</h2>
+            <h2>New Exchange Request Submitted</h2>
             <p>Dear ${order.fullName},</p>
+            <p><strong>This is a fresh notification for your new order ${order.orderId}.</strong></p>
             <p>Thank you for your request. Please make the payment to proceed with the exchange.</p>
             
             <div class="order-details">
@@ -476,8 +478,9 @@ export class EmailService {
             <p>We are processing your exchange</p>
           </div>
           <div class="content">
-            <h2>Payment Confirmation Received</h2>
+            <h2>Fresh Payment Confirmation Received</h2>
             <p>Dear ${order.fullName},</p>
+            <p><strong>This is a new notification for order ${order.orderId}.</strong></p>
             <p>We have received your payment request. Our team is now reviewing it. You will receive your funds shortly. Please wait while we process your exchange.</p>
             
             <div class="payment-details">
@@ -537,8 +540,9 @@ export class EmailService {
               Your ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} has been sent to your wallet!
             </div>
             
-            <h2>Order Completed Successfully</h2>
+            <h2>Fresh Order Completion Notification</h2>
             <p>Dear ${order.fullName},</p>
+            <p><strong>This is a new completion notification for order ${order.orderId}.</strong></p>
             <p>Your exchange order has been approved and completed successfully. Thank you for using our service.</p>
             
             <div class="completion-details">
