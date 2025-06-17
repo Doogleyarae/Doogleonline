@@ -52,10 +52,29 @@ export class EmailService {
       };
 
       if (resend) {
-        await resend.emails.send(emailConfig);
+        const result = await resend.emails.send(emailConfig);
         console.log(`[ORDER ${order.orderId}] Fresh order confirmation email sent via Resend to: ${emailAddress}`);
+        
+        // Log email delivery for admin tracking
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: emailAddress,
+          emailType: 'order_confirmation',
+          subject: emailConfig.subject,
+          deliveryStatus: 'sent',
+          resendId: result.data?.id || null,
+        });
       } else {
         console.log(`[ORDER ${order.orderId}] Mock order confirmation email sent to: ${emailAddress}`);
+        
+        // Log mock email for testing
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: emailAddress,
+          emailType: 'order_confirmation',
+          subject: emailConfig.subject,
+          deliveryStatus: 'sent',
+        });
       }
       return true;
     } catch (error) {
@@ -151,10 +170,29 @@ export class EmailService {
       };
 
       if (resend) {
-        await resend.emails.send(emailConfig);
+        const result = await resend.emails.send(emailConfig);
         console.log(`[ORDER ${order.orderId}] Fresh payment confirmation email sent via Resend to: ${order.email}`);
+        
+        // Log email delivery for admin tracking
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'payment_confirmation',
+          subject: emailConfig.subject,
+          deliveryStatus: 'sent',
+          resendId: result.data?.id || null,
+        });
       } else {
         console.log(`[ORDER ${order.orderId}] Mock payment confirmation email sent to: ${order.email}`);
+        
+        // Log mock email for testing
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'payment_confirmation',
+          subject: emailConfig.subject,
+          deliveryStatus: 'sent',
+        });
       }
       return true;
     } catch (error) {
@@ -182,10 +220,29 @@ export class EmailService {
       };
 
       if (resend) {
-        await resend.emails.send(emailConfig);
+        const result = await resend.emails.send(emailConfig);
         console.log(`[ORDER ${order.orderId}] Fresh order completion email sent via Resend to: ${order.email}`);
+        
+        // Log email delivery for admin tracking
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'order_completion',
+          subject: emailConfig.subject,
+          deliveryStatus: 'sent',
+          resendId: result.data?.id || null,
+        });
       } else {
         console.log(`[ORDER ${order.orderId}] Mock order completion email sent to: ${order.email}`);
+        
+        // Log mock email for testing
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'order_completion',
+          subject: emailConfig.subject,
+          deliveryStatus: 'sent',
+        });
       }
       return true;
     } catch (error) {

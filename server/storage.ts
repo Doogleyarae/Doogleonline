@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, customerRestrictions, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo, type CustomerRestriction, type InsertCustomerRestriction } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, customerRestrictions, emailLogs, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo, type CustomerRestriction, type InsertCustomerRestriction, type EmailLog, type InsertEmailLog } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -59,6 +59,12 @@ export interface IStorage {
   
   // Order workflow methods with balance management
   updateOrderStatusWithBalanceLogic(orderId: string, status: string): Promise<Order | undefined>;
+  
+  // Email delivery tracking methods
+  createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
+  getAllEmailLogs(): Promise<EmailLog[]>;
+  getEmailLogsByOrder(orderId: string): Promise<EmailLog[]>;
+  getEmailLogsByAddress(emailAddress: string): Promise<EmailLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -629,6 +635,27 @@ export class DatabaseStorage implements IStorage {
         restrictedUntil,
       });
     }
+  }
+
+  async createEmailLog(insertLog: InsertEmailLog): Promise<EmailLog> {
+    const [log] = await db.insert(emailLogs).values(insertLog).returning();
+    return log;
+  }
+
+  async getAllEmailLogs(): Promise<EmailLog[]> {
+    return await db.select().from(emailLogs).orderBy(desc(emailLogs.sentAt));
+  }
+
+  async getEmailLogsByOrder(orderId: string): Promise<EmailLog[]> {
+    return await db.select().from(emailLogs)
+      .where(eq(emailLogs.orderId, orderId))
+      .orderBy(desc(emailLogs.sentAt));
+  }
+
+  async getEmailLogsByAddress(emailAddress: string): Promise<EmailLog[]> {
+    return await db.select().from(emailLogs)
+      .where(eq(emailLogs.emailAddress, emailAddress))
+      .orderBy(desc(emailLogs.sentAt));
   }
 }
 
