@@ -508,6 +508,7 @@ export class EmailService {
           <div class="footer">
             <p>Thank you for choosing DoogleOnline</p>
             <p>For support, contact us at support@doogleonline.com</p>
+            <p style="font-size: 11px; color: #999;">Fresh Email ID: ${Date.now()}_${Math.random().toString(36).substr(2, 9)}</p>
           </div>
         </div>
       </body>
@@ -572,6 +573,7 @@ export class EmailService {
           <div class="footer">
             <p>Thank you for choosing DoogleOnline for your exchange needs!</p>
             <p>For support, contact us at support@doogleonline.com</p>
+            <p style="font-size: 11px; color: #999;">Fresh Email ID: ${Date.now()}_${Math.random().toString(36).substr(2, 9)}</p>
           </div>
         </div>
       </body>
