@@ -172,3 +172,23 @@ export const insertAdminContactInfoSchema = createInsertSchema(adminContactInfo)
 
 export type InsertAdminContactInfo = z.infer<typeof insertAdminContactInfoSchema>;
 export type AdminContactInfo = typeof adminContactInfo.$inferSelect;
+
+// Customer restrictions table for tracking order cancellations
+export const customerRestrictions = pgTable("customer_restrictions", {
+  id: serial("id").primaryKey(),
+  customerIdentifier: text("customer_identifier").notNull(), // phone number or email
+  cancellationCount: integer("cancellation_count").notNull().default(0),
+  lastCancellationAt: timestamp("last_cancellation_at"),
+  restrictedUntil: timestamp("restricted_until"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertCustomerRestrictionSchema = createInsertSchema(customerRestrictions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertCustomerRestriction = z.infer<typeof insertCustomerRestrictionSchema>;
+export type CustomerRestriction = typeof customerRestrictions.$inferSelect;

@@ -1,3 +1,4 @@
+import { Resend } from 'resend';
 import type { Order, ContactMessage } from "@shared/schema";
 
 interface EmailConfig {
@@ -7,7 +8,8 @@ interface EmailConfig {
   html: string;
 }
 
-// Mock email service - in production, integrate with SendGrid, Nodemailer, etc.
+// Initialize Resend with API key (optional)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 export class EmailService {
   private static instance: EmailService;
 
@@ -20,17 +22,24 @@ export class EmailService {
 
   async sendOrderConfirmation(order: Order, customerEmail?: string): Promise<boolean> {
     try {
-      const emailConfig: EmailConfig = {
-        from: "noreply@doogleonline.com",
-        to: customerEmail || "customer@example.com",
+      const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
+      
+      const emailConfig = {
+        from: "DoogleOnline <orders@doogleonline.com>",
+        to: customerEmail || order.email || "customer@example.com",
         subject: `Order Confirmation - ${order.orderId}`,
-        html: this.generateOrderConfirmationHTML(order)
+        html: this.generateOrderConfirmationHTML(order, trackingLink)
       };
 
-      console.log("📧 Order confirmation email sent:", emailConfig.subject);
+      if (resend) {
+        await resend.emails.send(emailConfig);
+        console.log("Order confirmation email sent via Resend:", emailConfig.subject);
+      } else {
+        console.log("Mock order confirmation email sent:", emailConfig.subject);
+      }
       return true;
     } catch (error) {
-      console.error("❌ Failed to send order confirmation email:", error);
+      console.error("Failed to send order confirmation email:", error);
       return false;
     }
   }
