@@ -56,6 +56,12 @@ export function useWebSocket() {
       case 'order_update':
         handleOrderUpdate(message.data);
         break;
+      case 'new_order':
+        console.log('New order created:', message.data);
+        break;
+      case 'new_message':
+        console.log('New contact message:', message.data);
+        break;
       case 'status_change':
         console.log('Status update:', message.data.message);
         break;
