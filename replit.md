@@ -170,6 +170,7 @@ Changelog:
 - June 17, 2025. Cleaned up exchange page performance by removing excessive caching, fixed exchange rate loading issues, and streamlined WebSocket connections. Confirmed order creation and email delivery working correctly with proper "pending" status emails being sent immediately upon form submission
 - June 17, 2025. Fixed exchange rate display and balance management system with enhanced loading states, proper currency mapping for balance lookup, and improved data fetching with zero cache tolerance ensuring real-time admin updates reflect immediately in exchange form
 - June 17, 2025. Resolved performance issues by optimizing API query caching and memoization, eliminating excessive API calls while maintaining proper exchange rate and balance display functionality. Fixed accessibility compliance for CommandDialog components
+- June 17, 2025. Enhanced wallet address field clarity and validation - renamed to "Receiving Wallet Address/Account Number", added input validation to prevent email addresses (blocks @ symbols), improved placeholder examples, and strengthened warning message to prevent user confusion between wallet address and email fields
 
 ## User Preferences
 
