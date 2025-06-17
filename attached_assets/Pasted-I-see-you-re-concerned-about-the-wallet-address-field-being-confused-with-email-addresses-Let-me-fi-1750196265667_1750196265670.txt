@@ -1,0 +1,34 @@
+I see you're concerned about the wallet address field being confused with email addresses. Let me fix the labeling and validation to make it clearer that this field is specifically for crypto wallet addresses or account numbers, not email addresses.
+
+
+Opened client/src/pages/exchange.tsx
+
+Opened client/src/pages/exchange.tsx
+I can see the warning message is already implemented in the wallet address field (line 694-695). The field clearly states "⚠️ This is for crypto wallet addresses or account numbers only - NOT your email address" which should help prevent confusion.
+
+Let me enhance this further by improving the placeholder text and validation to make it even clearer:
+
+
+Edited client/src/pages/exchange.tsx
+Perfect! I've improved the wallet address field to prevent confusion:
+
+✓ Changed label to "Receiving Wallet Address / Account Number" for clarity
+✓ Added specific placeholder examples: "e.g., TQn9Y8hfrJ2yW... or account: 1234567890"
+✓ Added input validation to prevent @ symbols (blocks email addresses)
+✓ Enhanced warning message to clearly explain this is where funds will be received
+✓ Made warning text bold for better visibility
+
+The field now actively prevents users from entering email addresses and provides clear guidance about what should be entered. The validation will block any input containing "@" symbols, ensuring only valid wallet addresses or account numbers can be submitted.
+
+
+Edited replit.md
+I've successfully enhanced the wallet address field to prevent confusion between wallet addresses and email addresses:
+
+Key Improvements Made:
+
+Renamed field to "Receiving Wallet Address / Account Number" for clarity
+Added input validation that blocks any text containing "@" symbols
+Updated placeholder with specific examples: "e.g., TQn9Y8hfrJ2yW... or account: 1234567890"
+Strengthened warning message to clearly explain this is where funds will be received
+Made warning text bold and prominent
+The form now actively prevents users from accidentally entering email addresses in the wallet field while maintaining clear separation between the email notification field and the receiving address field. This should eliminate any confusion about where to enter different types of information.
