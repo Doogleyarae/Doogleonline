@@ -168,6 +168,7 @@ Changelog:
 - June 17, 2025. Implemented comprehensive email delivery tracking system with unique timestamp identifiers ensuring every new order triggers completely fresh email notifications regardless of previous email activity. Enhanced system includes database-level email logging, admin API endpoints for delivery monitoring, Resend.com message ID tracking, and guaranteed fresh email generation with unique identifiers preventing any email skipping scenarios
 - June 17, 2025. Fixed email system to send exactly ONE email per stage - removed duplicate email sending from status updates ensuring customers receive only: (1) order submission confirmation, (2) payment confirmation when marked paid, (3) completion confirmation when admin accepts order. Eliminated multiple emails per stage for cleaner customer communication workflow
 - June 17, 2025. Cleaned up exchange page performance by removing excessive caching, fixed exchange rate loading issues, and streamlined WebSocket connections. Confirmed order creation and email delivery working correctly with proper "pending" status emails being sent immediately upon form submission
+- June 17, 2025. Fixed exchange rate display and balance management system with enhanced loading states, proper currency mapping for balance lookup, and improved data fetching with zero cache tolerance ensuring real-time admin updates reflect immediately in exchange form
 
 ## User Preferences
 

@@ -198,8 +198,9 @@ export default function Exchange() {
 
   // Update exchange rate when data is fetched
   useEffect(() => {
-    if (rateData?.rate) {
+    if (rateData?.rate && !rateLoading) {
       const rate = rateData.rate;
+      console.log('Setting exchange rate:', rate, 'from', sendMethod, 'to', receiveMethod);
       setExchangeRate(rate);
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
@@ -211,8 +212,12 @@ export default function Exchange() {
         setReceiveAmount(convertedAmount);
         form.setValue("receiveAmount", convertedAmount);
       }
+    } else if (!rateData && !rateLoading) {
+      console.log('No exchange rate data available for', sendMethod, 'to', receiveMethod);
+      setExchangeRate(0);
+      setRateDisplay("Rate not available");
     }
-  }, [rateData, sendMethod, receiveMethod, sendAmount, form]);
+  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, form]);
 
   // Calculate dynamic limits
   useEffect(() => {
@@ -412,7 +417,21 @@ export default function Exchange() {
                     <div className="text-xs text-center mt-1 text-blue-600">Loading balances...</div>
                   ) : balances && (
                     <div className="text-xs text-center mt-1 text-green-600">
-                      Available: ${balances[receiveMethod.toUpperCase()] || 0} {receiveMethod.toUpperCase()}
+                      Available: ${(() => {
+                        const currencyMapping: Record<string, string> = {
+                          'evc': 'EVCPLUS',
+                          'trc20': 'TRC20', 
+                          'zaad': 'ZAAD',
+                          'sahal': 'SAHAL',
+                          'moneygo': 'MONEYGO',
+                          'premier': 'PREMIER',
+                          'edahab': 'EDAHAB',
+                          'trx': 'TRX',
+                          'peb20': 'PEB20'
+                        };
+                        const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+                        return (balances[balanceKey] || 0).toLocaleString();
+                      })()} {receiveMethod.toUpperCase()}
                     </div>
                   )}
                 </div>
