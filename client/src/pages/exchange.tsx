@@ -494,7 +494,7 @@ export default function Exchange() {
   }, [queryClient]);
 
   // Fetch exchange rate with NO CACHING - always use latest rates
-  const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
+  const { data: rateData, refetch: refetchRate, isLoading: rateLoading, error: rateError } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
     staleTime: 0, // No stale time - always fetch fresh
@@ -503,6 +503,19 @@ export default function Exchange() {
     refetchOnReconnect: true, // Always refetch on reconnect
     refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
   });
+
+  // Debug exchange rate fetching
+  useEffect(() => {
+    console.log('EXCHANGE RATE DEBUG:', {
+      sendMethod,
+      receiveMethod,
+      queryEnabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
+      rateData,
+      rateLoading,
+      rateError,
+      queryKey: `/api/exchange-rate/${sendMethod}/${receiveMethod}`
+    });
+  }, [sendMethod, receiveMethod, rateData, rateLoading, rateError]);
 
   // Update exchange rate and calculate initial receive amount
   useEffect(() => {
