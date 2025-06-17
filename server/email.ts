@@ -94,7 +94,7 @@ export class EmailService {
     try {
       const emailConfig = {
         from: "DoogleOnline System <system@doogleonline.com>",
-        to: "admin@doogleonline.com",
+        to: "dadayare3@gmail.com",
         subject: `New Customer Message: ${message.subject}`,
         html: this.generateAdminNotificationHTML(message)
       };
