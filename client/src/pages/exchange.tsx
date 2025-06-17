@@ -323,10 +323,22 @@ export default function Exchange() {
   });
 
   const onSubmit = (data: ExchangeFormData) => {
+    console.log('Form submission data:', data);
+    console.log('Form errors:', form.formState.errors);
+    
     if (sendMethod === receiveMethod) {
       toast({
         title: "Invalid Selection",
         description: "Send and receive methods cannot be the same",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (exchangeRate === 0) {
+      toast({
+        title: "Exchange Rate Not Available",
+        description: "Please wait for the exchange rate to load before submitting.",
         variant: "destructive",
       });
       return;
