@@ -27,7 +27,7 @@ export class EmailService {
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: customerEmail || order.email || "customer@example.com",
-        subject: `Order Pending - ${order.orderId}`,
+        subject: `Exchange Request Submitted – Pending Payment`,
         html: this.generateOrderConfirmationHTML(order, trackingLink)
       };
 
@@ -119,7 +119,7 @@ export class EmailService {
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: order.email,
-        subject: `Waiting for admin confirmation - ${order.orderId}`,
+        subject: `Payment Confirmation Received`,
         html: this.generatePaymentConfirmationHTML(order, trackingLink)
       };
 
@@ -143,7 +143,7 @@ export class EmailService {
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: order.email,
-        subject: `Order Completed Successfully - ${order.orderId}`,
+        subject: `Order Completed Successfully`,
         html: this.generateOrderCompletionHTML(order, trackingLink)
       };
 
@@ -184,9 +184,9 @@ export class EmailService {
             <p>Order Confirmation</p>
           </div>
           <div class="content">
-            <h2>Customer: Please make the payment.</h2>
+            <h2>Exchange Request Submitted</h2>
             <p>Dear ${order.fullName},</p>
-            <p>We've received your exchange request. Please make your payment to complete the order:</p>
+            <p>Thank you for your request. Please make the payment to proceed with the exchange.</p>
             
             <div class="order-details">
               <h3>Order Details</h3>
@@ -393,9 +393,9 @@ export class EmailService {
             <p>We are processing your exchange</p>
           </div>
           <div class="content">
-            <h2>Waiting for admin confirmation...</h2>
+            <h2>Payment Confirmation Received</h2>
             <p>Dear ${order.fullName},</p>
-            <p>We have received your payment confirmation. Your order is now waiting for admin verification.</p>
+            <p>We have received your payment request. Our team is now reviewing it. You will receive your funds shortly. Please wait while we process your exchange.</p>
             
             <div class="payment-details">
               <h3>Payment Confirmed</h3>
@@ -454,9 +454,9 @@ export class EmailService {
               Your ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} has been sent to your wallet!
             </div>
             
-            <h2>Order Completed Successfully.</h2>
+            <h2>Order Completed Successfully</h2>
             <p>Dear ${order.fullName},</p>
-            <p>Your exchange order has been completed successfully and your funds have been sent to your wallet address.</p>
+            <p>Your exchange order has been approved and completed successfully. Thank you for using our service.</p>
             
             <div class="completion-details">
               <h3>Transaction Summary</h3>
