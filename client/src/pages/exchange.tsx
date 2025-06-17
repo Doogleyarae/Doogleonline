@@ -136,39 +136,39 @@ export default function Exchange() {
 
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`, Date.now()],
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   // Fetch currency limits
   const { data: sendCurrencyLimits, isLoading: sendLimitsLoading } = useQuery<CurrencyLimitsResponse>({
-    queryKey: [`/api/currency-limits/${sendMethod}`, Date.now()],
+    queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading } = useQuery<CurrencyLimitsResponse>({
-    queryKey: [`/api/currency-limits/${receiveMethod}`, Date.now()],
+    queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch wallet addresses
   const { data: walletAddresses } = useQuery<Record<string, string>>({
-    queryKey: ["/api/admin/wallet-addresses", Date.now()],
-    staleTime: 0,
-    refetchOnMount: true,
+    queryKey: ["/api/admin/wallet-addresses"],
+    staleTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Fetch balances
   const { data: balances, isLoading: balancesLoading } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances", Date.now()],
-    staleTime: 0,
-    refetchOnMount: true,
+    queryKey: ["/api/admin/balances"],
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   const form = useForm<ExchangeFormData>({
@@ -219,49 +219,55 @@ export default function Exchange() {
     }
   }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, form]);
 
-  // Calculate dynamic limits
-  useEffect(() => {
-    if (sendCurrencyLimits?.minAmount && receiveCurrencyLimits?.minAmount && exchangeRate > 0) {
-      let effectiveMinSend = sendCurrencyLimits.minAmount;
-      let effectiveMaxSend = sendCurrencyLimits.maxAmount;
-      let effectiveMaxReceive = receiveCurrencyLimits.maxAmount;
-
-      // Calculate rate-based minimum
-      const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
-      effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
-
-      // Apply balance limits if available
-      if (balances && typeof balances === 'object') {
-        const currencyMapping: Record<string, string> = {
-          'evc': 'EVCPLUS',
-          'trc20': 'TRC20',
-          'zaad': 'ZAAD',
-          'sahal': 'SAHAL',
-          'moneygo': 'MONEYGO',
-          'premier': 'PREMIER',
-          'edahab': 'EDAHAB',
-          'trx': 'TRX',
-          'peb20': 'PEB20'
-        };
-        
-        const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
-        const receiveBalance = balances[balanceKey] || 0;
-        
-        if (receiveBalance > 0) {
-          const balanceBasedMaxSend = receiveBalance / exchangeRate;
-          effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
-          effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
-        }
-      }
-
-      setDynamicLimits({
-        minSendAmount: effectiveMinSend,
-        maxSendAmount: effectiveMaxSend,
-        minReceiveAmount: receiveCurrencyLimits.minAmount,
-        maxReceiveAmount: effectiveMaxReceive,
-      });
+  // Calculate dynamic limits with memoization
+  const calculateDynamicLimits = useCallback(() => {
+    if (!sendCurrencyLimits?.minAmount || !receiveCurrencyLimits?.minAmount || exchangeRate <= 0) {
+      return;
     }
+
+    let effectiveMinSend = sendCurrencyLimits.minAmount;
+    let effectiveMaxSend = sendCurrencyLimits.maxAmount;
+    let effectiveMaxReceive = receiveCurrencyLimits.maxAmount;
+
+    // Calculate rate-based minimum
+    const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
+    effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
+
+    // Apply balance limits if available
+    if (balances && typeof balances === 'object') {
+      const currencyMapping: Record<string, string> = {
+        'evc': 'EVCPLUS',
+        'trc20': 'TRC20',
+        'zaad': 'ZAAD',
+        'sahal': 'SAHAL',
+        'moneygo': 'MONEYGO',
+        'premier': 'PREMIER',
+        'edahab': 'EDAHAB',
+        'trx': 'TRX',
+        'peb20': 'PEB20'
+      };
+      
+      const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+      const receiveBalance = balances[balanceKey] || 0;
+      
+      if (receiveBalance > 0) {
+        const balanceBasedMaxSend = receiveBalance / exchangeRate;
+        effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
+        effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+      }
+    }
+
+    setDynamicLimits({
+      minSendAmount: effectiveMinSend,
+      maxSendAmount: effectiveMaxSend,
+      minReceiveAmount: receiveCurrencyLimits.minAmount,
+      maxReceiveAmount: effectiveMaxReceive,
+    });
   }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
+
+  useEffect(() => {
+    calculateDynamicLimits();
+  }, [calculateDynamicLimits]);
 
   // Handle amount calculations
   const handleSendAmountChange = (value: string) => {
