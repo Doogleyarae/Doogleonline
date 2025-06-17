@@ -189,26 +189,20 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  // Fetch admin-configured limits with NO CACHING - always use latest limits
+  // Fetch admin-configured limits
   const { data: sendCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    staleTime: 0, // No stale time - always fetch fresh
-    gcTime: 0, // No garbage collection time - don't cache
-    refetchOnWindowFocus: true, // Always refetch when user focuses
-    refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 1000, // Refetch every 1 second for immediate Balance Management updates
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch admin-configured limits with NO CACHING - always use latest limits
+  // Fetch admin-configured limits
   const { data: receiveCurrencyLimits } = useQuery<{ minAmount: number; maxAmount: number; currency: string }>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    staleTime: 0, // No stale time - always fetch fresh
-    gcTime: 0, // No garbage collection time - don't cache
-    refetchOnWindowFocus: true, // Always refetch when user focuses
-    refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 1000, // Refetch every 1 second for immediate Balance Management updates
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 
   // Fetch live wallet addresses from admin dashboard
@@ -220,14 +214,11 @@ export default function Exchange() {
     refetchOnReconnect: false,
   });
 
-  // Fetch current balances with NO CACHING - always use latest balance data
+  // Fetch current balances
   const { data: balances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    staleTime: 0, // No stale time - always fetch fresh
-    gcTime: 0, // No garbage collection time - don't cache
-    refetchInterval: 5 * 1000, // Refetch every 5 seconds for real-time balance updates
-    refetchOnWindowFocus: true, // Refetch when user focuses window
-    refetchOnReconnect: true,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   // Create a dynamic form resolver that always uses current limits
@@ -493,33 +484,17 @@ export default function Exchange() {
     return () => ws.close();
   }, [queryClient]);
 
-  // Fetch exchange rate with NO CACHING - always use latest rates
-  const { data: rateData, refetch: refetchRate, isLoading: rateLoading, error: rateError } = useQuery<ExchangeRateResponse>({
+  // Fetch exchange rate
+  const { data: rateData, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    staleTime: 0, // No stale time - always fetch fresh
-    gcTime: 0, // No garbage collection time - don't cache
-    refetchOnWindowFocus: true, // Always refetch when user focuses
-    refetchOnReconnect: true, // Always refetch on reconnect
-    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
-
-  // Debug exchange rate fetching
-  useEffect(() => {
-    console.log('EXCHANGE RATE DEBUG:', {
-      sendMethod,
-      receiveMethod,
-      queryEnabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-      rateData,
-      rateLoading,
-      rateError,
-      queryKey: `/api/exchange-rate/${sendMethod}/${receiveMethod}`
-    });
-  }, [sendMethod, receiveMethod, rateData, rateLoading, rateError]);
 
   // Update exchange rate and calculate initial receive amount
   useEffect(() => {
-    if (rateData) {
+    if (rateData && rateData.rate) {
       const rate = rateData.rate;
       setExchangeRate(rate);
       form.setValue("exchangeRate", rate.toString());
@@ -534,9 +509,16 @@ export default function Exchange() {
         form.setValue("receiveAmount", convertedAmount);
         saveExchangeState({ sendAmount, receiveAmount: convertedAmount });
       }
-      
-      // Immediately trigger balance-based limit calculation with new rate
-      if (sendCurrencyLimits && receiveCurrencyLimits && balances) {
+    } else if (sendMethod && receiveMethod && sendMethod !== receiveMethod) {
+      // If no rate data but methods are set, trigger a refetch
+      refetchRate();
+    }
+  }, [rateData, sendMethod, receiveMethod, sendAmount, form, refetchRate]);
+
+  // Calculate dynamic limits based on exchange rate and balances
+  useEffect(() => {
+    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
+      if (balances) {
         // Map currency names to match admin dashboard balance keys
         const currencyMapping: Record<string, string> = {
           'evc': 'EVCPLUS',
@@ -553,12 +535,12 @@ export default function Exchange() {
         
         const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
         const receiveBalance = balances[balanceKey] || 0;
-        const balanceBasedMaxSend = receiveBalance / rate;
+        const balanceBasedMaxSend = receiveBalance / exchangeRate;
         const effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
         const effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
 
         // Calculate rate-based minimum send amount
-        const rateBasedMinSend = receiveCurrencyLimits.minAmount / rate;
+        const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
         // Use the higher of admin minimum or rate-based minimum to ensure both requirements are met
         const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
 
@@ -570,17 +552,21 @@ export default function Exchange() {
         };
 
         setDynamicLimits(newLimits);
-        console.log(`Balance-based limits recalculated: Send $${newLimits.minSendAmount.toFixed(2)}-$${newLimits.maxSendAmount.toFixed(2)}, Receive $${newLimits.minReceiveAmount.toFixed(2)}-$${newLimits.maxReceiveAmount.toFixed(2)}`);
-        console.log(`Available ${receiveMethod.toUpperCase()} balance: $${receiveBalance}, Rate: ${rate}`);
-        console.log(`RATE CALCULATION: ${receiveCurrencyLimits.minAmount} ÷ ${rate} = ${rateBasedMinSend.toFixed(2)}, using max(${sendCurrencyLimits.minAmount}, ${rateBasedMinSend.toFixed(2)}) = ${effectiveMinSend.toFixed(2)}`);
+      } else {
+        // Use admin-configured limits when balance data not available
+        const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
+        const effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
+        
+        const adminConfiguredLimits = {
+          minSendAmount: effectiveMinSend,
+          maxSendAmount: sendCurrencyLimits.maxAmount,
+          minReceiveAmount: receiveCurrencyLimits.minAmount,
+          maxReceiveAmount: receiveCurrencyLimits.maxAmount,
+        };
+        setDynamicLimits(adminConfiguredLimits);
       }
-      
-      // Trigger validation to update max amount limits based on new rate
-      setTimeout(() => {
-        form.trigger(['sendAmount', 'receiveAmount']);
-      }, 100);
     }
-  }, [rateData, sendMethod, receiveMethod, form, sendAmount, sendCurrencyLimits, receiveCurrencyLimits, balances]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
 
   // Force refresh exchange rate when methods change (once per change)
   useEffect(() => {
