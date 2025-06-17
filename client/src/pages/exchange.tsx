@@ -326,10 +326,14 @@ export default function Exchange() {
       sessionStorage.setItem("currentOrder", JSON.stringify(order));
       console.log('Navigating to confirmation page...');
       
-      // Force navigation with a slight delay to ensure state is saved
-      setTimeout(() => {
-        window.location.href = "/confirmation";
-      }, 100);
+      // Show success message and navigate
+      toast({
+        title: "Order Created Successfully",
+        description: `Order ${order.orderId} has been created. Check your email for confirmation.`,
+      });
+      
+      // Navigate to confirmation page
+      setLocation("/confirmation");
     },
     onError: (error: any) => {
       toast({
