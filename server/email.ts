@@ -46,17 +46,24 @@ export class EmailService {
 
   async sendStatusUpdate(order: Order, customerEmail?: string): Promise<boolean> {
     try {
-      const emailConfig: EmailConfig = {
-        from: "noreply@doogleonline.com",
-        to: customerEmail || "customer@example.com",
+      const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
+      
+      const emailConfig = {
+        from: "DoogleOnline <orders@doogleonline.com>",
+        to: customerEmail || order.email || "customer@example.com",
         subject: `Order Status Update - ${order.orderId}`,
-        html: this.generateStatusUpdateHTML(order)
+        html: this.generateStatusUpdateHTML(order, trackingLink)
       };
 
-      console.log("📧 Status update email sent:", emailConfig.subject);
+      if (resend) {
+        await resend.emails.send(emailConfig);
+        console.log("Status update email sent via Resend:", emailConfig.subject);
+      } else {
+        console.log("Mock status update email sent:", emailConfig.subject);
+      }
       return true;
     } catch (error) {
-      console.error("❌ Failed to send status update email:", error);
+      console.error("Failed to send status update email:", error);
       return false;
     }
   }
@@ -95,7 +102,7 @@ export class EmailService {
     }
   }
 
-  private generateOrderConfirmationHTML(order: Order): string {
+  private generateOrderConfirmationHTML(order: Order, trackingLink?: string): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -141,6 +148,7 @@ export class EmailService {
             </ol>
             
             <p>You can track your order status anytime using Order ID: <strong>${order.orderId}</strong></p>
+            ${trackingLink ? `<p><a href="${trackingLink}" style="background: #1e40af; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Track Your Order</a></p>` : ''}
           </div>
           <div class="footer">
             <p>Thank you for choosing DoogleOnline</p>
@@ -152,7 +160,7 @@ export class EmailService {
     `;
   }
 
-  private generateStatusUpdateHTML(order: Order): string {
+  private generateStatusUpdateHTML(order: Order, trackingLink?: string): string {
     const statusMessages = {
       pending: "Your order is waiting for payment confirmation",
       processing: "We're processing your exchange request",
@@ -206,7 +214,7 @@ export class EmailService {
             }
           </div>
           <div class="footer">
-            <p>Track your order: <a href="https://doogleonline.com/track">https://doogleonline.com/track</a></p>
+            ${trackingLink ? `<p><a href="${trackingLink}" style="background: #1e40af; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Track Your Order</a></p>` : '<p>Track your order: <a href="https://doogleonline.com/track">https://doogleonline.com/track</a></p>'}
             <p>For support, contact us at support@doogleonline.com</p>
           </div>
         </div>

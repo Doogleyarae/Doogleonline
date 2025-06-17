@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, customerRestrictions, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo, type CustomerRestriction, type InsertCustomerRestriction } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -49,6 +49,13 @@ export interface IStorage {
   // Admin contact information methods
   getAdminContactInfo(): Promise<AdminContactInfo | undefined>;
   updateAdminContactInfo(info: InsertAdminContactInfo): Promise<AdminContactInfo>;
+  
+  // Customer restriction methods
+  getCustomerRestriction(customerIdentifier: string): Promise<CustomerRestriction | undefined>;
+  createCustomerRestriction(restriction: InsertCustomerRestriction): Promise<CustomerRestriction>;
+  updateCustomerRestriction(customerIdentifier: string, restriction: Partial<InsertCustomerRestriction>): Promise<CustomerRestriction | undefined>;
+  checkCancellationLimit(customerIdentifier: string): Promise<{ canCancel: boolean; reason?: string }>;
+  recordCancellation(customerIdentifier: string): Promise<void>;
   
   // Order workflow methods with balance management
   updateOrderStatusWithBalanceLogic(orderId: string, status: string): Promise<Order | undefined>;
