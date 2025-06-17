@@ -232,10 +232,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (status === "completed") {
         // Send order completion email
         await emailService.sendOrderCompletion(order);
-      } else {
-        // Send general status update for other statuses
-        await emailService.sendStatusUpdate(order);
       }
+      // Removed general status update emails to prevent duplicates
       
       // Notify connected clients via WebSocket
       wsManager.notifyOrderUpdate(order);
