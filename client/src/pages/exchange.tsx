@@ -98,6 +98,9 @@ const createExchangeFormSchema = (
   ),
   exchangeRate: z.string(),
   fullName: z.string().min(1, "Full name is required"),
+  email: z.string()
+    .min(1, "Email address is required")
+    .email("Please enter a valid email address"),
   phoneNumber: z.string().min(1, "Phone number is required"),
   senderAccount: ['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) 
     ? z.string().min(1, "Sender account is required") 
@@ -248,6 +251,7 @@ export default function Exchange() {
       receiveAmount: receiveAmount,
       exchangeRate: exchangeRate.toString(),
       fullName: savedData.fullName || "",
+      email: savedData.email || "",
       phoneNumber: savedData.phoneNumber || "",
       senderAccount: savedData.senderAccount || "",
       walletAddress: savedData.walletAddress || "",
@@ -714,6 +718,7 @@ export default function Exchange() {
     const currentFormData = form.getValues();
     const dataToSave = {
       fullName: currentFormData.fullName,
+      email: currentFormData.email,
       phoneNumber: currentFormData.phoneNumber,
       walletAddress: currentFormData.walletAddress,
     };
@@ -731,6 +736,7 @@ export default function Exchange() {
     } else {
       // When turning OFF - clear form fields immediately
       form.setValue("fullName", "");
+      form.setValue("email", "");
       form.setValue("phoneNumber", "");
       form.setValue("walletAddress", "");
       
@@ -1201,6 +1207,30 @@ export default function Exchange() {
                     />
                     
                   </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email"
+                            placeholder="example@email.com" 
+                            {...field} 
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleFieldChange('email', e.target.value);
+                            }}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-blue-600">📧 Email notifications will be sent to this address</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   <FormField
                     control={form.control}
                     name="walletAddress"
