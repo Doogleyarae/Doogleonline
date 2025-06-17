@@ -16,6 +16,18 @@ import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff } from "lucide-reac
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
 
+interface ExchangeRateResponse {
+  rate: number;
+  from: string;
+  to: string;
+}
+
+interface CurrencyLimitsResponse {
+  minAmount: number;
+  maxAmount: number;
+  currency: string;
+}
+
 // Import currency logos
 import zaadLogo from "@assets/zaad_1749853582330.png";
 import evcLogo from "@assets/evc plus_1749853582322.png";
@@ -123,33 +135,33 @@ export default function Exchange() {
   } = useFormDataMemory('exchange');
 
   // Fetch exchange rate
-  const { data: rateData } = useQuery({
+  const { data: rateData } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
     staleTime: 30000,
   });
 
   // Fetch currency limits
-  const { data: sendCurrencyLimits } = useQuery({
+  const { data: sendCurrencyLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
     staleTime: 30000,
   });
 
-  const { data: receiveCurrencyLimits } = useQuery({
+  const { data: receiveCurrencyLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
     staleTime: 30000,
   });
 
   // Fetch wallet addresses
-  const { data: walletAddresses } = useQuery({
+  const { data: walletAddresses } = useQuery<Record<string, string>>({
     queryKey: ["/api/admin/wallet-addresses"],
     staleTime: 30 * 60 * 1000,
   });
 
   // Fetch balances
-  const { data: balances } = useQuery({
+  const { data: balances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
     staleTime: 60000,
   });
@@ -181,7 +193,7 @@ export default function Exchange() {
 
   // Update exchange rate when data is fetched
   useEffect(() => {
-    if (rateData && rateData.rate) {
+    if (rateData?.rate) {
       const rate = rateData.rate;
       setExchangeRate(rate);
       form.setValue("exchangeRate", rate.toString());
@@ -310,8 +322,14 @@ export default function Exchange() {
       return response.json();
     },
     onSuccess: (order) => {
+      console.log('Order created successfully:', order);
       sessionStorage.setItem("currentOrder", JSON.stringify(order));
-      setLocation("/confirmation");
+      console.log('Navigating to confirmation page...');
+      
+      // Force navigation with a slight delay to ensure state is saved
+      setTimeout(() => {
+        window.location.href = "/confirmation";
+      }, 100);
     },
     onError: (error: any) => {
       toast({
