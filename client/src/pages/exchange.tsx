@@ -677,27 +677,19 @@ export default function Exchange() {
                 name="walletAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Receiving Wallet Address / Account Number *</FormLabel>
+                    <FormLabel>Wallet Address / Account Number *</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g., TQn9Y8hfrJ2yW... or account: 1234567890"
+                        placeholder="Enter your wallet address or account number"
                         {...field}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          // Prevent email addresses from being entered
-                          if (value.includes('@')) {
-                            return; // Don't update if it contains @
-                          }
-                          field.onChange(value);
+                          field.onChange(e.target.value);
                           if (isReminded) {
-                            updateSavedField('walletAddress', value);
+                            updateSavedField('walletAddress', e.target.value);
                           }
                         }}
                       />
                     </FormControl>
-                    <div className="text-xs text-orange-600 mt-1 font-medium">
-                      ⚠️ Enter your crypto wallet address or bank account number where you want to receive funds - NOT your email
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
