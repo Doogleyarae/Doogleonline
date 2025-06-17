@@ -780,6 +780,7 @@ export default function Exchange() {
 
       const response = await apiRequest("POST", "/api/orders", {
         fullName: data.fullName,
+        email: data.email,
         phoneNumber: data.phoneNumber,
         senderAccount: data.senderAccount,
         walletAddress: data.walletAddress,
@@ -1239,7 +1240,7 @@ export default function Exchange() {
                         <FormLabel>Wallet Address / Account Number *</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Enter wallet address or account number" 
+                            placeholder="e.g., TXtU9bwJhg... or account number (NOT email address)" 
                             {...field} 
                             onChange={(e) => {
                               field.onChange(e);
@@ -1247,7 +1248,7 @@ export default function Exchange() {
                             }}
                           />
                         </FormControl>
-                        <p className="text-xs text-gray-500">Enter the destination wallet address or account number</p>
+                        <p className="text-xs text-red-600">⚠️ This is for crypto wallet addresses or account numbers only - NOT your email address</p>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -164,6 +164,7 @@ Changelog:
 - June 17, 2025. Enhanced email messaging system to match three-stage customer workflow - "Order Pending" when order submitted ("Customer: Please make the payment."), "Waiting for admin confirmation" when customer marks as paid, and "Order Completed Successfully" when admin accepts order, providing consistent messaging between confirmation page and email notifications
 - June 17, 2025. Refined email notification workflow with professional messaging - "Exchange Request Submitted – Pending Payment" for new orders, "Payment Confirmation Received" when customers mark as paid, and "Order Completed Successfully" when admin accepts orders, providing clear customer communication at each workflow stage
 - June 17, 2025. Added customer email notification guidance message on confirmation page explaining how to check for email confirmations, troubleshoot delivery issues, and contact support if needed, improving customer experience and reducing support inquiries
+- June 17, 2025. Fixed critical email delivery issue by adding required email field to exchange form with validation, clear labeling to prevent confusion with wallet address field, and comprehensive form integration including memory persistence and order submission, ensuring customers receive all three-stage email notifications properly
 
 ## User Preferences
 
