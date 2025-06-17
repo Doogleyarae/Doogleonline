@@ -225,8 +225,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
       
-      // Send status update email
-      await emailService.sendStatusUpdate(order);
+      // Send appropriate email notification based on status
+      if (status === "paid") {
+        // Send payment confirmation email
+        await emailService.sendPaymentConfirmation(order);
+      } else if (status === "completed") {
+        // Send order completion email
+        await emailService.sendOrderCompletion(order);
+      } else {
+        // Send general status update for other statuses
+        await emailService.sendStatusUpdate(order);
+      }
       
       // Notify connected clients via WebSocket
       wsManager.notifyOrderUpdate(order);
