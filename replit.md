@@ -163,6 +163,7 @@ Changelog:
 - June 17, 2025. Implemented comprehensive email notification system with Resend integration featuring three distinct email types: (1) Contact message confirmations for customers with admin notifications, (2) Payment confirmation emails when customers make payments with processing timelines, (3) Order completion emails when admin accepts orders with transaction summaries and wallet delivery confirmations
 - June 17, 2025. Enhanced email messaging system to match three-stage customer workflow - "Order Pending" when order submitted ("Customer: Please make the payment."), "Waiting for admin confirmation" when customer marks as paid, and "Order Completed Successfully" when admin accepts order, providing consistent messaging between confirmation page and email notifications
 - June 17, 2025. Refined email notification workflow with professional messaging - "Exchange Request Submitted – Pending Payment" for new orders, "Payment Confirmation Received" when customers mark as paid, and "Order Completed Successfully" when admin accepts orders, providing clear customer communication at each workflow stage
+- June 17, 2025. Added customer email notification guidance message on confirmation page explaining how to check for email confirmations, troubleshoot delivery issues, and contact support if needed, improving customer experience and reducing support inquiries
 
 ## User Preferences
 

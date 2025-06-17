@@ -430,6 +430,16 @@ export default function Confirmation() {
             </Card>
           )}
 
+          {/* Email Notification Information */}
+          <Card className="bg-gray-50 border border-gray-200 mb-6">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">Email Notifications</h3>
+              <p className="text-sm text-gray-700">
+                Dear Customer, thank you for submitting your exchange request. If you did not receive an email confirmation, please make sure you entered a correct email address and check your spam/junk folder. If you still haven't received anything, please contact our support team for assistance.
+              </p>
+            </CardContent>
+          </Card>
+
           <div className="space-y-3">
             <Link href="/track">
               <Button className="w-full">
