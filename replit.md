@@ -157,6 +157,9 @@ Changelog:
 - June 16, 2025. Fixed admin cancel functionality - resolved storage layer status update issue ensuring admin cancellations properly save to database with correct status and timestamps. Enhanced customer redirection system ensuring immediate redirect to cancelled order page when admin cancels their order via WebSocket real-time synchronization
 - June 16, 2025. Confirmed accessibility compliance maintained - all Dialog and AlertDialog components properly implement required DialogTitle and DialogDescription elements with sr-only classes for screen reader support. Browser extension warnings verified as false positives with actual accessibility implementation meeting standards
 - June 16, 2025. Implemented admin-controlled balance deduction system - removed balance deduction from order creation and configured system so balance deduction only occurs when admin accepts orders (marks as completed). This gives admin full control over when exchange wallet funds are committed to customer transactions
+- June 17, 2025. Implemented comprehensive order cancellation limit system enforcing maximum 3 cancellations per customer per 24-hour period. Added customer_restrictions table tracking cancellation counts and restriction timestamps. Integrated limit checking into confirmation page preventing excessive cancellations with clear error messaging
+- June 17, 2025. Enhanced email service with Resend integration for professional order notifications including tracking links, dynamic status messages ("Order Status: Pending" → "We are verifying your payment. Please wait 15 minutes." → "Order Completed Successfully"), and improved customer communication workflow
+- June 17, 2025. Added enhanced status messaging system with contextual descriptions on confirmation page based on order status (pending, paid, processing, completed, cancelled) providing clear customer guidance and expectations for each stage of the exchange process
 
 ## User Preferences
 

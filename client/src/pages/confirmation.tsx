@@ -307,7 +307,21 @@ export default function Confirmation() {
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Request Received!</h1>
-            <p className="text-lg text-gray-600">We received your exchange request. Processing will complete in 15 minutes.</p>
+            {order.status === "pending" && (
+              <p className="text-lg text-gray-600">We received your exchange request. Please send payment to complete your order.</p>
+            )}
+            {order.status === "paid" && (
+              <p className="text-lg text-blue-600">We are verifying your payment. Please wait 15 minutes.</p>
+            )}
+            {order.status === "processing" && (
+              <p className="text-lg text-blue-600">Your payment is confirmed. We're processing your exchange now.</p>
+            )}
+            {order.status === "completed" && (
+              <p className="text-lg text-green-600">Order Completed Successfully! Your funds have been sent.</p>
+            )}
+            {order.status === "cancelled" && (
+              <p className="text-lg text-red-600">This order has been cancelled.</p>
+            )}
           </div>
 
           <Card className="bg-gray-50 mb-6">
