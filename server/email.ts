@@ -37,7 +37,7 @@ export class EmailService {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: emailAddress,
         subject: `Exchange Request Submitted – Pending Payment (Order ${order.orderId}) - ${timestamp}`,
-        html: this.generateOrderConfirmationHTML(order, trackingLink, timestamp)
+        html: this.generateOrderConfirmationHTML(order, trackingLink)
       };
 
       if (resend) {
@@ -131,10 +131,11 @@ export class EmailService {
       
       const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
       
+      const timestamp = Date.now();
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: order.email,
-        subject: `Payment Confirmation Received (Order ${order.orderId})`,
+        subject: `Payment Confirmation Received (Order ${order.orderId}) - ${timestamp}`,
         html: this.generatePaymentConfirmationHTML(order, trackingLink)
       };
 
@@ -161,10 +162,11 @@ export class EmailService {
       
       const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
       
+      const timestamp = Date.now();
       const emailConfig = {
         from: "DoogleOnline <orders@doogleonline.com>",
         to: order.email,
-        subject: `Order Completed Successfully (Order ${order.orderId})`,
+        subject: `Order Completed Successfully (Order ${order.orderId}) - ${timestamp}`,
         html: this.generateOrderCompletionHTML(order, trackingLink)
       };
 
@@ -244,7 +246,7 @@ export class EmailService {
     `;
   }
 
-  private generateOrderConfirmationHTML(order: Order, trackingLink?: string): string {
+  private generateOrderConfirmationHTML(order: Order, trackingLink?: string, timestamp?: number): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -359,6 +361,7 @@ export class EmailService {
           <div class="footer">
             ${trackingLink ? `<p><a href="${trackingLink}" style="background: #1e40af; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Track Your Order</a></p>` : '<p>Track your order: <a href="https://doogleonline.com/track">https://doogleonline.com/track</a></p>'}
             <p>For support, contact us at support@doogleonline.com</p>
+            <p style="font-size: 11px; color: #999;">Fresh Email ID: ${Date.now()}_${Math.random().toString(36).substr(2, 9)}</p>
           </div>
         </div>
       </body>
@@ -454,7 +457,7 @@ export class EmailService {
     `;
   }
 
-  private generatePaymentConfirmationHTML(order: Order, trackingLink?: string): string {
+  private generatePaymentConfirmationHTML(order: Order, trackingLink?: string, timestamp?: number): string {
     return `
       <!DOCTYPE html>
       <html>
