@@ -135,35 +135,40 @@ export default function Exchange() {
   } = useFormDataMemory('exchange');
 
   // Fetch exchange rate
-  const { data: rateData } = useQuery<ExchangeRateResponse>({
-    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
+  const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
+    queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`, Date.now()],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    staleTime: 30000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Fetch currency limits
-  const { data: sendCurrencyLimits } = useQuery<CurrencyLimitsResponse>({
-    queryKey: [`/api/currency-limits/${sendMethod}`],
+  const { data: sendCurrencyLimits, isLoading: sendLimitsLoading } = useQuery<CurrencyLimitsResponse>({
+    queryKey: [`/api/currency-limits/${sendMethod}`, Date.now()],
     enabled: !!sendMethod,
-    staleTime: 30000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
-  const { data: receiveCurrencyLimits } = useQuery<CurrencyLimitsResponse>({
-    queryKey: [`/api/currency-limits/${receiveMethod}`],
+  const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading } = useQuery<CurrencyLimitsResponse>({
+    queryKey: [`/api/currency-limits/${receiveMethod}`, Date.now()],
     enabled: !!receiveMethod,
-    staleTime: 30000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Fetch wallet addresses
   const { data: walletAddresses } = useQuery<Record<string, string>>({
-    queryKey: ["/api/admin/wallet-addresses"],
-    staleTime: 30 * 60 * 1000,
+    queryKey: ["/api/admin/wallet-addresses", Date.now()],
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Fetch balances
-  const { data: balances } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances"],
-    staleTime: 60000,
+  const { data: balances, isLoading: balancesLoading } = useQuery<Record<string, number>>({
+    queryKey: ["/api/admin/balances", Date.now()],
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const form = useForm<ExchangeFormData>({
@@ -211,7 +216,7 @@ export default function Exchange() {
 
   // Calculate dynamic limits
   useEffect(() => {
-    if (sendCurrencyLimits && receiveCurrencyLimits && exchangeRate > 0) {
+    if (sendCurrencyLimits?.minAmount && receiveCurrencyLimits?.minAmount && exchangeRate > 0) {
       let effectiveMinSend = sendCurrencyLimits.minAmount;
       let effectiveMaxSend = sendCurrencyLimits.maxAmount;
       let effectiveMaxReceive = receiveCurrencyLimits.maxAmount;
@@ -221,7 +226,7 @@ export default function Exchange() {
       effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
 
       // Apply balance limits if available
-      if (balances) {
+      if (balances && typeof balances === 'object') {
         const currencyMapping: Record<string, string> = {
           'evc': 'EVCPLUS',
           'trc20': 'TRC20',
@@ -236,10 +241,12 @@ export default function Exchange() {
         
         const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
         const receiveBalance = balances[balanceKey] || 0;
-        const balanceBasedMaxSend = receiveBalance / exchangeRate;
         
-        effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
-        effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+        if (receiveBalance > 0) {
+          const balanceBasedMaxSend = receiveBalance / exchangeRate;
+          effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
+          effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+        }
       }
 
       setDynamicLimits({
@@ -384,13 +391,30 @@ export default function Exchange() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-blue-800">Current Rate:</span>
-                  <span className="text-lg font-bold text-blue-900">{rateDisplay}</span>
+                  {rateLoading ? (
+                    <span className="text-sm text-blue-600">Loading rate...</span>
+                  ) : rateData?.rate ? (
+                    <span className="text-lg font-bold text-blue-900">{rateDisplay}</span>
+                  ) : (
+                    <span className="text-sm text-red-600">Rate not available</span>
+                  )}
                 </div>
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="text-xs text-center">
                     <span className="text-blue-700 font-medium">Transaction Limits: </span>
-                    <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
+                    {sendLimitsLoading || receiveLimitsLoading ? (
+                      <span className="text-blue-600">Loading limits...</span>
+                    ) : (
+                      <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
+                    )}
                   </div>
+                  {balancesLoading ? (
+                    <div className="text-xs text-center mt-1 text-blue-600">Loading balances...</div>
+                  ) : balances && (
+                    <div className="text-xs text-center mt-1 text-green-600">
+                      Available: ${balances[receiveMethod.toUpperCase()] || 0} {receiveMethod.toUpperCase()}
+                    </div>
+                  )}
                 </div>
               </div>
 
