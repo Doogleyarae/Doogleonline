@@ -306,21 +306,31 @@ export default function Confirmation() {
             <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Request Received!</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Exchange Order</h1>
             {order.status === "pending" && (
-              <p className="text-lg text-gray-600">We received your exchange request. Please send payment to complete your order.</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-xl font-semibold text-blue-800">Customer: Please make the payment.</p>
+              </div>
             )}
             {order.status === "paid" && (
-              <p className="text-lg text-blue-600">We are verifying your payment. Please wait 15 minutes.</p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-xl font-semibold text-yellow-800">Waiting for admin confirmation...</p>
+              </div>
             )}
             {order.status === "processing" && (
-              <p className="text-lg text-blue-600">Your payment is confirmed. We're processing your exchange now.</p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-xl font-semibold text-yellow-800">Waiting for admin confirmation...</p>
+              </div>
             )}
             {order.status === "completed" && (
-              <p className="text-lg text-green-600">Order Completed Successfully! Your funds have been sent.</p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <p className="text-xl font-semibold text-green-800">Order Completed Successfully.</p>
+              </div>
             )}
             {order.status === "cancelled" && (
-              <p className="text-lg text-red-600">This order has been cancelled.</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-xl font-semibold text-red-800">This order has been cancelled.</p>
+              </div>
             )}
           </div>
 
@@ -384,7 +394,7 @@ export default function Confirmation() {
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Mark as Paid
+                    Paid
                   </Button>
                   <Button
                     onClick={handleCancelOrder}
