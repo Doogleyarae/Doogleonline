@@ -269,6 +269,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check cancellation limit for customer
+  app.post("/api/orders/check-cancellation-limit", async (req, res) => {
+    try {
+      const { phoneNumber, email } = req.body;
+      const customerIdentifier = phoneNumber || email;
+      
+      if (!customerIdentifier) {
+        return res.status(400).json({ message: "Phone number or email is required" });
+      }
+      
+      const result = await storage.checkCancellationLimit(customerIdentifier);
+      res.json(result);
+    } catch (error) {
+      console.error('Cancellation limit check error:', error);
+      res.status(500).json({ message: "Failed to check cancellation limit" });
+    }
+  });
+
+  // Record customer cancellation
+  app.post("/api/orders/record-cancellation", async (req, res) => {
+    try {
+      const { phoneNumber, email } = req.body;
+      const customerIdentifier = phoneNumber || email;
+      
+      if (!customerIdentifier) {
+        return res.status(400).json({ message: "Phone number or email is required" });
+      }
+      
+      await storage.recordCancellation(customerIdentifier);
+      res.json({ message: "Cancellation recorded successfully" });
+    } catch (error) {
+      console.error('Record cancellation error:', error);
+      res.status(500).json({ message: "Failed to record cancellation" });
+    }
+  });
+
   // Get all orders
   app.get("/api/orders", async (req, res) => {
     try {

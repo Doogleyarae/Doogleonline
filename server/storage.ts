@@ -534,6 +534,102 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  async getCustomerRestriction(customerIdentifier: string): Promise<CustomerRestriction | undefined> {
+    const [restriction] = await db
+      .select()
+      .from(customerRestrictions)
+      .where(eq(customerRestrictions.customerIdentifier, customerIdentifier));
+    return restriction || undefined;
+  }
+
+  async createCustomerRestriction(insertRestriction: InsertCustomerRestriction): Promise<CustomerRestriction> {
+    const [restriction] = await db
+      .insert(customerRestrictions)
+      .values(insertRestriction)
+      .returning();
+    return restriction;
+  }
+
+  async updateCustomerRestriction(customerIdentifier: string, restriction: Partial<InsertCustomerRestriction>): Promise<CustomerRestriction | undefined> {
+    const [updated] = await db
+      .update(customerRestrictions)
+      .set({
+        ...restriction,
+        updatedAt: new Date(),
+      })
+      .where(eq(customerRestrictions.customerIdentifier, customerIdentifier))
+      .returning();
+    return updated || undefined;
+  }
+
+  async checkCancellationLimit(customerIdentifier: string): Promise<{ canCancel: boolean; reason?: string }> {
+    const restriction = await this.getCustomerRestriction(customerIdentifier);
+    
+    if (!restriction) {
+      return { canCancel: true };
+    }
+
+    // Check if customer is currently restricted
+    if (restriction.restrictedUntil && new Date() < new Date(restriction.restrictedUntil)) {
+      const hoursLeft = Math.ceil((new Date(restriction.restrictedUntil).getTime() - new Date().getTime()) / (1000 * 60 * 60));
+      return { 
+        canCancel: false, 
+        reason: `You have reached the maximum cancellation limit. You can cancel orders again in ${hoursLeft} hours.` 
+      };
+    }
+
+    // Check if customer has reached 3 cancellations in the last 24 hours
+    if (restriction.cancellationCount >= 3 && restriction.lastCancellationAt) {
+      const hoursSinceLastCancellation = (new Date().getTime() - new Date(restriction.lastCancellationAt).getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceLastCancellation < 24) {
+        const hoursLeft = Math.ceil(24 - hoursSinceLastCancellation);
+        return { 
+          canCancel: false, 
+          reason: `You have reached the maximum cancellation limit (3 per day). You can cancel orders again in ${hoursLeft} hours.` 
+        };
+      }
+      
+      // Reset count if 24 hours have passed
+      await this.updateCustomerRestriction(customerIdentifier, {
+        cancellationCount: 0,
+        restrictedUntil: null,
+      });
+      return { canCancel: true };
+    }
+
+    return { canCancel: true };
+  }
+
+  async recordCancellation(customerIdentifier: string): Promise<void> {
+    const restriction = await this.getCustomerRestriction(customerIdentifier);
+    const now = new Date();
+    
+    if (!restriction) {
+      // Create new restriction record
+      await this.createCustomerRestriction({
+        customerIdentifier,
+        cancellationCount: 1,
+        lastCancellationAt: now,
+        restrictedUntil: null,
+      });
+    } else {
+      const newCount = restriction.cancellationCount + 1;
+      let restrictedUntil = null;
+      
+      // If this is the 3rd cancellation, restrict for 24 hours
+      if (newCount >= 3) {
+        restrictedUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+      }
+      
+      await this.updateCustomerRestriction(customerIdentifier, {
+        cancellationCount: newCount,
+        lastCancellationAt: now,
+        restrictedUntil,
+      });
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

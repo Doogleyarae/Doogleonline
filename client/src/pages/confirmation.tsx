@@ -97,8 +97,42 @@ export default function Confirmation() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  // Check cancellation limit before allowing cancellation
+  const checkCancellationLimit = async (phoneNumber: string, email: string) => {
+    const response = await fetch("/api/orders/check-cancellation-limit", {
+      method: "POST",
+      body: JSON.stringify({ phoneNumber, email }),
+      headers: { "Content-Type": "application/json" },
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to check cancellation limit");
+    }
+    
+    return await response.json();
+  };
+
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      // Check cancellation limit before allowing cancellation
+      if (status === "cancelled" && order) {
+        const limitCheck = await checkCancellationLimit(order.phoneNumber, order.email);
+        
+        if (!limitCheck.canCancel) {
+          throw new Error(limitCheck.reason || "Cancellation limit reached");
+        }
+        
+        // Record the cancellation
+        await fetch("/api/orders/record-cancellation", {
+          method: "POST",
+          body: JSON.stringify({ 
+            phoneNumber: order.phoneNumber, 
+            email: order.email 
+          }),
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
       const response = await fetch(`/api/orders/${orderId}/status`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
@@ -179,9 +213,28 @@ export default function Confirmation() {
     }
   };
 
-  // Customer-side order cancellation mutation
+  // Customer-side order cancellation mutation with limit checking
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
+      if (!order) throw new Error("Order not found");
+      
+      // Check cancellation limit first
+      const limitCheck = await checkCancellationLimit(order.phoneNumber, order.email);
+      
+      if (!limitCheck.canCancel) {
+        throw new Error(limitCheck.reason || "Cancellation limit reached");
+      }
+      
+      // Record the cancellation
+      await fetch("/api/orders/record-cancellation", {
+        method: "POST",
+        body: JSON.stringify({ 
+          phoneNumber: order.phoneNumber, 
+          email: order.email 
+        }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
       const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status: "cancelled" });
       return response.json();
     },
@@ -200,7 +253,7 @@ export default function Confirmation() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
+        title: "Cancellation Failed",
         description: error.message || "Failed to cancel order",
         variant: "destructive",
       });
