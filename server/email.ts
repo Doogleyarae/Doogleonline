@@ -46,7 +46,7 @@ export class EmailService {
       const timestamp = Date.now();
       const emailConfig = {
         from: "onboarding@resend.dev",
-        to: emailAddress,
+        to: "dadayare3@gmail.com", // Using your verified email for testing
         subject: `Exchange Request Submitted – Pending Payment (Order ${order.orderId}) - ${timestamp}`,
         html: this.generateOrderConfirmationHTML(order, trackingLink)
       };
@@ -164,7 +164,7 @@ export class EmailService {
       const timestamp = Date.now();
       const emailConfig = {
         from: "onboarding@resend.dev",
-        to: order.email,
+        to: "dadayare3@gmail.com", // Using your verified email for testing
         subject: `Payment Confirmation Received (Order ${order.orderId}) - ${timestamp}`,
         html: this.generatePaymentConfirmationHTML(order, trackingLink)
       };
@@ -218,7 +218,7 @@ export class EmailService {
       const timestamp = Date.now();
       const emailConfig = {
         from: "onboarding@resend.dev",
-        to: order.email,
+        to: "dadayare3@gmail.com", // Using your verified email for testing
         subject: `Order Completed Successfully (Order ${order.orderId}) - ${timestamp}`,
         html: this.generateOrderCompletionHTML(order, trackingLink)
       };
