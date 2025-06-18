@@ -45,7 +45,7 @@ export class EmailService {
       
       const timestamp = Date.now();
       const emailConfig = {
-        from: "DoogleOnline <orders@doogleonline.com>",
+        from: "onboarding@resend.dev",
         to: emailAddress,
         subject: `Exchange Request Submitted – Pending Payment (Order ${order.orderId}) - ${timestamp}`,
         html: this.generateOrderConfirmationHTML(order, trackingLink)
@@ -163,7 +163,7 @@ export class EmailService {
       
       const timestamp = Date.now();
       const emailConfig = {
-        from: "DoogleOnline <orders@doogleonline.com>",
+        from: "onboarding@resend.dev",
         to: order.email,
         subject: `Payment Confirmation Received (Order ${order.orderId}) - ${timestamp}`,
         html: this.generatePaymentConfirmationHTML(order, trackingLink)
@@ -172,6 +172,10 @@ export class EmailService {
       if (resend) {
         const result = await resend.emails.send(emailConfig);
         console.log(`[ORDER ${order.orderId}] Fresh payment confirmation email sent via Resend to: ${order.email}`);
+        console.log(`[RESEND RESPONSE] ID: ${result.data?.id}, Status: ${result.error ? 'ERROR' : 'SUCCESS'}`);
+        if (result.error) {
+          console.error(`[RESEND ERROR] ${JSON.stringify(result.error)}`);
+        }
         
         // Log email delivery for admin tracking
         await this.logEmailDelivery({
@@ -179,7 +183,7 @@ export class EmailService {
           emailAddress: order.email,
           emailType: 'payment_confirmation',
           subject: emailConfig.subject,
-          deliveryStatus: 'sent',
+          deliveryStatus: result.error ? 'failed' : 'sent',
           resendId: result.data?.id || null,
         });
       } else {
@@ -213,7 +217,7 @@ export class EmailService {
       
       const timestamp = Date.now();
       const emailConfig = {
-        from: "DoogleOnline <orders@doogleonline.com>",
+        from: "onboarding@resend.dev",
         to: order.email,
         subject: `Order Completed Successfully (Order ${order.orderId}) - ${timestamp}`,
         html: this.generateOrderCompletionHTML(order, trackingLink)
