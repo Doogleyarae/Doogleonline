@@ -374,15 +374,15 @@ export default function Exchange() {
     console.log('Form submission data:', data);
     console.log('Form errors:', form.formState.errors);
     
-    // Check if system is closed
-    if (systemStatus?.status === 'off') {
-      toast({
-        title: "System Closed",
-        description: "Exchange services are temporarily unavailable. Please try again later.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Check if system is closed - hidden
+    // if (systemStatus?.status === 'off') {
+    //   toast({
+    //     title: "System Closed",
+    //     description: "Exchange services are temporarily unavailable. Please try again later.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
     
     if (sendMethod === receiveMethod) {
       toast({
@@ -436,6 +436,8 @@ export default function Exchange() {
         <p className="text-lg text-gray-600">Complete your exchange in just a few steps</p>
         
         {/* System Status Indicator */}
+        {/* System status display hidden
+        {/* System status display hidden
         {systemStatus && (
           <div className={`mt-4 p-3 rounded-lg border ${
             systemStatus.status === 'on' 
@@ -457,6 +459,8 @@ export default function Exchange() {
             )}
           </div>
         )}
+        */}
+        */}
       </div>
 
       <Card className="shadow-lg">
@@ -853,8 +857,7 @@ export default function Exchange() {
                 disabled={createOrderMutation.isPending || exchangeRate === 0 || systemStatus?.status === 'off'}
               >
                 <Send className="w-5 h-5 mr-2" />
-                {createOrderMutation.isPending ? "Processing..." : 
-                 systemStatus?.status === 'off' ? "System Closed" : "Submit Exchange Request"}
+                {createOrderMutation.isPending ? "Processing..." : "Submit Exchange Request"}
               </Button>
             </form>
           </Form>
