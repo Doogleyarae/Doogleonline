@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, decimal, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, decimal, integer, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -198,11 +198,8 @@ export const emailLogs = pgTable("email_logs", {
   orderId: text("order_id").notNull(),
   emailAddress: text("email_address").notNull(),
   emailType: text("email_type").notNull(), // order_confirmation, payment_confirmation, order_completion, test_email
-  subject: text("subject").notNull(),
-  deliveryStatus: text("delivery_status").notNull().default("sent"), // sent, failed, delivered
-  resendId: text("resend_id"), // Resend.com message ID for tracking
-  errorMessage: text("error_message"),
   sentAt: timestamp("sent_at").notNull().defaultNow(),
+  status: text("status").notNull().default("sent"), // sent, failed, pending
 });
 
 export const insertEmailLogSchema = createInsertSchema(emailLogs).omit({
@@ -212,3 +209,28 @@ export const insertEmailLogSchema = createInsertSchema(emailLogs).omit({
 
 export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
 export type EmailLog = typeof emailLogs.$inferSelect;
+
+// Exchange rate history table for tracking all rate changes
+export const exchangeRateHistory = pgTable("exchange_rate_history", {
+  id: serial("id").primaryKey(),
+  fromCurrency: text("from_currency").notNull(),
+  toCurrency: text("to_currency").notNull(),
+  oldRate: decimal("old_rate", { precision: 10, scale: 6 }),
+  newRate: decimal("new_rate", { precision: 10, scale: 6 }).notNull(),
+  changedBy: text("changed_by").notNull(), // username of admin who made the change
+  changeReason: text("change_reason"), // optional reason for the change
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertExchangeRateHistorySchema = createInsertSchema(exchangeRateHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertExchangeRateHistory = z.infer<typeof insertExchangeRateHistorySchema>;
+export type ExchangeRateHistory = typeof exchangeRateHistory.$inferSelect;
+
+export const systemStatus = pgTable('system_status', {
+  id: serial('id').primaryKey(),
+  status: varchar('status', { length: 8 }).notNull(), // 'on' or 'off'
+});

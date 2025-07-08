@@ -15,6 +15,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 interface ExchangeRateResponse {
   rate: number;
@@ -166,8 +167,15 @@ export default function Exchange() {
 
   // Fetch balances
   const { data: balances, isLoading: balancesLoading } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances"],
+    queryKey: ["/api/balances"],
     staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch system status
+  const { data: systemStatus } = useQuery<{ status: 'on' | 'off' }>({
+    queryKey: ["/api/admin/system-status"],
+    staleTime: 30000, // 30 seconds
     refetchOnWindowFocus: false,
   });
 
@@ -366,6 +374,16 @@ export default function Exchange() {
     console.log('Form submission data:', data);
     console.log('Form errors:', form.formState.errors);
     
+    // Check if system is closed
+    if (systemStatus?.status === 'off') {
+      toast({
+        title: "System Closed",
+        description: "Exchange services are temporarily unavailable. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (sendMethod === receiveMethod) {
       toast({
         title: "Invalid Selection",
@@ -387,11 +405,58 @@ export default function Exchange() {
     createOrderMutation.mutate(data);
   };
 
+  useWebSocket(); // Establish WebSocket connection for real-time updates
+
+  // Listen for admin updates and refetch exchange rate instantly
+  useEffect(() => {
+    const handleAdminUpdate = (event: CustomEvent) => {
+      // Only refetch if the update is for exchange rates, currency limits, or balances
+      if (
+        event.detail?.type === 'exchange_rate_update' ||
+        event.detail?.type === 'currency_limit_update' ||
+        event.detail?.type === 'balance_update'
+      ) {
+        // Refetch exchange rate and limits
+        queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+      }
+    };
+    window.addEventListener('admin-update', handleAdminUpdate as EventListener);
+    return () => {
+      window.removeEventListener('admin-update', handleAdminUpdate as EventListener);
+    };
+  }, [queryClient, sendMethod, receiveMethod]);
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Currency Exchange</h1>
         <p className="text-lg text-gray-600">Complete your exchange in just a few steps</p>
+        
+        {/* System Status Indicator */}
+        {systemStatus && (
+          <div className={`mt-4 p-3 rounded-lg border ${
+            systemStatus.status === 'on' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center justify-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${
+                systemStatus.status === 'on' ? 'bg-green-500' : 'bg-red-500'
+              }`}></div>
+              <span className="font-semibold">
+                {systemStatus.status === 'on' ? 'System Open' : 'System Closed'}
+              </span>
+            </div>
+            {systemStatus.status === 'off' && (
+              <p className="text-sm mt-1">
+                Exchange services are temporarily unavailable. Please try again later.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <Card className="shadow-lg">
@@ -785,10 +850,11 @@ export default function Exchange() {
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
-                disabled={createOrderMutation.isPending || exchangeRate === 0}
+                disabled={createOrderMutation.isPending || exchangeRate === 0 || systemStatus?.status === 'off'}
               >
                 <Send className="w-5 h-5 mr-2" />
-                {createOrderMutation.isPending ? "Processing..." : "Submit Exchange Request"}
+                {createOrderMutation.isPending ? "Processing..." : 
+                 systemStatus?.status === 'off' ? "System Closed" : "Submit Exchange Request"}
               </Button>
             </form>
           </Form>

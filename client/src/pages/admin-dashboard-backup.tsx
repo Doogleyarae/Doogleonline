@@ -59,10 +59,7 @@ function MessageResponseCard({ message, onResponseSent }: { message: ContactMess
 
   const responseMutation = useMutation({
     mutationFn: async (data: ResponseFormData) => {
-      return await apiRequest(`/api/contact/${message.id}/response`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("PATCH", `/api/contact/${message.id}/response`, data);
     },
     onSuccess: () => {
       toast({

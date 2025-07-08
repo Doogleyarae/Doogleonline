@@ -16,3 +16,20 @@ export const pool = new Pool({
 });
 
 export const db = drizzle(pool, { schema });
+
+// Add connection test function
+export async function testDatabaseConnection() {
+  try {
+    console.log('🔍 Testing database connection...');
+    const result = await db.select().from(walletAddresses).limit(1);
+    console.log('✅ Database connection successful');
+    console.log(' Sample wallet data:', result);
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    return false;
+  }
+}
+
+// Test connection on startup
+testDatabaseConnection();

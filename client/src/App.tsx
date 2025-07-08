@@ -22,6 +22,7 @@ const Contact = lazy(() => import("@/pages/contact"));
 const AdminLogin = lazy(() => import("@/pages/admin-login"));
 const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
 const AdminAnalytics = lazy(() => import("@/pages/admin-analytics"));
+const AdminExchangeRates = lazy(() => import("@/pages/admin-exchange-rates"));
 const OrderHistory = lazy(() => import("@/pages/order-history"));
 const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
 const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
@@ -59,6 +60,7 @@ function Router() {
         <Route path="/admin" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
+        <Route path="/admin-exchange-rates" component={AdminExchangeRates} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

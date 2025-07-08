@@ -117,6 +117,18 @@ export class WebSocketManager {
     });
   }
 
+  notifyBalanceUpdate(currency: string, newBalance: number) {
+    this.broadcast({
+      type: 'balance_update',
+      data: { 
+        currency, 
+        newBalance,
+        message: `Balance updated for ${currency}: $${newBalance.toLocaleString()}`
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+
   getClientCount(): number {
     return this.clients.size;
   }

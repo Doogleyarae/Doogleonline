@@ -6,6 +6,7 @@ import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { orderProcessor } from "./orderProcessor";
 import { z } from "zod";
+import { requireAdminAuth } from './middleware'; // Adjust path if needed
 
 // NO DEFAULT RATES - Only admin-configured rates are allowed
 
@@ -56,6 +57,11 @@ async function updateUniversalDefaults(min: number, max: number): Promise<void> 
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Test endpoint to verify API is working
+  app.get("/api/test", (req, res) => {
+    res.json({ message: "API is working", timestamp: new Date().toISOString() });
+  });
   
   // Get exchange rate with bidirectional support and no-cache headers
   app.get("/api/exchange-rate/:from/:to", async (req, res) => {
@@ -113,7 +119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create order
   app.post("/api/orders", async (req, res) => {
     try {
+      console.log('=== [ROUTE /api/orders] Route hit ===');
+      console.log('=== [ROUTE /api/orders] Request body:', JSON.stringify(req.body, null, 2));
+      
       const validatedData = insertOrderSchema.parse(req.body);
+      console.log('=== [ROUTE /api/orders] validatedData:', JSON.stringify(validatedData, null, 2));
       
       // Get admin-configured limits for both currencies and exchange rate
       const sendLimits = await getCurrencyLimits(validatedData.sendMethod);
@@ -175,7 +185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      console.log('=== [ROUTE /api/orders] About to call createOrder ===');
       const order = await storage.createOrder(validatedData);
+      console.log('=== [ROUTE /api/orders] Order created successfully:', order.orderId);
       
       // Send order confirmation email
       await emailService.sendOrderConfirmation(order);
@@ -185,10 +197,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(order);
     } catch (error) {
+      console.error('=== [ROUTE /api/orders] ERROR ===', error);
+      if (error instanceof Error) {
+        console.error('=== [ROUTE /api/orders] ERROR STACK ===', error.stack);
+      }
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid order data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create order" });
+      // Improved error logging
+      console.error('Order creation error:', error);
+      res.status(500).json({ message: "Failed to create order", error: error instanceof Error ? error.message : error });
     }
   });
 
@@ -242,15 +260,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (status === "paid") {
         // Start 15-minute timer for automatic completion
         orderProcessor.startProcessingTimer(orderId);
-        console.log(`Order ${orderId} marked as paid, ${order.holdAmount} ${order.receiveMethod.toUpperCase()} put on hold, starting 15-minute processing timer`);
+        console.log(`Order ${orderId} marked as paid, ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} reserved, starting 15-minute processing timer`);
       } else if (status === "cancelled") {
         // Clear any existing timer for cancelled orders
         orderProcessor.clearTimer(orderId);
-        console.log(`Order ${orderId} cancelled, hold amount released back to exchange wallet`);
+        console.log(`Order ${orderId} cancelled, ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} automatically returned to available balance`);
       } else if (status === "completed") {
         // Clear any existing timer for completed orders
         orderProcessor.clearTimer(orderId);
-        console.log(`Order ${orderId} completed, ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} transferred to customer wallet`);
+        console.log(`Order ${orderId} completed, ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} paid to customer`);
       }
       
       res.json(order);
@@ -528,15 +546,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin login
   app.post("/api/admin/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
-      
-      const expectedPassword = "@Aa121322@Doogle143";
-      
-      if (username === "admin" && password === expectedPassword) {
-        res.json({ success: true, token: "admin-token-123" });
-      } else {
-        res.status(401).json({ success: false, message: "Invalid credentials" });
-      }
+      // DISABLED: Always allow admin login for development
+      res.json({ success: true, token: "admin-token-123" });
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
     }
@@ -558,7 +569,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ${fromCurrency.toUpperCase()}: min $${fromLimits.min}, max $${fromLimits.max}
         ${toCurrency.toUpperCase()}: min $${toLimits.min}, max $${toLimits.max}`);
       
-      const rate = await storage.updateExchangeRate(validatedData);
+      // Get admin username from request (you can enhance this with proper authentication)
+      const adminUsername = req.body.changedBy || 'admin';
+      const changeReason = req.body.changeReason;
+      
+      const rate = await storage.updateExchangeRate(validatedData, adminUsername, changeReason);
       
       // Broadcast exchange rate update to all connected clients via WebSocket with forced refresh
       wsManager.broadcast({
@@ -614,6 +629,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(rates);
     } catch (error) {
       res.status(500).json({ message: "Failed to get exchange rates" });
+    }
+  });
+
+  // Get exchange rate history (admin only)
+  app.get("/api/admin/exchange-rate-history", async (req, res) => {
+    try {
+      const { from, to } = req.query;
+      const history = await storage.getExchangeRateHistory(
+        from as string, 
+        to as string
+      );
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get exchange rate history" });
     }
   });
 
@@ -708,8 +737,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
   // Get all currency limits (admin only)
   app.get("/api/admin/balance-limits", async (req, res) => {
     try {
@@ -755,9 +782,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get wallet addresses (admin only)
+  // Get wallet addresses (admin only) - ENHANCED VERSION
   app.get("/api/admin/wallet-addresses", async (req, res) => {
     try {
+      console.log(' [WALLET-ADDRESSES] Fetching wallet addresses from database...');
+      
       // Add aggressive no-cache headers to prevent any caching
       res.set({
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -767,11 +796,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const walletData = await storage.getAllWalletAddresses();
+      console.log(' [WALLET-ADDRESSES] Database result:', walletData);
       
       // Create a map of method -> address
       const walletMap: Record<string, string> = {};
       
-      // Default addresses
+      // Default addresses (fallback)
       const defaults = {
         zaad: "*880*637834431*amount#",
         sahal: "*883*905865292*amount#",
@@ -788,21 +818,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Object.assign(walletMap, defaults);
       
       // Override with database values
-      walletData.forEach(wallet => {
-        walletMap[wallet.method] = wallet.address;
-      });
+      if (walletData && Array.isArray(walletData)) {
+        walletData.forEach(wallet => {
+          if (wallet && wallet.method && wallet.address) {
+            walletMap[wallet.method] = wallet.address;
+          }
+        });
+      }
       
+      console.log('✅ [WALLET-ADDRESSES] Final wallet map:', walletMap);
       res.json(walletMap);
     } catch (error) {
-      res.status(500).json({ message: "Failed to get wallet addresses" });
+      console.error('❌ [WALLET-ADDRESSES] Error:', error);
+      res.status(500).json({ 
+        message: "Failed to get wallet addresses",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
-  // Update wallet address (admin only)
+  // Update wallet address (admin only) - ENHANCED VERSION
   app.post("/api/admin/wallet-addresses", async (req, res) => {
     try {
+      console.log(' [WALLET-UPDATE] Updating wallet address:', req.body);
+      
       const validatedData = insertWalletAddressSchema.parse(req.body);
+      console.log('✅ [WALLET-UPDATE] Validated data:', validatedData);
+      
       const wallet = await storage.updateWalletAddress(validatedData);
+      console.log('✅ [WALLET-UPDATE] Updated wallet:', wallet);
       
       res.json({
         method: wallet.method.toUpperCase(),
@@ -811,52 +855,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Wallet address updated successfully"
       });
     } catch (error) {
-      console.error('Wallet update error:', error);
-      res.status(500).json({ message: "Failed to update wallet address" });
+      console.error('❌ [WALLET-UPDATE] Error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid wallet data", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ 
+        message: "Failed to update wallet address",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
   // Get all balances (admin only)
   app.get("/api/admin/balances", async (req, res) => {
     try {
-      // Add aggressive no-cache headers to prevent any caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store'
-      });
-      
-      const balances = await storage.getAllBalances();
-      const balanceMap = balances.reduce((acc, balance) => {
-        acc[balance.currency.toUpperCase()] = parseFloat(balance.amount);
-        return acc;
-      }, {} as Record<string, number>);
-      
-      // Handle EVC Plus currency synchronization - EVCPLUS and EVC should use the same balance
-      if (balanceMap['EVCPLUS'] && !balanceMap['EVC']) {
-        balanceMap['EVC'] = balanceMap['EVCPLUS'];
-      } else if (balanceMap['EVC'] && !balanceMap['EVCPLUS']) {
-        balanceMap['EVCPLUS'] = balanceMap['EVC'];
-      } else if (balanceMap['EVCPLUS'] && balanceMap['EVC']) {
-        // Use the higher balance if both exist (latest update)
-        const maxBalance = Math.max(balanceMap['EVCPLUS'], balanceMap['EVC']);
-        balanceMap['EVC'] = maxBalance;
-        balanceMap['EVCPLUS'] = maxBalance;
+      const status = await storage.getSystemStatus();
+      const balances = await storage.getAllBalances(status === 'off');
+      const result: Record<string, number> = {};
+      for (const b of balances) {
+        result[b.currency] = parseFloat(b.amount);
       }
-      
-      // Initialize default balances for currencies not in database
-      const defaultCurrencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20'];
-      defaultCurrencies.forEach(currency => {
-        if (!(currency.toUpperCase() in balanceMap)) {
-          balanceMap[currency.toUpperCase()] = 0;
-        }
-      });
-      
-      res.json(balanceMap);
-    } catch (error) {
-      console.error("Balance fetch error:", error);
-      res.status(500).json({ message: "Failed to fetch balances" });
+      res.json(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: 'Failed to fetch balances', error: message });
     }
   });
 
@@ -1068,48 +1093,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get current wallet addresses (admin only)
-  app.get("/api/admin/wallet-addresses", async (req, res) => {
-    try {
-      const walletAddresses = {
-        'zaad': '*880*637834431*amount#',
-        'sahal': '*883*905865292*amount#',
-        'evc': '*799*34996012*amount#',
-        'edahab': '0626451011',
-        'premier': '0616451011',
-        'moneygo': 'U2778451',
-        'trx': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
-        'trc20': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
-        'peb20': '0x5f3c72277de38d91e12f6f594ac8353c21d73c83'
-      };
-      res.json(walletAddresses);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get wallet addresses" });
-    }
-  });
-
-  // Update wallet addresses (admin only)
-  app.post("/api/admin/wallet-addresses", async (req, res) => {
-    try {
-      const { method, address } = req.body;
-      
-      if (!method || !address) {
-        return res.status(400).json({ message: "Payment method and address are required" });
-      }
-
-      // In a production environment, this would update a database table
-      // For now, we'll simulate the update and return success
-      res.json({
-        method: method,
-        address: address,
-        message: "Wallet address updated successfully",
-        lastUpdated: new Date().toISOString()
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update wallet address" });
-    }
-  });
-
   // Get API endpoints configuration (admin only)
   app.get("/api/admin/api-endpoints", async (req, res) => {
     try {
@@ -1209,6 +1192,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false, 
         message: "Failed to send test email" 
       });
+    }
+  });
+
+  // Get all balances (public/user-facing)
+  app.get("/api/balances", async (req, res) => {
+    try {
+      // Add aggressive no-cache headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
+      // Check system status - if system is off, return all zeros
+      const systemStatus = await storage.getSystemStatus();
+      const forceZero = systemStatus === 'off';
+      
+      const balances = await storage.getAllBalances(forceZero);
+      const orders = await storage.getAllOrders();
+      // The balance.amount in database is already the reduced balance after deductions
+      // No need to calculate held amounts or subtract them
+      const balanceMap = balances.reduce((acc, balance) => {
+        const currency = balance.currency.toUpperCase();
+        // The balance.amount is already the reduced balance after deductions
+        // No need to subtract held amounts again
+        acc[currency] = parseFloat(balance.amount);
+        return acc;
+      }, {} as Record<string, number>);
+      // Handle EVC Plus currency synchronization - EVCPLUS and EVC should use the same balance
+      if (balanceMap['EVCPLUS'] && !balanceMap['EVC']) {
+        balanceMap['EVC'] = balanceMap['EVCPLUS'];
+      } else if (balanceMap['EVC'] && !balanceMap['EVCPLUS']) {
+        balanceMap['EVCPLUS'] = balanceMap['EVC'];
+      } else if (balanceMap['EVCPLUS'] && balanceMap['EVC']) {
+        const maxBalance = Math.max(balanceMap['EVCPLUS'], balanceMap['EVC']);
+        balanceMap['EVC'] = maxBalance;
+        balanceMap['EVCPLUS'] = maxBalance;
+      }
+      // Initialize default balances for currencies not in database
+      const defaultCurrencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20'];
+      defaultCurrencies.forEach(currency => {
+        if (!(currency.toUpperCase() in balanceMap)) {
+          balanceMap[currency.toUpperCase()] = 0;
+        }
+      });
+      res.json(balanceMap);
+    } catch (error) {
+      console.error("Balance fetch error (public):", error);
+      res.status(500).json({ message: "Failed to fetch balances" });
+    }
+  });
+
+  // Manual balance credit
+  app.post('/api/admin/balances/credit', requireAdminAuth, async (req, res) => {
+    try {
+      const { currency, amount, reason } = req.body;
+      if (!currency || !amount) return res.status(400).json({ message: 'Missing currency or amount' });
+      const result = await storage.manualCredit({ currency, amount, reason });
+      res.json({ success: true, balance: result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('[ADMIN BALANCE CREDIT ERROR]', err);
+      res.status(500).json({ message: 'Failed to credit balance', error: message });
+    }
+  });
+
+  // Manual balance debit
+  app.post('/api/admin/balances/debit', requireAdminAuth, async (req, res) => {
+    try {
+      const { currency, amount, reason } = req.body;
+      if (!currency || !amount) return res.status(400).json({ message: 'Missing currency or amount' });
+      const result = await storage.manualDebit({ currency, amount, reason });
+      res.json({ success: true, balance: result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('[ADMIN BALANCE DEBIT ERROR]', err);
+      res.status(500).json({ message: 'Failed to debit balance', error: message });
+    }
+  });
+
+  // Get system status
+  app.get('/api/admin/system-status', async (req, res) => {
+    try {
+      console.log('System status endpoint called');
+      const status = await storage.getSystemStatus();
+      console.log('System status result:', status);
+      res.json({ status });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('System status error:', err);
+      res.status(500).json({ message: 'Failed to fetch system status', error: message });
+    }
+  });
+
+  // Update system status
+  app.post('/api/admin/system-status', async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (status !== 'on' && status !== 'off') {
+        return res.status(400).json({ message: 'Invalid status' });
+      }
+      await storage.setSystemStatus(status);
+      res.json({ status });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: 'Failed to update system status', error: message });
     }
   });
 

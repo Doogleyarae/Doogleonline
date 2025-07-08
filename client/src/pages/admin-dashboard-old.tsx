@@ -84,8 +84,37 @@ export default function AdminDashboard() {
     },
   });
   
+  // Universal limits update mutation
+  const updateLimitsMutation = useMutation({
+    mutationFn: async ({ minAmount, maxAmount, fromCurrency, toCurrency }: { 
+      minAmount: string; 
+      maxAmount: string; 
+      fromCurrency?: string; 
+      toCurrency?: string; 
+    }) => {
+      const response = await apiRequest("POST", "/api/admin/universal-limits", { 
+        min: parseFloat(minAmount), 
+        max: parseFloat(maxAmount) 
+      });
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/currency-limits"] });
+      toast({
+        title: "Limits Updated",
+        description: `Universal limits updated: $${data.min} - $${data.max}`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Universal limits update error:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update universal limits",
+        variant: "destructive",
+      });
+    },
+  });
 
-  
   // Order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -150,7 +179,7 @@ export default function AdminDashboard() {
   });
 
   // Update currency limits mutation
-  const updateCurrencyLimitMutation = useMutation({
+  const updateCurrencyLimitMutation2 = useMutation({
     mutationFn: async (data: { fromCurrency: string; toCurrency: string; minAmount: string; maxAmount: string }) => {
       const response = await apiRequest("POST", "/api/admin/currency-limits", {
         fromCurrency: data.fromCurrency.toUpperCase(),
@@ -325,6 +354,9 @@ export default function AdminDashboard() {
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
   const completedOrders = orders.filter(order => order.status === 'completed').length;
   const totalRevenue = orders
+    .filter(order => order.status === 'completed')
+    .reduce((sum, order) => sum + parseFloat(order.sendAmount), 0);
+  const totalVolume = orders
     .filter(order => order.status === 'completed')
     .reduce((sum, order) => sum + parseFloat(order.sendAmount), 0);
 
@@ -955,7 +987,7 @@ export default function AdminDashboard() {
                 <Button
                   onClick={() => {
                     if (limitFromCurrency && limitToCurrency && limitMinAmount && limitMaxAmount) {
-                      updateCurrencyLimitMutation.mutate({
+                      updateCurrencyLimitMutation2.mutate({
                         fromCurrency: limitFromCurrency,
                         toCurrency: limitToCurrency,
                         minAmount: limitMinAmount,
@@ -963,10 +995,10 @@ export default function AdminDashboard() {
                       });
                     }
                   }}
-                  disabled={!limitFromCurrency || !limitToCurrency || !limitMinAmount || !limitMaxAmount || updateCurrencyLimitMutation.isPending}
+                  disabled={!limitFromCurrency || !limitToCurrency || !limitMinAmount || !limitMaxAmount || updateCurrencyLimitMutation2.isPending}
                   className="w-full"
                 >
-                  {updateCurrencyLimitMutation.isPending ? "Setting Limit..." : "Set Currency Limit"}
+                  {updateCurrencyLimitMutation2.isPending ? "Setting Limit..." : "Set Currency Limit"}
                 </Button>
               </div>
 

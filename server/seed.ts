@@ -1,22 +1,40 @@
+import "dotenv/config";
 import { db } from "./db";
-import { users, exchangeRates, walletAddresses } from "@shared/schema";
+import { users, exchangeRates, walletAddresses, systemStatus } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 async function seedDatabase() {
   try {
-    // Check if admin user already exists
-    const existingAdmin = await db.select().from(users).where(eq(users.username, "admin"));
-    
+    // Upsert admin user with strong password
+    const adminUsername = "admin";
+    const adminPassword = await bcrypt.hash("admin123", 10);
+    const existingAdmin = await db.select().from(users).where(eq(users.username, adminUsername));
     if (existingAdmin.length === 0) {
-      // Create default admin user
       await db.insert(users).values({
-        username: "admin",
-        password: "admin123",
+        username: adminUsername,
+        password: adminPassword,
         role: "admin"
       });
       console.log("✓ Admin user created");
     } else {
-      console.log("✓ Admin user already exists");
+      await db.update(users)
+        .set({ password: adminPassword, role: "admin" })
+        .where(eq(users.username, adminUsername));
+      console.log("✓ Admin user password updated");
+    }
+
+    // Add sample users
+    const sampleUsers = [
+      { username: "user1", password: "User1Pass!2024", role: "user" },
+      { username: "user2", password: "User2Pass!2024", role: "user" }
+    ];
+    for (const user of sampleUsers) {
+      const exists = await db.select().from(users).where(eq(users.username, user.username));
+      if (exists.length === 0) {
+        await db.insert(users).values(user);
+        console.log(`✓ Sample user created: ${user.username}`);
+      }
     }
 
     // Seed default exchange rates (1:1 for all currencies)
@@ -26,11 +44,6 @@ async function seedDatabase() {
     for (const from of currencies) {
       for (const to of currencies) {
         if (from !== to) {
-          // Check if rate already exists
-          const existingRate = await db.select().from(exchangeRates)
-            .where(and(eq(exchangeRates.fromCurrency, from), eq(exchangeRates.toCurrency, to)));
-          
-          if (existingRate.length === 0) {
             defaultRates.push({
               fromCurrency: from,
               toCurrency: to,
@@ -39,16 +52,22 @@ async function seedDatabase() {
           }
         }
       }
+
+    // Insert all rates if not present
+    for (const rate of defaultRates) {
+      await db
+        .insert(exchangeRates)
+        .values(rate)
+        .onConflictDoUpdate({
+          target: [exchangeRates.fromCurrency, exchangeRates.toCurrency],
+          set: { 
+            rate: rate.rate, 
+            updatedAt: new Date()
+          }
+        });
     }
 
-    if (defaultRates.length > 0) {
-      await db.insert(exchangeRates).values(defaultRates);
-      console.log(`✓ Seeded ${defaultRates.length} default exchange rates`);
-    } else {
-      console.log("✓ Exchange rates already exist");
-    }
-
-    // Seed default wallet addresses
+    // Enhanced wallet addresses seeding
     const defaultWallets = [
       { method: 'zaad', address: '*880*637834431*amount#' },
       { method: 'sahal', address: '*883*905865292*amount#' },
@@ -61,13 +80,30 @@ async function seedDatabase() {
       { method: 'peb20', address: '0x5f3c72277de38d91e12f6f594ac8353c21d73c83' }
     ];
 
-    const existingWallets = await db.select().from(walletAddresses);
-    
-    if (existingWallets.length === 0) {
-      await db.insert(walletAddresses).values(defaultWallets);
-      console.log(`✓ Seeded ${defaultWallets.length} default wallet addresses`);
-    } else {
-      console.log("✓ Wallet addresses already exist");
+    // Enhanced seeding with better error handling
+    try {
+      const existingWallets = await db.select().from(walletAddresses);
+      console.log(`📊 Found ${existingWallets.length} existing wallet addresses`);
+      
+      if (existingWallets.length === 0) {
+        console.log('🌱 Seeding wallet addresses...');
+        await db.insert(walletAddresses).values(defaultWallets);
+        console.log(`✅ Seeded ${defaultWallets.length} default wallet addresses`);
+      } else {
+        console.log('✅ Wallet addresses already exist, skipping seed');
+        
+        // Update any missing wallet addresses
+        for (const defaultWallet of defaultWallets) {
+          const exists = existingWallets.find(w => w.method === defaultWallet.method);
+          if (!exists) {
+            console.log(`➕ Adding missing wallet: ${defaultWallet.method}`);
+            await db.insert(walletAddresses).values(defaultWallet);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error seeding wallet addresses:', error);
+      throw error;
     }
     
     console.log("✓ Database seeded successfully");
@@ -76,4 +112,17 @@ async function seedDatabase() {
   }
 }
 
-seedDatabase();
+async function seedSystemStatus() {
+  const existing = await db.select().from(systemStatus).limit(1);
+  if (!existing.length) {
+    await db.insert(systemStatus).values({ status: 'on' });
+    console.log('Seeded system_status with status: on');
+  }
+}
+
+async function main() {
+  await seedDatabase();
+  await seedSystemStatus();
+}
+
+main();

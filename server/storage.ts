@@ -1,4 +1,4 @@
-import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, customerRestrictions, emailLogs, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo, type CustomerRestriction, type InsertCustomerRestriction, type EmailLog, type InsertEmailLog } from "@shared/schema";
+import { users, orders, contactMessages, exchangeRates, currencyLimits, walletAddresses, balances, transactions, adminContactInfo, customerRestrictions, emailLogs, exchangeRateHistory, type User, type InsertUser, type Order, type InsertOrder, type ContactMessage, type InsertContactMessage, type ExchangeRate, type InsertExchangeRate, type CurrencyLimit, type InsertCurrencyLimit, type WalletAddress, type InsertWalletAddress, type Balance, type InsertBalance, type Transaction, type InsertTransaction, type AdminContactInfo, type InsertAdminContactInfo, type CustomerRestriction, type InsertCustomerRestriction, type EmailLog, type InsertEmailLog, type ExchangeRateHistory, type InsertExchangeRateHistory, systemStatus } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -22,7 +22,8 @@ export interface IStorage {
   // Exchange rate methods
   getExchangeRate(from: string, to: string): Promise<ExchangeRate | undefined>;
   getAllExchangeRates(): Promise<ExchangeRate[]>;
-  updateExchangeRate(rate: InsertExchangeRate): Promise<ExchangeRate>;
+  updateExchangeRate(rate: InsertExchangeRate, changedBy?: string, changeReason?: string): Promise<ExchangeRate>;
+  getExchangeRateHistory(from?: string, to?: string): Promise<ExchangeRateHistory[]>;
   
   // Currency limit methods
   getCurrencyLimit(from: string, to: string): Promise<CurrencyLimit | undefined>;
@@ -37,7 +38,7 @@ export interface IStorage {
   
   // Balance methods
   getBalance(currency: string): Promise<Balance | undefined>;
-  getAllBalances(): Promise<Balance[]>;
+  getAllBalances(forceZero?: boolean): Promise<Balance[]>;
   updateBalance(balance: InsertBalance): Promise<Balance>;
   deductBalance(currency: string, amount: number): Promise<Balance | undefined>;
   
@@ -65,6 +66,15 @@ export interface IStorage {
   getAllEmailLogs(): Promise<EmailLog[]>;
   getEmailLogsByOrder(orderId: string): Promise<EmailLog[]>;
   getEmailLogsByAddress(emailAddress: string): Promise<EmailLog[]>;
+
+  // Manual credit
+  manualCredit({ currency, amount, reason }: { currency: string, amount: string, reason?: string }): Promise<Balance | undefined>;
+  // Manual debit
+  manualDebit({ currency, amount, reason }: { currency: string, amount: string, reason?: string }): Promise<Balance | undefined>;
+
+  // System status methods
+  getSystemStatus(): Promise<'on' | 'off'>;
+  setSystemStatus(status: 'on' | 'off'): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -87,32 +97,88 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const orderCount = await db.select().from(orders);
-    const orderId = `DGL-${new Date().getFullYear()}-${(orderCount.length + 1).toString().padStart(6, '0')}`;
-    
-    // Payment wallet addresses based on receive method
-    const paymentWallets: Record<string, string> = {
-      'zaad': '*880*637834431*amount#',
-      'sahal': '*883*905865292*amount#',
-      'evc': '*799*34996012*amount#',
-      'edahab': '0626451011',
-      'premier': '0616451011',
-      'moneygo': 'U2778451',
-      'trx': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
-      'trc20': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
-      'peb20': '0x5f3c72277de38d91e12f6f594ac8353c21d73c83'
-    };
+    console.log('=== [createOrder] Attempting to create order ===');
+    console.log('[createOrder] Received order:', insertOrder);
+    try {
+      const orderCount = await db.select().from(orders);
+      const orderId = `DGL-${new Date().getFullYear()}-${(orderCount.length + 1).toString().padStart(6, '0')}`;
+      
+      // Payment wallet addresses based on receive method
+      const receiveMethod = insertOrder.receiveMethod || 'unknown';
+      const paymentWallets: Record<string, string> = {
+        'zaad': '*880*637834431*amount#',
+        'sahal': '*883*905865292*amount#',
+        'evc': '*799*34996012*amount#',
+        'edahab': '0626451011',
+        'premier': '0616451011',
+        'moneygo': 'U2778451',
+        'trx': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
+        'trc20': 'THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv',
+        'peb20': '0x5f3c72277de38d91e12f6f594ac8353c21d73c83',
+        'unknown': 'Unknown'
+      };
 
-    const [order] = await db
-      .insert(orders)
-      .values({
+      const paymentWallet = paymentWallets[receiveMethod] || 'Unknown';
+
+      // Check if sufficient balance is available
+      const receiveAmountNum = parseFloat(insertOrder.receiveAmount || '0');
+      const receiveCurrency = receiveMethod.toUpperCase();
+      
+      const currentBalance = await this.getBalance(receiveCurrency);
+      console.log(`[createOrder] Current balance for ${receiveCurrency}:`, currentBalance?.amount);
+      if (!currentBalance || parseFloat(currentBalance.amount) < receiveAmountNum) {
+        throw new Error(`Insufficient balance. Available: ${currentBalance?.amount || 0} ${receiveCurrency}, Required: ${receiveAmountNum} ${receiveCurrency}`);
+      }
+
+      console.log(`ORDER ${orderId}: Balance check passed - $${receiveAmountNum} ${receiveCurrency} available. Current balance: $${currentBalance.amount}`);
+
+      // IMMEDIATELY DEDUCT BALANCE WHEN ORDER IS CREATED
+      const newBalance = parseFloat(currentBalance.amount) - receiveAmountNum;
+      await this.updateBalance({
+        currency: receiveCurrency,
+        amount: newBalance.toString()
+      });
+
+      console.log(`[createOrder] Deducted ${receiveAmountNum} from ${receiveCurrency}. New balance: ${newBalance}`);
+
+      // Create the order
+      const [newOrder] = await db.insert(orders).values({
         orderId,
-        ...insertOrder,
-        paymentWallet: paymentWallets[insertOrder.receiveMethod] || 'Unknown',
-        status: 'pending',
-      })
-      .returning();
-    return order;
+        fullName: insertOrder.fullName,
+        email: insertOrder.email,
+        phoneNumber: insertOrder.phoneNumber,
+        senderAccount: insertOrder.senderAccount,
+        walletAddress: insertOrder.walletAddress,
+        sendMethod: insertOrder.sendMethod,
+        receiveMethod: insertOrder.receiveMethod,
+        sendAmount: insertOrder.sendAmount,
+        receiveAmount: insertOrder.receiveAmount,
+        exchangeRate: insertOrder.exchangeRate,
+        paymentWallet,
+        status: 'pending'
+      }).returning();
+      
+      console.log(`ORDER ${orderId}: Created successfully. Balance already deducted.`);
+
+      // Log the transaction
+      await this.createTransaction({
+        orderId: orderId,
+        type: "ORDER_CREATED",
+        currency: receiveCurrency,
+        amount: receiveAmountNum.toString(),
+        fromWallet: "exchange_wallet",
+        toWallet: "pending_orders",
+        description: `Order created - ${receiveAmountNum} ${receiveCurrency} deducted from balance`
+      });
+
+      return newOrder;
+    } catch (error) {
+      console.log('=== [createOrder ERROR] ===');
+      console.log('Order data:', insertOrder);
+      console.log('Error object:', error);
+      console.log('Error stack:', error);
+      throw error;
+    }
   }
 
   async getOrder(orderId: string): Promise<Order | undefined> {
@@ -185,10 +251,20 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(exchangeRates);
   }
 
-  async updateExchangeRate(insertRate: InsertExchangeRate): Promise<ExchangeRate> {
+  async updateExchangeRate(insertRate: InsertExchangeRate, changedBy: string = 'admin', changeReason?: string): Promise<ExchangeRate> {
     const existing = await this.getExchangeRate(insertRate.fromCurrency, insertRate.toCurrency);
     
     if (existing) {
+      // Record the change in history before updating
+      await db.insert(exchangeRateHistory).values({
+        fromCurrency: insertRate.fromCurrency,
+        toCurrency: insertRate.toCurrency,
+        oldRate: existing.rate,
+        newRate: insertRate.rate,
+        changedBy: changedBy,
+        changeReason: changeReason
+      });
+      
       // Force replace old data with new data - no merging, complete replacement
       const [rate] = await db
         .update(exchangeRates)
@@ -200,16 +276,56 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(exchangeRates.id, existing.id))
         .returning();
-      console.log(`REPLACED old exchange rate data: ${existing.rate} → ${insertRate.rate} for ${insertRate.fromCurrency}/${insertRate.toCurrency}`);
+      console.log(`REPLACED old exchange rate data: ${existing.rate} → ${insertRate.rate} for ${insertRate.fromCurrency}/${insertRate.toCurrency} (changed by: ${changedBy})`);
       return rate;
     } else {
+      // Record the change in history for new rates
+      await db.insert(exchangeRateHistory).values({
+        fromCurrency: insertRate.fromCurrency,
+        toCurrency: insertRate.toCurrency,
+        oldRate: null,
+        newRate: insertRate.rate,
+        changedBy: changedBy,
+        changeReason: changeReason || 'Initial rate setup'
+      });
+      
       // Insert completely new data
       const [rate] = await db
         .insert(exchangeRates)
         .values(insertRate)
         .returning();
-      console.log(`INSERTED new exchange rate data: ${insertRate.rate} for ${insertRate.fromCurrency}/${insertRate.toCurrency}`);
+      console.log(`INSERTED new exchange rate data: ${insertRate.rate} for ${insertRate.fromCurrency}/${insertRate.toCurrency} (changed by: ${changedBy})`);
       return rate;
+    }
+  }
+
+  async getExchangeRateHistory(from?: string, to?: string): Promise<ExchangeRateHistory[]> {
+    if (from && to) {
+      return await db
+        .select()
+        .from(exchangeRateHistory)
+        .where(and(
+          eq(exchangeRateHistory.fromCurrency, from),
+          eq(exchangeRateHistory.toCurrency, to)
+        ))
+        .orderBy(desc(exchangeRateHistory.createdAt));
+    } else if (from) {
+      return await db
+        .select()
+        .from(exchangeRateHistory)
+        .where(eq(exchangeRateHistory.fromCurrency, from))
+        .orderBy(desc(exchangeRateHistory.createdAt));
+    } else if (to) {
+      return await db
+        .select()
+        .from(exchangeRateHistory)
+        .where(eq(exchangeRateHistory.toCurrency, to))
+        .orderBy(desc(exchangeRateHistory.createdAt));
+    } else {
+      return await db
+        .select()
+        .from(exchangeRateHistory)
+        .orderBy(desc(exchangeRateHistory.createdAt));
     }
   }
 
@@ -299,60 +415,63 @@ export class DatabaseStorage implements IStorage {
     return balance || undefined;
   }
 
-  async getAllBalances(): Promise<Balance[]> {
-    return await db.select().from(balances);
+  async getAllBalances(forceZero = false): Promise<Balance[]> {
+    const balances = await db.select().from(balances);
+    if (forceZero) {
+      return balances.map(b => ({ ...b, amount: '0' }));
+    }
+    return balances;
   }
 
   async updateBalance(insertBalance: InsertBalance): Promise<Balance> {
+    // Log before update
     const existing = await this.getBalance(insertBalance.currency);
-    
-    let balance: Balance;
-    if (existing) {
-      // Force replace old balance data with new data - complete replacement
-      const [updatedBalance] = await db
-        .update(balances)
-        .set({ 
-          amount: insertBalance.amount, 
-          updatedAt: new Date(),
-          currency: insertBalance.currency
-        })
-        .where(eq(balances.id, existing.id))
-        .returning();
-      balance = updatedBalance;
-      console.log(`REPLACED old balance data: ${existing.amount} → ${insertBalance.amount} for ${insertBalance.currency}`);
-    } else {
-      // Insert completely new balance data
-      const [newBalance] = await db
-        .insert(balances)
-        .values(insertBalance)
-        .returning();
-      balance = newBalance;
-      console.log(`INSERTED new balance data: ${insertBalance.amount} for ${insertBalance.currency}`);
-    }
+    console.log(`[updateBalance] BEFORE: currency=${insertBalance.currency}, existingAmount=${existing ? existing.amount : 'N/A'}, newAmount=${insertBalance.amount}`);
+
+    // Use upsert to avoid duplicate key errors
+    const [balance] = await db
+      .insert(balances)
+      .values({
+        currency: insertBalance.currency,
+        amount: insertBalance.amount,
+        updatedAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: balances.currency,
+        set: {
+          amount: insertBalance.amount,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+
+    // Log after update
+    console.log(`[updateBalance] AFTER: currency=${balance.currency}, updatedAmount=${balance.amount}`);
     
     // Handle EVC Plus currency synchronization - when updating EVC or EVCPLUS, sync both
     const currency = insertBalance.currency.toLowerCase();
     if (currency === 'evc' || currency === 'evcplus') {
       const syncCurrency = currency === 'evc' ? 'evcplus' : 'evc';
-      const syncExisting = await this.getBalance(syncCurrency);
-      
-      if (syncExisting) {
-        await db
-          .update(balances)
-          .set({ 
-            amount: insertBalance.amount, 
-            updatedAt: new Date() 
-          })
-          .where(eq(balances.id, syncExisting.id));
-      } else {
-        await db
-          .insert(balances)
-          .values({
-            currency: syncCurrency,
-            amount: insertBalance.amount
-          });
-      }
+      await db
+        .insert(balances)
+        .values({
+          currency: syncCurrency,
+          amount: insertBalance.amount,
+          updatedAt: new Date()
+        })
+        .onConflictDoUpdate({
+          target: balances.currency,
+          set: {
+            amount: insertBalance.amount,
+            updatedAt: new Date()
+          }
+        });
+      console.log(`[updateBalance] SYNC: currency=${syncCurrency}, syncedAmount=${insertBalance.amount}`);
     }
+    
+    // Notify WebSocket clients about balance update
+    const { wsManager } = await import('./websocket');
+    wsManager.notifyBalanceUpdate(insertBalance.currency.toUpperCase(), parseFloat(insertBalance.amount));
     
     return balance;
   }
@@ -428,97 +547,96 @@ export class DatabaseStorage implements IStorage {
   async updateOrderStatusWithBalanceLogic(orderId: string, status: string): Promise<Order | undefined> {
     const order = await this.getOrder(orderId);
     if (!order) return undefined;
+    console.log(`[updateOrderStatusWithBalanceLogic] Order:`, order, 'New status:', status);
+    // If this is a test order, skip all balance logic
+    if (order.status === 'test' || order.status === 'new' || status === 'test' || status === 'new') {
+      // Just update status, skip balance changes
+      await db.update(orders).set({ status }).where(eq(orders.orderId, orderId));
+      return await this.getOrder(orderId);
+    }
 
-    const receiveAmountNum = parseFloat(order.receiveAmount);
-    const receiveCurrency = order.receiveMethod.toUpperCase();
+    const receiveAmountNum = parseFloat(order.receiveAmount || '0');
+    const receiveCurrency = (order.receiveMethod || 'unknown').toUpperCase();
 
     // Begin transaction-like logic for balance management
     try {
       // Handle status transitions according to workflow
       if (status === "cancelled") {
-        // C. Admin "Cancel" - Release hold amount back to available balance
-        if (parseFloat(order.holdAmount) > 0) {
-          // Increase available balance by hold amount
-          const currentBalance = await this.getBalance(receiveCurrency);
-          const currentAmount = currentBalance ? parseFloat(currentBalance.amount) : 0;
-          const newAmount = currentAmount + parseFloat(order.holdAmount);
-          
+        // Restore the balance that was deducted when order was created
+        const currentBalance = await this.getBalance(receiveCurrency);
+        if (currentBalance) {
+          const restoredBalance = parseFloat(currentBalance.amount) + receiveAmountNum;
+          console.log(`[updateOrderStatusWithBalanceLogic] Restoring ${receiveAmountNum} to ${receiveCurrency}. Old balance: ${currentBalance.amount}, New balance: ${restoredBalance}`);
           await this.updateBalance({
-            currency: receiveCurrency.toLowerCase(),
-            amount: newAmount.toString()
-          });
-
-          // Log the release transaction
-          await this.createTransaction({
-            orderId: order.orderId,
-            type: "RELEASE",
             currency: receiveCurrency,
-            amount: order.holdAmount,
-            fromWallet: "hold",
-            toWallet: "exchange_wallet",
-            description: `Released ${order.holdAmount} ${receiveCurrency} from hold - order cancelled`
+            amount: restoredBalance.toString()
           });
+          
+          console.log(`ORDER ${orderId}: Cancelled - Restored $${receiveAmountNum} ${receiveCurrency} to balance. New balance: $${restoredBalance}`);
         }
 
-        // Always update order status to cancelled (whether there was hold amount or not)
+        // Log the cancellation transaction
+        await this.createTransaction({
+          orderId: order.orderId,
+          type: "CANCELLED",
+          currency: receiveCurrency,
+          amount: receiveAmountNum.toString(),
+          fromWallet: "pending_orders",
+          toWallet: "exchange_wallet",
+          description: `Order cancelled - ${receiveAmountNum} ${receiveCurrency} restored to balance`
+        });
+
+        // Update order status to cancelled
         await db
           .update(orders)
           .set({ 
             status: status, 
-            holdAmount: "0",
             updatedAt: new Date() 
           })
           .where(eq(orders.orderId, orderId));
       } else if (status === "completed") {
-        // D. Admin "Completed" - Decrease exchange wallet, increase customer wallet
-        const currentBalance = await this.getBalance(receiveCurrency);
-        const currentAmount = currentBalance ? parseFloat(currentBalance.amount) : 0;
-        const newAmount = currentAmount - receiveAmountNum;
-        
-        // Update exchange wallet balance
-        await this.updateBalance({
-          currency: receiveCurrency.toLowerCase(),
-          amount: newAmount.toString()
-        });
-
-        // Log the payout transaction
+        // Balance was already deducted when order was created
+        // Just log the completion transaction
         await this.createTransaction({
           orderId: order.orderId,
-          type: "PAYOUT",
+          type: "COMPLETED",
           currency: receiveCurrency,
           amount: receiveAmountNum.toString(),
           fromWallet: "exchange_wallet",
           toWallet: "customer_wallet",
-          description: `Payout ${receiveAmountNum} ${receiveCurrency} to customer - order completed`
+          description: `Order completed - ${receiveAmountNum} ${receiveCurrency} paid to customer`
         });
 
-        // Update order status and clear hold amount
+        console.log(`[updateOrderStatusWithBalanceLogic] Order completed. No balance change. Status: completed`);
+
+        // Update order status
         await db
           .update(orders)
           .set({ 
             status: status, 
-            holdAmount: "0",
             updatedAt: new Date() 
           })
           .where(eq(orders.orderId, orderId));
       } else if (status === "paid") {
-        // When marked as paid, put amount on hold
+        // Balance was already deducted when order was created
+        // Just log the payment transaction
         await this.createTransaction({
           orderId: order.orderId,
-          type: "HOLD",
+          type: "PAID",
           currency: receiveCurrency,
           amount: receiveAmountNum.toString(),
           fromWallet: "exchange_wallet",
-          toWallet: "hold",
-          description: `Put ${receiveAmountNum} ${receiveCurrency} on hold - order paid`
+          toWallet: "customer_wallet",
+          description: `Order paid - ${receiveAmountNum} ${receiveCurrency} reserved for customer`
         });
 
-        // Update order with hold amount
+        console.log(`[updateOrderStatusWithBalanceLogic] Order marked as paid. No balance change. Status: paid`);
+
+        // Update order status
         await db
           .update(orders)
           .set({ 
             status: status, 
-            holdAmount: receiveAmountNum.toString(),
             updatedAt: new Date() 
           })
           .where(eq(orders.orderId, orderId));
@@ -656,6 +774,65 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(emailLogs)
       .where(eq(emailLogs.emailAddress, emailAddress))
       .orderBy(desc(emailLogs.sentAt));
+  }
+
+  // Manual credit
+  async manualCredit({ currency, amount, reason }: { currency: string, amount: string, reason?: string }) {
+    const current = await this.getBalance(currency);
+    const newAmount = (parseFloat(current?.amount || '0') + parseFloat(amount)).toString();
+    console.log(`[manualCredit] Crediting ${amount} to ${currency}. Old balance: ${current?.amount}, New balance: ${newAmount}`);
+    await this.updateBalance({ currency, amount: newAmount });
+    await this.createTransaction({
+      orderId: null,
+      type: 'manual-credit',
+      currency,
+      amount,
+      fromWallet: 'manual',
+      toWallet: 'exchange_wallet',
+      description: reason || 'Manual credit by admin'
+    });
+    return await this.getBalance(currency);
+  }
+  // Manual debit
+  async manualDebit({ currency, amount, reason }: { currency: string, amount: string, reason?: string }) {
+    const current = await this.getBalance(currency);
+    const newAmount = (parseFloat(current?.amount || '0') - parseFloat(amount)).toString();
+    console.log(`[manualDebit] Debiting ${amount} from ${currency}. Old balance: ${current?.amount}, New balance: ${newAmount}`);
+    await this.updateBalance({ currency, amount: newAmount });
+    await this.createTransaction({
+      orderId: null,
+      type: 'manual-debit',
+      currency,
+      amount,
+      fromWallet: 'exchange_wallet',
+      toWallet: 'manual',
+      description: reason || 'Manual debit by admin'
+    });
+    return await this.getBalance(currency);
+  }
+
+  // System status methods
+  async getSystemStatus(): Promise<'on' | 'off'> {
+    try {
+      const [row] = await db.select().from(systemStatus).limit(1);
+      return (row?.status === 'off') ? 'off' : 'on';
+    } catch (error) {
+      console.log('System status table not found, defaulting to ON:', error);
+      return 'on';
+    }
+  }
+  async setSystemStatus(status: 'on' | 'off'): Promise<void> {
+    try {
+      const [existing] = await db.select().from(systemStatus).limit(1);
+      if (existing) {
+        await db.update(systemStatus).set({ status }).where(systemStatus.id === existing.id);
+      } else {
+        await db.insert(systemStatus).values({ status }).execute();
+      }
+    } catch (error) {
+      console.error('Error setting system status:', error);
+      // If table doesn't exist, we'll just log the error but not crash
+    }
   }
 }
 
