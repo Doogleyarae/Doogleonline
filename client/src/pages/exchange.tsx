@@ -434,33 +434,6 @@ export default function Exchange() {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Currency Exchange</h1>
         <p className="text-lg text-gray-600">Complete your exchange in just a few steps</p>
-        
-        {/* System Status Indicator */}
-        {/* System status display hidden
-        {/* System status display hidden
-        {systemStatus && (
-          <div className={`mt-4 p-3 rounded-lg border ${
-            systemStatus.status === 'on' 
-              ? 'bg-green-50 border-green-200 text-green-800' 
-              : 'bg-red-50 border-red-200 text-red-800'
-          }`}>
-            <div className="flex items-center justify-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${
-                systemStatus.status === 'on' ? 'bg-green-500' : 'bg-red-500'
-              }`}></div>
-              <span className="font-semibold">
-                {systemStatus.status === 'on' ? 'System Open' : 'System Closed'}
-              </span>
-            </div>
-            {systemStatus.status === 'off' && (
-              <p className="text-sm mt-1">
-                Exchange services are temporarily unavailable. Please try again later.
-              </p>
-            )}
-          </div>
-        )}
-        */}
-        */}
       </div>
 
       <Card className="shadow-lg">
