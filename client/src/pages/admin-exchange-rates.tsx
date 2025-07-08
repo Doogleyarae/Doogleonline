@@ -57,6 +57,11 @@ export default function AdminExchangeRates() {
   const [selectedRate, setSelectedRate] = useState<ExchangeRate | null>(null);
   const [selectedHistory, setSelectedHistory] = useState<ExchangeRateHistory[]>([]);
 
+  // BALANCE MANAGEMENT STATE
+  const [balances, setBalances] = useState<Record<string, number>>({});
+  const [editAmounts, setEditAmounts] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+
   // Fetch all exchange rates
   const { data: rates, isLoading: ratesLoading } = useQuery<ExchangeRate[]>({
     queryKey: ["/api/admin/exchange-rates"],
@@ -68,6 +73,20 @@ export default function AdminExchangeRates() {
     queryKey: ["/api/admin/exchange-rate-history"],
     refetchInterval: 60000, // Refetch every minute
   });
+
+  // Fetch balances on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiRequest("GET", "/api/admin/balances");
+        const data = await res.json();
+        setBalances(data);
+        setEditAmounts(Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.toString()])));
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message || "Failed to fetch balances", variant: "destructive" });
+      }
+    })();
+  }, []);
 
   // Update exchange rate mutation
   const updateRateMutation = useMutation({
@@ -100,6 +119,27 @@ export default function AdminExchangeRates() {
       });
     },
   });
+
+  // Handle edit
+  const handleEditAmount = (currency: string, value: string) => {
+    setEditAmounts((prev) => ({ ...prev, [currency]: value }));
+  };
+
+  // Handle save
+  const handleSave = async (currency: string) => {
+    setSaving((prev) => ({ ...prev, [currency]: true }));
+    try {
+      const res = await apiRequest("POST", "/api/admin/balances", { currency, amount: editAmounts[currency] });
+      const data = await res.json();
+      setBalances((prev) => ({ ...prev, [currency]: data.amount }));
+      setEditAmounts((prev) => ({ ...prev, [currency]: data.amount.toString() }));
+      toast({ title: "Balance Updated", description: `${currency.toUpperCase()} balance updated to $${data.amount}` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || `Failed to update ${currency} balance`, variant: "destructive" });
+    } finally {
+      setSaving((prev) => ({ ...prev, [currency]: false }));
+    }
+  };
 
   // Generate all possible currency pairs
   const generateAllPairs = () => {
@@ -183,6 +223,53 @@ export default function AdminExchangeRates() {
           Refresh
         </Button>
       </div>
+
+      {/* BALANCE MANAGEMENT SECTION */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            Balance Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Currency</TableHead>
+                <TableHead>Available Balance</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paymentMethods.map((method) => {
+                const code = method.value.toUpperCase();
+                return (
+                  <TableRow key={code}>
+                    <TableCell>{method.label} ({code})</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={editAmounts[code] ?? ""}
+                        onChange={e => handleEditAmount(code, e.target.value)}
+                        className="w-32"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSave(code)}
+                        disabled={saving[code] || editAmounts[code] === undefined || editAmounts[code] === balances[code]?.toString()}
+                      >
+                        {saving[code] ? "Saving..." : "Save"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Add New Rate */}
       <Card className="mb-8">
