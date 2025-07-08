@@ -80,8 +80,14 @@ export default function AdminExchangeRates() {
       try {
         const res = await apiRequest("GET", "/api/admin/balances");
         const data = await res.json();
-        setBalances(data);
-        setEditAmounts(Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.toString()])));
+        // Ensure all values are numbers
+        const safeData: Record<string, number> = {};
+        Object.entries(data).forEach(([k, v]) => {
+          const num = typeof v === 'number' ? v : Number(v);
+          safeData[k] = isNaN(num) ? 0 : num;
+        });
+        setBalances(safeData);
+        setEditAmounts(Object.fromEntries(Object.entries(safeData).map(([k, v]) => [k, v.toString()])));
       } catch (err: any) {
         toast({ title: "Error", description: err.message || "Failed to fetch balances", variant: "destructive" });
       }
