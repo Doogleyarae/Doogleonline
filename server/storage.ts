@@ -433,42 +433,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateBalance(insertBalance: InsertBalance): Promise<Balance> {
-    // Always store currency as uppercase
     const currencyUpper = insertBalance.currency.toUpperCase();
-    // Delete all other rows for this currency (case-insensitive)
-    // Use a raw SQL query for compatibility
-    await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [currencyUpper]);
-    // Log before update
-    console.log(`[updateBalance] CLEANED: All rows for currency=${currencyUpper} deleted before update.`);
+    try {
+      // Delete all other rows for this currency (case-insensitive)
+      await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [currencyUpper]);
+      console.log(`[updateBalance] CLEANED: All rows for currency=${currencyUpper} deleted before update.`);
 
-    // Use upsert to avoid duplicate key errors (should only be one row now)
-    const [balance] = await db
-      .insert(balances)
-      .values({
-        currency: currencyUpper,
-        amount: insertBalance.amount,
-        updatedAt: new Date()
-      })
-      .onConflictDoUpdate({
-        target: balances.currency,
-        set: {
-          amount: insertBalance.amount,
-          updatedAt: new Date()
-        }
-      })
-      .returning();
-
-    // Log after update
-    console.log(`[updateBalance] AFTER: currency=${balance.currency}, updatedAmount=${balance.amount}`);
-    
-    // Handle EVC Plus currency synchronization - when updating EVC or EVCPLUS, sync both
-    if (currencyUpper === 'EVC' || currencyUpper === 'EVCPLUS') {
-      const syncCurrency = currencyUpper === 'EVC' ? 'EVCPLUS' : 'EVC';
-      await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [syncCurrency]);
-      await db
+      // Insert the new balance
+      const [balance] = await db
         .insert(balances)
         .values({
-          currency: syncCurrency,
+          currency: currencyUpper,
           amount: insertBalance.amount,
           updatedAt: new Date()
         })
@@ -478,15 +453,38 @@ export class DatabaseStorage implements IStorage {
             amount: insertBalance.amount,
             updatedAt: new Date()
           }
-        });
-      console.log(`[updateBalance] SYNC: currency=${syncCurrency}, syncedAmount=${insertBalance.amount}`);
+        })
+        .returning();
+
+      // EVC/EVCPLUS sync
+      if (currencyUpper === 'EVC' || currencyUpper === 'EVCPLUS') {
+        const syncCurrency = currencyUpper === 'EVC' ? 'EVCPLUS' : 'EVC';
+        await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [syncCurrency]);
+        await db
+          .insert(balances)
+          .values({
+            currency: syncCurrency,
+            amount: insertBalance.amount,
+            updatedAt: new Date()
+          })
+          .onConflictDoUpdate({
+            target: balances.currency,
+            set: {
+              amount: insertBalance.amount,
+              updatedAt: new Date()
+            }
+          });
+        console.log(`[updateBalance] SYNC: currency=${syncCurrency}, syncedAmount=${insertBalance.amount}`);
+      }
+
+      // Notify WebSocket clients about balance update
+      const { wsManager } = await import('./websocket');
+      wsManager.notifyBalanceUpdate(currencyUpper, parseFloat(insertBalance.amount));
+      return { ...balance, currency: currencyUpper };
+    } catch (error) {
+      console.error(`[updateBalance] ERROR for currency=${currencyUpper}:`, error);
+      throw new Error('Failed to update balance in the database. Please check backend logs for details.');
     }
-    
-    // Notify WebSocket clients about balance update
-    const { wsManager } = await import('./websocket');
-    wsManager.notifyBalanceUpdate(currencyUpper, parseFloat(insertBalance.amount));
-    
-    return { ...balance, currency: currencyUpper };
   }
 
   async deductBalance(currency: string, amount: number): Promise<Balance | undefined> {
