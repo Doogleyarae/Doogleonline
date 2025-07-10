@@ -165,11 +165,12 @@ export default function Exchange() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch balances
+  // Fetch balances - use admin endpoint for real-time updates
   const { data: balances, isLoading: balancesLoading } = useQuery<Record<string, number>>({
-    queryKey: ["/api/balances"],
-    staleTime: 60000, // 1 minute
+    queryKey: ["/api/admin/balances"],
+    staleTime: 5000, // 5 seconds for more frequent updates
     refetchOnWindowFocus: false,
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   // Fetch system status
@@ -407,6 +408,74 @@ export default function Exchange() {
 
   useWebSocket(); // Establish WebSocket connection for real-time updates
 
+  // Enhanced WebSocket listener for real-time balance updates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('Exchange page WebSocket connected for real-time balance updates');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        
+        // Handle balance updates from admin dashboard
+        if (message.type === 'balance_update') {
+          console.log('Exchange page received balance update:', message.data);
+          
+          // Show toast notification for balance update
+          toast({
+            title: "Balance Updated",
+            description: `${message.data.currency} balance has been updated to $${message.data.amount}`,
+            duration: 3000,
+          });
+          
+          // Force immediate cache invalidation and refetch
+          queryClient.removeQueries({ queryKey: ["/api/admin/balances"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+          queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+          
+          // Also invalidate exchange rate and limits
+          queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+        }
+        
+        // Handle exchange rate updates
+        if (message.type === 'exchange_rate_update') {
+          const { fromCurrency, toCurrency } = message.data;
+          if ((fromCurrency === sendMethod && toCurrency === receiveMethod) ||
+              (fromCurrency === receiveMethod && toCurrency === sendMethod)) {
+            queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+          }
+        }
+        
+        // Handle currency limit updates
+        if (message.type === 'currency_limit_update') {
+          queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+        }
+      } catch (error) {
+        console.error('WebSocket message parsing error:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('Exchange page WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('Exchange page WebSocket disconnected');
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [queryClient, sendMethod, receiveMethod]);
+
   // Listen for admin updates and refetch exchange rate instantly
   useEffect(() => {
     const handleAdminUpdate = (event: CustomEvent) => {
@@ -420,7 +489,7 @@ export default function Exchange() {
         queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
-        queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
       }
     };
     window.addEventListener('admin-update', handleAdminUpdate as EventListener);
@@ -464,22 +533,39 @@ export default function Exchange() {
                   {balancesLoading ? (
                     <div className="text-xs text-center mt-1 text-blue-600">Loading balances...</div>
                   ) : balances && (
-                    <div className="text-xs text-center mt-1 text-green-600">
-                      Available: ${(() => {
-                        const currencyMapping: Record<string, string> = {
-                          'evc': 'EVCPLUS',
-                          'trc20': 'TRC20', 
-                          'zaad': 'ZAAD',
-                          'sahal': 'SAHAL',
-                          'moneygo': 'MONEYGO',
-                          'premier': 'PREMIER',
-                          'edahab': 'EDAHAB',
-                          'trx': 'TRX',
-                          'peb20': 'PEB20'
-                        };
-                        const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
-                        return (balances[balanceKey] || 0).toLocaleString();
-                      })()} {receiveMethod.toUpperCase()}
+                    <div className="text-xs text-center mt-1 text-green-600 flex items-center justify-center gap-2">
+                      <span>
+                        Available: ${(() => {
+                          const currencyMapping: Record<string, string> = {
+                            'evc': 'EVCPLUS',
+                            'trc20': 'TRC20', 
+                            'zaad': 'ZAAD',
+                            'sahal': 'SAHAL',
+                            'moneygo': 'MONEYGO',
+                            'premier': 'PREMIER',
+                            'edahab': 'EDAHAB',
+                            'trx': 'TRX',
+                            'peb20': 'PEB20'
+                          };
+                          const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
+                          return (balances[balanceKey] || 0).toLocaleString();
+                        })()} {receiveMethod.toUpperCase()}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 text-green-600 hover:text-green-800"
+                        onClick={() => {
+                          queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                          queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+                        }}
+                        title="Refresh balance"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </Button>
                     </div>
                   )}
                 </div>
