@@ -583,28 +583,30 @@ export default function Exchange() {
                     </FormLabel>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormControl>
-                        <Select
-                          value={field.value}
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setSendMethod(value);
-                          }}
-                        >
-                          <SelectTrigger className="h-12">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {paymentMethods.map((method) => (
-                              <SelectItem key={method.value} value={method.value}>
-                                <div className="flex items-center">
-                                  <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2" />
-                                  {method.label}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                setSendMethod(value);
+                              }}
+                            >
+                              <SelectTrigger className="h-12">
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {paymentMethods
+                                  .filter(method => method.value !== receiveMethod)
+                                  .map((method) => (
+                                    <SelectItem key={method.value} value={method.value}>
+                                      <div className="flex items-center">
+                                        <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2" />
+                                        {method.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
                       <FormField
                         control={form.control}
                         name="sendAmount"
@@ -642,28 +644,30 @@ export default function Exchange() {
                     </FormLabel>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormControl>
-                        <Select
-                          value={field.value}
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setReceiveMethod(value);
-                          }}
-                        >
-                          <SelectTrigger className="h-12">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {paymentMethods.map((method) => (
-                              <SelectItem key={method.value} value={method.value}>
-                                <div className="flex items-center">
-                                  <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2" />
-                                  {method.label}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                setReceiveMethod(value);
+                              }}
+                            >
+                              <SelectTrigger className="h-12">
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {paymentMethods
+                                  .filter(method => method.value !== sendMethod)
+                                  .map((method) => (
+                                    <SelectItem key={method.value} value={method.value}>
+                                      <div className="flex items-center">
+                                        <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2" />
+                                        {method.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
                       <FormField
                         control={form.control}
                         name="receiveAmount"
