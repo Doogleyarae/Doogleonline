@@ -99,7 +99,9 @@ const createExchangeFormSchema = (
     }
   ),
   exchangeRate: z.string(),
-  fullName: z.string().min(1, "Full name is required"),
+  fullName: ['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) 
+    ? z.string().min(1, "Full name is required") 
+    : z.string().optional(),
   email: z.string()
     .min(1, "Email address is required")
     .email("Please enter a valid email address"),
@@ -338,7 +340,7 @@ export default function Exchange() {
       }
 
       const response = await apiRequest("POST", "/api/orders", {
-        fullName: data.fullName,
+        ...(['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(data.sendMethod) && { fullName: data.fullName }),
         email: data.email,
         senderAccount: data.senderAccount,
         walletAddress: data.walletAddress,
@@ -703,28 +705,30 @@ export default function Exchange() {
 
               {/* Customer Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your full name"
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                            if (isReminded) {
-                              updateSavedField('fullName', e.target.value);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter your full name"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              if (isReminded) {
+                                updateSavedField('fullName', e.target.value);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
               </div>
 
@@ -829,7 +833,7 @@ export default function Exchange() {
                             if (!checked) {
                               form.reset({
                                 ...form.getValues(),
-                                fullName: "",
+                                fullName: ['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) ? "" : undefined,
                                 email: "",
                                 senderAccount: "",
                                 walletAddress: "",
