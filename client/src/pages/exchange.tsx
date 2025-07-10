@@ -703,23 +703,123 @@ export default function Exchange() {
                 )}
               />
 
-              {/* Customer Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
+              {/* Section 1: Full Name (when required) */}
+              {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
+                <div className="space-y-6">
+                  <div className="border-b border-gray-200 pb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                    <FormField
+                      control={form.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter your full name"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                                if (isReminded) {
+                                  updateSavedField('fullName', e.target.value);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Section 2: Sender Account Information (when required) */}
+              {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
+                <div className="space-y-6">
+                  <div className="border-b border-gray-200 pb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Sender Account Details</h3>
+                    <FormField
+                      control={form.control}
+                      name="senderAccount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {['zaad', 'sahal', 'evc', 'edahab'].includes(sendMethod) 
+                              ? `${sendMethod.charAt(0).toUpperCase() + sendMethod.slice(1)} Phone Number *`
+                              : 'Premier Bank Account Number *'
+                            }
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={
+                                ['zaad', 'sahal', 'evc', 'edahab'].includes(sendMethod)
+                                  ? "252612345678"
+                                  : "1234567890"
+                              }
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                                if (isReminded) {
+                                  updateSavedField('senderAccount', e.target.value);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Section 3: Contact and Payment Information */}
+              <div className="space-y-6">
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact & Payment Information</h3>
+                  
                   <FormField
                     control={form.control}
-                    name="fullName"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Name *</FormLabel>
+                        <FormLabel>Email Address *</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your full name"
+                            type="email"
+                            placeholder="your.email@example.com"
                             {...field}
                             onChange={(e) => {
                               field.onChange(e.target.value);
                               if (isReminded) {
-                                updateSavedField('fullName', e.target.value);
+                                updateSavedField('email', e.target.value);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <div className="text-xs text-blue-600 mt-1">
+                          📧 Email notifications will be sent to this address
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="walletAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Wallet Address / Account Number *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter your wallet address or account number"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              if (isReminded) {
+                                updateSavedField('walletAddress', e.target.value);
                               }
                             }}
                           />
@@ -728,94 +828,8 @@ export default function Exchange() {
                       </FormItem>
                     )}
                   />
-                )}
-
+                </div>
               </div>
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="your.email@example.com"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                          if (isReminded) {
-                            updateSavedField('email', e.target.value);
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <div className="text-xs text-blue-600 mt-1">
-                      📧 Email notifications will be sent to this address
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Sender Account (conditional) */}
-              {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
-                <FormField
-                  control={form.control}
-                  name="senderAccount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {['zaad', 'sahal', 'evc', 'edahab'].includes(sendMethod) 
-                          ? `${sendMethod.charAt(0).toUpperCase() + sendMethod.slice(1)} Phone Number *`
-                          : 'Premier Bank Account Number *'
-                        }
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={
-                            ['zaad', 'sahal', 'evc', 'edahab'].includes(sendMethod)
-                              ? "252612345678"
-                              : "1234567890"
-                          }
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                            if (isReminded) {
-                              updateSavedField('senderAccount', e.target.value);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              <FormField
-                control={form.control}
-                name="walletAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Wallet Address / Account Number *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter your wallet address or account number"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                          if (isReminded) {
-                            updateSavedField('walletAddress', e.target.value);
-                          }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* Remember Details and Terms */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-4">
