@@ -435,11 +435,12 @@ export class DatabaseStorage implements IStorage {
   async updateBalance(insertBalance: InsertBalance): Promise<Balance> {
     // Always store currency as uppercase
     const currencyUpper = insertBalance.currency.toUpperCase();
+    // Delete all other rows for this currency (case-insensitive)
+    await db.delete(balances).where(db.sql`UPPER(${balances.currency}) = ${currencyUpper}`);
     // Log before update
-    const existing = await this.getBalance(currencyUpper);
-    console.log(`[updateBalance] BEFORE: currency=${currencyUpper}, existingAmount=${existing ? existing.amount : 'N/A'}, newAmount=${insertBalance.amount}`);
+    console.log(`[updateBalance] CLEANED: All rows for currency=${currencyUpper} deleted before update.`);
 
-    // Use upsert to avoid duplicate key errors
+    // Use upsert to avoid duplicate key errors (should only be one row now)
     const [balance] = await db
       .insert(balances)
       .values({
@@ -460,9 +461,9 @@ export class DatabaseStorage implements IStorage {
     console.log(`[updateBalance] AFTER: currency=${balance.currency}, updatedAmount=${balance.amount}`);
     
     // Handle EVC Plus currency synchronization - when updating EVC or EVCPLUS, sync both
-    const currency = currencyUpper;
-    if (currency === 'EVC' || currency === 'EVCPLUS') {
-      const syncCurrency = currency === 'EVC' ? 'EVCPLUS' : 'EVC';
+    if (currencyUpper === 'EVC' || currencyUpper === 'EVCPLUS') {
+      const syncCurrency = currencyUpper === 'EVC' ? 'EVCPLUS' : 'EVC';
+      await db.delete(balances).where(db.sql`UPPER(${balances.currency}) = ${syncCurrency}`);
       await db
         .insert(balances)
         .values({
