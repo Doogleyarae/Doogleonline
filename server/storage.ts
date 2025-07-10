@@ -411,7 +411,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBalance(currency: string): Promise<Balance | undefined> {
-    const [balance] = await db.select().from(balances).where(eq(balances.currency, currency.toLowerCase()));
+    const [balance] = await db.select().from(balances).where(eq(balances.currency, currency.toUpperCase()));
     return balance || undefined;
   }
 
@@ -483,11 +483,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deductBalance(currency: string, amount: number): Promise<Balance | undefined> {
-    const currentBalance = await this.getBalance(currency);
+    const currentBalance = await this.getBalance(currency.toUpperCase());
     if (!currentBalance) {
       // Initialize balance if it doesn't exist
       return await this.updateBalance({ 
-        currency: currency.toLowerCase(), 
+        currency: currency.toUpperCase(), 
         amount: (0 - amount).toString() 
       });
     }
@@ -496,7 +496,7 @@ export class DatabaseStorage implements IStorage {
     const newAmount = currentAmount - amount;
     
     return await this.updateBalance({ 
-      currency: currency.toLowerCase(), 
+      currency: currency.toUpperCase(), 
       amount: newAmount.toString() 
     });
   }
@@ -562,7 +562,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     const receiveAmountNum = parseFloat(order.receiveAmount || '0');
-    const receiveCurrency = (order.receiveMethod || 'unknown').toUpperCase();
+    const receiveCurrency = String(order.receiveMethod ?? 'UNKNOWN').toUpperCase();
 
     // Begin transaction-like logic for balance management
     try {
@@ -784,37 +784,37 @@ export class DatabaseStorage implements IStorage {
 
   // Manual credit
   async manualCredit({ currency, amount, reason }: { currency: string, amount: string, reason?: string }) {
-    const current = await this.getBalance(currency);
+    const current = await this.getBalance(currency.toUpperCase());
     const newAmount = (parseFloat(current?.amount || '0') + parseFloat(amount)).toString();
     console.log(`[manualCredit] Crediting ${amount} to ${currency}. Old balance: ${current?.amount}, New balance: ${newAmount}`);
-    await this.updateBalance({ currency, amount: newAmount });
+    await this.updateBalance({ currency: currency.toUpperCase(), amount: newAmount });
     await this.createTransaction({
-      orderId: null,
+      orderId: '',
       type: 'manual-credit',
-      currency,
+      currency: currency.toUpperCase(),
       amount,
       fromWallet: 'manual',
       toWallet: 'exchange_wallet',
       description: reason || 'Manual credit by admin'
     });
-    return await this.getBalance(currency);
+    return await this.getBalance(currency.toUpperCase());
   }
   // Manual debit
   async manualDebit({ currency, amount, reason }: { currency: string, amount: string, reason?: string }) {
-    const current = await this.getBalance(currency);
+    const current = await this.getBalance(currency.toUpperCase());
     const newAmount = (parseFloat(current?.amount || '0') - parseFloat(amount)).toString();
     console.log(`[manualDebit] Debiting ${amount} from ${currency}. Old balance: ${current?.amount}, New balance: ${newAmount}`);
-    await this.updateBalance({ currency, amount: newAmount });
+    await this.updateBalance({ currency: currency.toUpperCase(), amount: newAmount });
     await this.createTransaction({
-      orderId: null,
+      orderId: '',
       type: 'manual-debit',
-      currency,
+      currency: currency.toUpperCase(),
       amount,
       fromWallet: 'exchange_wallet',
       toWallet: 'manual',
       description: reason || 'Manual debit by admin'
     });
-    return await this.getBalance(currency);
+    return await this.getBalance(currency.toUpperCase());
   }
 
   // System status methods
@@ -831,7 +831,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [existing] = await db.select().from(systemStatus).limit(1);
       if (existing) {
-        await db.update(systemStatus).set({ status }).where(systemStatus.id === existing.id);
+        await db.update(systemStatus).set({ status }).where(eq(systemStatus.id, existing.id));
       } else {
         await db.insert(systemStatus).values({ status }).execute();
       }
