@@ -53,6 +53,12 @@ const paymentMethods = [
   { value: "usdc", label: "USDC", logo: trc20Logo }
 ];
 
+const specialExclusions: Record<string, string[]> = {
+  sahal: ['sahal', 'evc'], // 'evc' is the value for EVC Plus
+  evc: ['evc', 'sahal', 'zaad'],
+  zaad: ['zaad', 'evc', 'sahal'],
+};
+
 const createExchangeFormSchema = (
   minSendAmount: number = 5,
   maxSendAmount: number = 10000,
@@ -498,6 +504,11 @@ export default function Exchange() {
     };
   }, [queryClient, sendMethod, receiveMethod]);
 
+  // Helper to get exclusions for a selected value
+  function getExclusions(selected: string) {
+    return specialExclusions[selected] || [selected];
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-8">
@@ -595,7 +606,7 @@ export default function Exchange() {
                               </SelectTrigger>
                               <SelectContent>
                                 {paymentMethods
-                                  .filter(method => method.value !== receiveMethod)
+                                  .filter(method => !getExclusions(receiveMethod).includes(method.value))
                                   .map((method) => (
                                     <SelectItem key={method.value} value={method.value}>
                                       <div className="flex items-center">
@@ -656,7 +667,7 @@ export default function Exchange() {
                               </SelectTrigger>
                               <SelectContent>
                                 {paymentMethods
-                                  .filter(method => method.value !== sendMethod)
+                                  .filter(method => !getExclusions(sendMethod).includes(method.value))
                                   .map((method) => (
                                     <SelectItem key={method.value} value={method.value}>
                                       <div className="flex items-center">
