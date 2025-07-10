@@ -40,6 +40,25 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   updatedAt: true,
 });
 
+export const insertOrderSchemaValidated = insertOrderSchema.extend({
+  phoneNumber: z.string().optional(),
+  fullName: z.string().optional(),
+  sendMethod: z.string(),
+}).superRefine((data, ctx) => {
+  // Only require fullName for these send methods
+  const requireFullName = ['zaad', 'sahal', 'evc', 'edahab', 'premier'];
+  if (requireFullName.includes((data.sendMethod || '').toLowerCase())) {
+    if (!data.fullName || typeof data.fullName !== 'string' || data.fullName.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['fullName'],
+        message: 'Full name is required for this send method',
+      });
+    }
+  }
+  // phoneNumber is never required
+});
+
 export const insertContactMessageSchema = createInsertSchema(contactMessages).omit({
   id: true,
   createdAt: true,

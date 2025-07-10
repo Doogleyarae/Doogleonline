@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertOrderSchema, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema, insertWalletAddressSchema } from "@shared/schema";
+import { insertOrderSchema, insertOrderSchemaValidated, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema, insertWalletAddressSchema } from "@shared/schema";
 import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { orderProcessor } from "./orderProcessor";
@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('=== [ROUTE /api/orders] Route hit ===');
       console.log('=== [ROUTE /api/orders] Request body:', JSON.stringify(req.body, null, 2));
       
-      const validatedData = insertOrderSchema.parse(req.body);
+      const validatedData = insertOrderSchemaValidated.parse(req.body);
       console.log('=== [ROUTE /api/orders] validatedData:', JSON.stringify(validatedData, null, 2));
       
       // Get admin-configured limits for both currencies and exchange rate
