@@ -120,19 +120,6 @@ export default function Exchange() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [sendMethod, setSendMethod] = useState("trc20");
-  const [receiveMethod, setReceiveMethod] = useState("moneygo");
-  const [sendAmount, setSendAmount] = useState("1");
-  const [receiveAmount, setReceiveAmount] = useState("");
-  const [exchangeRate, setExchangeRate] = useState<number>(0);
-  const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
-  const [dynamicLimits, setDynamicLimits] = useState({
-    minSendAmount: 5,
-    maxSendAmount: 10000,
-    minReceiveAmount: 5,
-    maxReceiveAmount: 10000,
-  });
-
   const { 
     isReminded, 
     savedData, 
@@ -141,6 +128,19 @@ export default function Exchange() {
     forceRemoveData,
     hasSavedData 
   } = useFormDataMemory('exchange');
+
+  const [sendMethod, setSendMethod] = useState(savedData?.sendMethod || "trc20");
+  const [receiveMethod, setReceiveMethod] = useState(savedData?.receiveMethod || "moneygo");
+  const [sendAmount, setSendAmount] = useState(savedData?.sendAmount || "1");
+  const [receiveAmount, setReceiveAmount] = useState(savedData?.receiveAmount || "");
+  const [exchangeRate, setExchangeRate] = useState<number>(0);
+  const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
+  const [dynamicLimits, setDynamicLimits] = useState({
+    minSendAmount: 5,
+    maxSendAmount: 10000,
+    minReceiveAmount: 5,
+    maxReceiveAmount: 10000,
+  });
 
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
@@ -598,6 +598,9 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 field.onChange(value);
                                 setSendMethod(value);
+                                if (isReminded) {
+                                  updateSavedField('sendMethod', value);
+                                }
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -631,6 +634,9 @@ export default function Exchange() {
                               onChange={(e) => {
                                 field.onChange(e.target.value);
                                 handleSendAmountChange(e.target.value);
+                                if (isReminded) {
+                                  updateSavedField('sendAmount', e.target.value);
+                                }
                               }}
                             />
                           </FormControl>
@@ -659,6 +665,9 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 field.onChange(value);
                                 setReceiveMethod(value);
+                                if (isReminded) {
+                                  updateSavedField('receiveMethod', value);
+                                }
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -692,6 +701,9 @@ export default function Exchange() {
                               onChange={(e) => {
                                 field.onChange(e.target.value);
                                 handleReceiveAmountChange(e.target.value);
+                                if (isReminded) {
+                                  updateSavedField('receiveAmount', e.target.value);
+                                }
                               }}
                             />
                           </FormControl>
@@ -872,7 +884,15 @@ export default function Exchange() {
                                 email: "",
                                 senderAccount: "",
                                 walletAddress: "",
+                                sendMethod: "trc20",
+                                receiveMethod: "moneygo",
+                                sendAmount: "1",
+                                receiveAmount: "",
                               });
+                              setSendMethod("trc20");
+                              setReceiveMethod("moneygo");
+                              setSendAmount("1");
+                              setReceiveAmount("");
                               forceRemoveData();
                               toast({
                                 title: "Data Cleared",
