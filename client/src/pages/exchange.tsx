@@ -115,6 +115,24 @@ const createExchangeFormSchema = (
 
 type ExchangeFormData = z.infer<ReturnType<typeof createExchangeFormSchema>>;
 
+// Utility functions for localStorage persistence
+const EXCHANGE_PERSIST_KEY = 'exchange-persist';
+function saveExchangePersist(data: { sendMethod: string, receiveMethod: string, sendAmount: string, receiveAmount: string }) {
+  localStorage.setItem(EXCHANGE_PERSIST_KEY, JSON.stringify(data));
+}
+function loadExchangePersist() {
+  try {
+    const raw = localStorage.getItem(EXCHANGE_PERSIST_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+function clearExchangePersist() {
+  localStorage.removeItem(EXCHANGE_PERSIST_KEY);
+}
+
 export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -129,10 +147,12 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  const [sendMethod, setSendMethod] = useState(savedData?.sendMethod || "trc20");
-  const [receiveMethod, setReceiveMethod] = useState(savedData?.receiveMethod || "moneygo");
-  const [sendAmount, setSendAmount] = useState(savedData?.sendAmount || "1");
-  const [receiveAmount, setReceiveAmount] = useState(savedData?.receiveAmount || "");
+  // Use localStorage for currency/amount persistence
+  const persisted = loadExchangePersist();
+  const [sendMethod, setSendMethod] = useState(persisted?.sendMethod || "trc20");
+  const [receiveMethod, setReceiveMethod] = useState(persisted?.receiveMethod || "moneygo");
+  const [sendAmount, setSendAmount] = useState(persisted?.sendAmount || "1");
+  const [receiveAmount, setReceiveAmount] = useState(persisted?.receiveAmount || "");
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
   const [dynamicLimits, setDynamicLimits] = useState({
@@ -502,6 +522,18 @@ export default function Exchange() {
       window.removeEventListener('admin-update', handleAdminUpdate as EventListener);
     };
   }, [queryClient, sendMethod, receiveMethod]);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    saveExchangePersist({ sendMethod, receiveMethod, sendAmount, receiveAmount });
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
+
+  // In the form reset logic (when clearing), also clear localStorage
+  useEffect(() => {
+    if (!isReminded) {
+      clearExchangePersist();
+    }
+  }, [isReminded]);
 
   // Helper to get exclusions for a selected value
   function getExclusions(selected: string) {
@@ -893,6 +925,7 @@ export default function Exchange() {
                               setReceiveMethod("moneygo");
                               setSendAmount("1");
                               setReceiveAmount("");
+                              clearExchangePersist();
                               forceRemoveData();
                               toast({
                                 title: "Data Cleared",
