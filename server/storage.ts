@@ -436,7 +436,8 @@ export class DatabaseStorage implements IStorage {
     // Always store currency as uppercase
     const currencyUpper = insertBalance.currency.toUpperCase();
     // Delete all other rows for this currency (case-insensitive)
-    await db.delete(balances).where(db.sql`UPPER(${balances.currency}) = ${currencyUpper}`);
+    // Use a raw SQL query for compatibility
+    await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [currencyUpper]);
     // Log before update
     console.log(`[updateBalance] CLEANED: All rows for currency=${currencyUpper} deleted before update.`);
 
@@ -463,7 +464,7 @@ export class DatabaseStorage implements IStorage {
     // Handle EVC Plus currency synchronization - when updating EVC or EVCPLUS, sync both
     if (currencyUpper === 'EVC' || currencyUpper === 'EVCPLUS') {
       const syncCurrency = currencyUpper === 'EVC' ? 'EVCPLUS' : 'EVC';
-      await db.delete(balances).where(db.sql`UPPER(${balances.currency}) = ${syncCurrency}`);
+      await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [syncCurrency]);
       await db
         .insert(balances)
         .values({
