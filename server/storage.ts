@@ -435,11 +435,7 @@ export class DatabaseStorage implements IStorage {
   async updateBalance(insertBalance: InsertBalance): Promise<Balance> {
     const currencyUpper = insertBalance.currency.toUpperCase();
     try {
-      // Delete all other rows for this currency (case-insensitive)
-      await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [currencyUpper]);
-      console.log(`[updateBalance] CLEANED: All rows for currency=${currencyUpper} deleted before update.`);
-
-      // Insert the new balance
+      // Use upsert to always overwrite the value for this currency
       const [balance] = await db
         .insert(balances)
         .values({
@@ -459,7 +455,6 @@ export class DatabaseStorage implements IStorage {
       // EVC/EVCPLUS sync
       if (currencyUpper === 'EVC' || currencyUpper === 'EVCPLUS') {
         const syncCurrency = currencyUpper === 'EVC' ? 'EVCPLUS' : 'EVC';
-        await db.execute(`DELETE FROM balances WHERE UPPER(currency) = $1`, [syncCurrency]);
         await db
           .insert(balances)
           .values({
