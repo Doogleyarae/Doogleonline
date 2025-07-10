@@ -14,7 +14,7 @@ const navigationItems = [
   { href: "/track", label: "Track Order" },
   { href: "/contact", label: "Contact" },
   { href: "/about", label: "About" },
-  { href: "/admin", label: "Admin" },
+  // { href: "/admin", label: "Admin" }, // Hidden for preview
 ];
 
 export default function Navigation() {
