@@ -35,6 +35,8 @@ import {
   AlertCircle,
   UserCheck,
   Send,
+  Bell,
+  X,
 } from "lucide-react";
 import type { Order, ContactMessage, Transaction } from "@shared/schema";
 
@@ -927,6 +929,147 @@ export default function AdminDashboard() {
 
   const [systemStatus, setSystemStatus] = useState<'on' | 'off'>('on');
   const [loadingStatus, setLoadingStatus] = useState(false);
+  
+  // Notification system state
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: 'order' | 'message' | 'system' | 'balance' | 'rate';
+    title: string;
+    message: string;
+    timestamp: Date;
+    read: boolean;
+    priority: 'low' | 'medium' | 'high';
+    actionUrl?: string;
+  }>>([]);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+
+  // Generate notifications based on data
+  useEffect(() => {
+    const newNotifications: Array<{
+      id: string;
+      type: 'order' | 'message' | 'system' | 'balance' | 'rate';
+      title: string;
+      message: string;
+      timestamp: Date;
+      read: boolean;
+      priority: 'low' | 'medium' | 'high';
+      actionUrl?: string;
+    }> = [];
+
+    // Order notifications
+    const pendingOrders = orders.filter(order => order.status === 'pending');
+    const processingOrders = orders.filter(order => order.status === 'processing');
+    const recentOrders = orders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      return orderDate >= oneHourAgo;
+    });
+
+    if (pendingOrders.length > 0) {
+      newNotifications.push({
+        id: 'pending-orders',
+        type: 'order',
+        title: 'Pending Orders',
+        message: `${pendingOrders.length} orders waiting for payment confirmation`,
+        timestamp: new Date(),
+        read: false,
+        priority: 'high',
+        actionUrl: '#orders'
+      });
+    }
+
+    if (processingOrders.length > 0) {
+      newNotifications.push({
+        id: 'processing-orders',
+        type: 'order',
+        title: 'Orders in Progress',
+        message: `${processingOrders.length} orders currently being processed`,
+        timestamp: new Date(),
+        read: false,
+        priority: 'medium',
+        actionUrl: '#orders'
+      });
+    }
+
+    if (recentOrders.length > 0) {
+      newNotifications.push({
+        id: 'recent-activity',
+        type: 'order',
+        title: 'Recent Activity',
+        message: `${recentOrders.length} new orders in the last hour`,
+        timestamp: new Date(),
+        read: false,
+        priority: 'low',
+        actionUrl: '#orders'
+      });
+    }
+
+    // Message notifications
+    const unreadMessages = messages.filter(message => !message.response);
+    const recentMessages = messages.filter(message => {
+      const messageDate = new Date(message.createdAt);
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      return messageDate >= oneDayAgo;
+    });
+
+    if (unreadMessages.length > 0) {
+      newNotifications.push({
+        id: 'unread-messages',
+        type: 'message',
+        title: 'Unread Messages',
+        message: `${unreadMessages.length} customer messages need responses`,
+        timestamp: new Date(),
+        read: false,
+        priority: 'high',
+        actionUrl: '#messages'
+      });
+    }
+
+    if (recentMessages.length > 0) {
+      newNotifications.push({
+        id: 'recent-messages',
+        type: 'message',
+        title: 'Recent Messages',
+        message: `${recentMessages.length} messages received in the last 24 hours`,
+        timestamp: new Date(),
+        read: false,
+        priority: 'medium',
+        actionUrl: '#messages'
+      });
+    }
+
+    // System notifications
+    if (systemStatus === 'off') {
+      newNotifications.push({
+        id: 'system-closed',
+        type: 'system',
+        title: 'System Closed',
+        message: 'System is currently closed for business',
+        timestamp: new Date(),
+        read: false,
+        priority: 'high'
+      });
+    }
+
+    // Balance notifications
+    const lowBalances = Object.entries(balances).filter(([currency, amount]) => amount < 100);
+    if (lowBalances.length > 0) {
+      newNotifications.push({
+        id: 'low-balances',
+        type: 'balance',
+        title: 'Low Balances',
+        message: `${lowBalances.length} currencies have low balances (< $100)`,
+        timestamp: new Date(),
+        read: false,
+        priority: 'medium',
+        actionUrl: '#management'
+      });
+    }
+
+    setNotifications(newNotifications);
+  }, [orders, messages, systemStatus, balances]);
 
   // Fetch system status on mount
   useEffect(() => {
@@ -960,6 +1103,57 @@ export default function AdminDashboard() {
     setLoadingStatus(false);
   };
 
+  // Notification helper functions
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const dismissNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high': return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case 'medium': return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'low': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      default: return <Bell className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  // Close notification panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.notification-panel') && !target.closest('.notification-bell')) {
+        setIsNotificationPanelOpen(false);
+      }
+    };
+
+    if (isNotificationPanelOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isNotificationPanelOpen]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
@@ -974,9 +1168,105 @@ export default function AdminDashboard() {
                 Manage orders, exchange rates, and transaction limits
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              Real-time sync active
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                Real-time sync active
+              </div>
+              
+              {/* Notification Bell */}
+              <div className="relative notification-bell">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsNotificationPanelOpen(!isNotificationPanelOpen)}
+                  className="relative"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+
+                {/* Notification Panel */}
+                {isNotificationPanelOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg z-50 notification-panel">
+                    <Card className="border-0 shadow-none">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center justify-between">
+                          <span className="flex items-center">
+                            <Bell className="w-5 h-5 mr-2" />
+                            Notifications
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsNotificationPanelOpen(false)}
+                            className="h-6 w-6"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-center text-gray-500">
+                            <Bell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                            <p>No notifications</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1 max-h-96 overflow-y-auto">
+                            {notifications.map((notification) => (
+                              <div
+                                key={notification.id}
+                                className={`p-3 border-l-4 ${getPriorityColor(notification.priority)} ${
+                                  notification.read ? 'opacity-60' : ''
+                                } hover:bg-gray-50 transition-colors`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      {getPriorityIcon(notification.priority)}
+                                      <h4 className="font-medium text-sm">{notification.title}</h4>
+                                      <Badge variant="outline" className="text-xs">
+                                        {notification.type}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
+                                    <p className="text-xs text-gray-500">{formatDate(notification.timestamp)}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {!notification.read && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => markNotificationAsRead(notification.id)}
+                                        className="h-6 px-2 text-xs"
+                                      >
+                                        Mark read
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => dismissNotification(notification.id)}
+                                      className="h-6 w-6"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
