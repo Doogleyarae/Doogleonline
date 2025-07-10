@@ -811,10 +811,31 @@ export default function Exchange() {
                     name="walletAddress"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Wallet Address / Account Number *</FormLabel>
+                        <FormLabel>
+                          {['zaad', 'sahal', 'evc', 'edahab'].includes(receiveMethod) 
+                            ? `${receiveMethod.charAt(0).toUpperCase() + receiveMethod.slice(1)} Phone Number *`
+                            : receiveMethod === 'premier'
+                            ? 'Premier Bank Account Number *'
+                            : receiveMethod === 'moneygo'
+                            ? 'MoneyGo Phone Number *'
+                            : `${receiveMethod.toUpperCase()} Wallet Address *`
+                          }
+                        </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your wallet address or account number"
+                            placeholder={
+                              ['zaad', 'sahal', 'evc', 'edahab', 'moneygo'].includes(receiveMethod)
+                                ? "252612345678"
+                                : receiveMethod === 'premier'
+                                ? "1234567890"
+                                : receiveMethod === 'trc20' || receiveMethod === 'peb20'
+                                ? "TRC20 wallet address (e.g., T...)"
+                                : receiveMethod === 'trx'
+                                ? "TRX wallet address"
+                                : receiveMethod === 'usdc'
+                                ? "USDC wallet address"
+                                : "Enter your wallet address or account number"
+                            }
                             {...field}
                             onChange={(e) => {
                               field.onChange(e.target.value);
