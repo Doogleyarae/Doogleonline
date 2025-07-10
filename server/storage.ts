@@ -416,23 +416,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllBalances(forceZero = false): Promise<Balance[]> {
-    const balances = await db.select().from(balances);
-    if (forceZero) {
-      return balances.map(b => ({ ...b, amount: '0' }));
+    const balancesList = await db.select().from(balances);
+    // Merge balances with the same currency (case-insensitive)
+    const merged: Record<string, Balance> = {};
+    for (const b of balancesList) {
+      const upper = b.currency.toUpperCase();
+      if (!merged[upper]) {
+        merged[upper] = { ...b, currency: upper };
+      } else {
+        // If duplicate, sum the amounts
+        merged[upper].amount = (parseFloat(merged[upper].amount) + parseFloat(b.amount)).toString();
+      }
     }
-    return balances;
+    const result = Object.values(merged).map(b => ({ ...b, currency: b.currency.toUpperCase(), amount: forceZero ? '0' : b.amount }));
+    return result;
   }
 
   async updateBalance(insertBalance: InsertBalance): Promise<Balance> {
+    // Always store currency as uppercase
+    const currencyUpper = insertBalance.currency.toUpperCase();
     // Log before update
-    const existing = await this.getBalance(insertBalance.currency);
-    console.log(`[updateBalance] BEFORE: currency=${insertBalance.currency}, existingAmount=${existing ? existing.amount : 'N/A'}, newAmount=${insertBalance.amount}`);
+    const existing = await this.getBalance(currencyUpper);
+    console.log(`[updateBalance] BEFORE: currency=${currencyUpper}, existingAmount=${existing ? existing.amount : 'N/A'}, newAmount=${insertBalance.amount}`);
 
     // Use upsert to avoid duplicate key errors
     const [balance] = await db
       .insert(balances)
       .values({
-        currency: insertBalance.currency,
+        currency: currencyUpper,
         amount: insertBalance.amount,
         updatedAt: new Date()
       })
@@ -449,9 +460,9 @@ export class DatabaseStorage implements IStorage {
     console.log(`[updateBalance] AFTER: currency=${balance.currency}, updatedAmount=${balance.amount}`);
     
     // Handle EVC Plus currency synchronization - when updating EVC or EVCPLUS, sync both
-    const currency = insertBalance.currency.toLowerCase();
-    if (currency === 'evc' || currency === 'evcplus') {
-      const syncCurrency = currency === 'evc' ? 'evcplus' : 'evc';
+    const currency = currencyUpper;
+    if (currency === 'EVC' || currency === 'EVCPLUS') {
+      const syncCurrency = currency === 'EVC' ? 'EVCPLUS' : 'EVC';
       await db
         .insert(balances)
         .values({
@@ -471,9 +482,9 @@ export class DatabaseStorage implements IStorage {
     
     // Notify WebSocket clients about balance update
     const { wsManager } = await import('./websocket');
-    wsManager.notifyBalanceUpdate(insertBalance.currency.toUpperCase(), parseFloat(insertBalance.amount));
+    wsManager.notifyBalanceUpdate(currencyUpper, parseFloat(insertBalance.amount));
     
-    return balance;
+    return { ...balance, currency: currencyUpper };
   }
 
   async deductBalance(currency: string, amount: number): Promise<Balance | undefined> {
