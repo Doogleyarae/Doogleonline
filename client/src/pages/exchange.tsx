@@ -103,7 +103,6 @@ const createExchangeFormSchema = (
   email: z.string()
     .min(1, "Email address is required")
     .email("Please enter a valid email address"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
   senderAccount: ['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) 
     ? z.string().min(1, "Sender account is required") 
     : z.string().optional(),
@@ -203,7 +202,6 @@ export default function Exchange() {
       exchangeRate: exchangeRate.toString(),
       fullName: savedData?.fullName || "",
       email: savedData?.email || "",
-      phoneNumber: savedData?.phoneNumber || "",
       senderAccount: savedData?.senderAccount || "",
       walletAddress: savedData?.walletAddress || "",
       rememberDetails: isReminded,
@@ -342,7 +340,6 @@ export default function Exchange() {
       const response = await apiRequest("POST", "/api/orders", {
         fullName: data.fullName,
         email: data.email,
-        phoneNumber: data.phoneNumber,
         senderAccount: data.senderAccount,
         walletAddress: data.walletAddress,
         sendMethod: data.sendMethod,
@@ -729,28 +726,6 @@ export default function Exchange() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="+252 61 234 5678"
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                            if (isReminded) {
-                              updateSavedField('phoneNumber', e.target.value);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField
@@ -856,7 +831,6 @@ export default function Exchange() {
                                 ...form.getValues(),
                                 fullName: "",
                                 email: "",
-                                phoneNumber: "",
                                 senderAccount: "",
                                 walletAddress: "",
                               });
