@@ -282,9 +282,9 @@ export default function Exchange() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch balances - use admin endpoint for real-time updates
+  // Fetch balances - use public endpoint so system status is respected
   const { data: balances, isLoading: balancesLoading } = useQuery<Record<string, number>>({
-    queryKey: ["/api/admin/balances"],
+    queryKey: ["/api/balances"],
     staleTime: 5000, // 5 seconds for more frequent updates
     refetchOnWindowFocus: false,
     refetchInterval: 10000, // Refetch every 10 seconds
