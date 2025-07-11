@@ -133,6 +133,24 @@ function clearExchangePersist() {
   localStorage.removeItem(EXCHANGE_PERSIST_KEY);
 }
 
+// Utility functions for personal info persistence
+const EXCHANGE_PERSONAL_KEY = 'exchange-personal';
+function savePersonalInfo(data: { fullName?: string, email?: string, senderAccount?: string, walletAddress?: string }) {
+  localStorage.setItem(EXCHANGE_PERSONAL_KEY, JSON.stringify(data));
+}
+function loadPersonalInfo() {
+  try {
+    const raw = localStorage.getItem(EXCHANGE_PERSONAL_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+function clearPersonalInfo() {
+  localStorage.removeItem(EXCHANGE_PERSONAL_KEY);
+}
+
 export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -146,6 +164,14 @@ export default function Exchange() {
     forceRemoveData,
     hasSavedData 
   } = useFormDataMemory('exchange');
+
+  // On page load, restore personal info if rememberDetails is true
+  const persistedPersonal = loadPersonalInfo();
+  const [rememberDetails, setRememberDetails] = useState(!!persistedPersonal);
+  const [fullName, setFullName] = useState(persistedPersonal?.fullName || "");
+  const [email, setEmail] = useState(persistedPersonal?.email || "");
+  const [senderAccount, setSenderAccount] = useState(persistedPersonal?.senderAccount || "");
+  const [walletAddress, setWalletAddress] = useState(persistedPersonal?.walletAddress || "");
 
   // Use localStorage for currency/amount persistence
   const persisted = loadExchangePersist();
@@ -222,11 +248,11 @@ export default function Exchange() {
       sendAmount: sendAmount,
       receiveAmount: receiveAmount,
       exchangeRate: exchangeRate.toString(),
-      fullName: savedData?.fullName || "",
-      email: savedData?.email || "",
-      senderAccount: savedData?.senderAccount || "",
-      walletAddress: savedData?.walletAddress || "",
-      rememberDetails: isReminded,
+      fullName: fullName,
+      email: email,
+      senderAccount: senderAccount,
+      walletAddress: walletAddress,
+      rememberDetails: rememberDetails,
       agreeToTerms: false,
     },
   });
@@ -523,17 +549,23 @@ export default function Exchange() {
     };
   }, [queryClient, sendMethod, receiveMethod]);
 
-  // Save to localStorage on change
+  // Save personal info to localStorage only if rememberDetails is true
   useEffect(() => {
-    saveExchangePersist({ sendMethod, receiveMethod, sendAmount, receiveAmount });
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
-
-  // In the form reset logic (when clearing), also clear localStorage
-  useEffect(() => {
-    if (!isReminded) {
-      clearExchangePersist();
+    if (rememberDetails) {
+      savePersonalInfo({ fullName, email, senderAccount, walletAddress });
     }
-  }, [isReminded]);
+  }, [rememberDetails, fullName, email, senderAccount, walletAddress]);
+
+  // When rememberDetails is unchecked, clear personal info from localStorage
+  useEffect(() => {
+    if (!rememberDetails) {
+      clearPersonalInfo();
+      setFullName("");
+      setEmail("");
+      setSenderAccount("");
+      setWalletAddress("");
+    }
+  }, [rememberDetails]);
 
   // Helper to get exclusions for a selected value
   function getExclusions(selected: string) {
