@@ -817,6 +817,10 @@ export default function Exchange() {
                                 step="0.01"
                                 placeholder="0.00"
                                 className="h-12 text-lg"
+                                autoComplete="off"
+                                spellCheck={false}
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 value={field.value}
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
