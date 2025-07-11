@@ -187,6 +187,11 @@ export default function Exchange() {
     maxReceiveAmount: 10000,
   });
 
+  // Add automatic saving of payment methods and amounts
+  useEffect(() => {
+    saveExchangePersist({ sendMethod, receiveMethod, sendAmount, receiveAmount });
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
+
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
@@ -953,11 +958,11 @@ export default function Exchange() {
                     className="w-full md:w-auto bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg mt-4"
                     onClick={() => {
                       clearPersonalInfo();
+                      clearExchangePersist();
                       setFullName("");
                       setEmail("");
                       setSenderAccount("");
                       setWalletAddress("");
-                      // Optionally reset other fields
                       setSendMethod("trc20");
                       setReceiveMethod("moneygo");
                       setSendAmount("1");
@@ -965,7 +970,7 @@ export default function Exchange() {
                       form.reset();
                     }}
                   >
-                    Clear my saved details
+                    Clear all saved information
                   </Button>
                 </div>
               </div>
