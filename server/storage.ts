@@ -474,7 +474,9 @@ export class DatabaseStorage implements IStorage {
 
       // Notify WebSocket clients about balance update
       const { wsManager } = await import('./websocket');
-      wsManager.notifyBalanceUpdate(currencyUpper, parseFloat(insertBalance.amount));
+      if (currencyUpper && insertBalance.amount) {
+        wsManager.notifyBalanceUpdate(currencyUpper, parseFloat(insertBalance.amount));
+      }
       return { ...balance, currency: currencyUpper };
     } catch (error) {
       console.error(`[updateBalance] ERROR for currency=${currencyUpper}:`, error);

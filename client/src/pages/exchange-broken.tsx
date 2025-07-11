@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { ArrowUpCircle, ArrowDownCircle, User, Send, Bell, BellOff } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, User, Send, Bell, BellOff, CheckCircle, Save } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
 
@@ -712,7 +712,7 @@ export default function Exchange() {
     }
   };
 
-  // Toggle remind functionality with complete form control
+  // Enhanced toggle remind functionality with complete customer data management
   const handleToggleRemind = () => {
     const currentFormData = form.getValues();
     const dataToSave = {
@@ -720,28 +720,34 @@ export default function Exchange() {
       email: currentFormData.email,
       phoneNumber: currentFormData.phoneNumber,
       walletAddress: currentFormData.walletAddress,
+      senderAccount: currentFormData.senderAccount,
+      sendMethod: sendMethod,
+      receiveMethod: receiveMethod,
+      sendAmount: sendAmount,
+      receiveAmount: receiveAmount,
     };
     
     const newRemindStatus = toggleRemind(dataToSave);
     form.setValue("rememberDetails", newRemindStatus);
     
     if (newRemindStatus) {
-      // When turning ON - save current data
+      // When turning ON - save ALL customer data and show success message
       toast({
-        title: "Data Saved",
-        description: "Your personal details will be remembered for future exchanges.",
+        title: "✅ Data Saved Successfully",
+        description: "Your personal details, wallet information, and exchange preferences will be automatically remembered for all future transactions.",
         variant: "default",
       });
     } else {
-      // When turning OFF - clear form fields immediately
+      // When turning OFF - clear ALL form fields immediately and show confirmation
       form.setValue("fullName", "");
       form.setValue("email", "");
       form.setValue("phoneNumber", "");
       form.setValue("walletAddress", "");
+      form.setValue("senderAccount", "");
       
       toast({
-        title: "Data Cleared",
-        description: "Your saved personal details have been removed.",
+        title: "🗑️ Data Cleared",
+        description: "All your saved personal details and wallet information have been completely removed from this device.",
         variant: "default",
       });
     }
@@ -1139,27 +1145,32 @@ export default function Exchange() {
                       onClick={handleToggleRemind}
                       className={`flex items-center space-x-2 transition-all ${
                         isReminded 
-                          ? "bg-blue-600 hover:bg-blue-700 text-white" 
+                          ? "bg-green-600 hover:bg-green-700 text-white shadow-lg" 
                           : "border-blue-600 text-blue-600 hover:bg-blue-50"
                       }`}
                     >
                       {isReminded ? (
                         <>
-                          <Bell className="w-4 h-4" />
-                          <span>ON</span>
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Auto-Save ON</span>
                         </>
                       ) : (
                         <>
-                          <BellOff className="w-4 h-4" />
-                          <span>Remind Me</span>
+                          <Save className="w-4 h-4" />
+                          <span>Remember My Details</span>
                         </>
                       )}
                     </Button>
                   </CardTitle>
                   {isReminded && (
-                    <p className="text-sm text-blue-600 mt-2">
-                      Your personal details are being automatically saved and will be remembered for future exchanges.
-                    </p>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+                      <div className="flex items-center">
+                        <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                        <p className="text-sm text-green-700 font-medium">
+                          Auto-save enabled! Your personal details, wallet information, and exchange preferences will be automatically remembered for all future transactions.
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1270,9 +1281,12 @@ export default function Exchange() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel className="text-sm font-normal">
-                            Remember my details for future transactions
+                          <FormLabel className="text-sm font-medium text-gray-700">
+                            ✅ Remember my details for future transactions
                           </FormLabel>
+                          <p className="text-xs text-gray-500">
+                            Automatically save your personal information, wallet addresses, and exchange preferences
+                          </p>
                         </div>
                       </FormItem>
                     )}

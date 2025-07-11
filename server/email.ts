@@ -60,9 +60,7 @@ export class EmailService {
           orderId: order.orderId,
           emailAddress: emailAddress,
           emailType: 'order_confirmation',
-          subject: emailConfig.subject,
-          deliveryStatus: 'sent',
-          resendId: result.data?.id || null,
+          status: 'sent',
         });
       } else {
         console.log(`[ORDER ${order.orderId}] Mock order confirmation email sent to: ${emailAddress}`);
@@ -72,8 +70,7 @@ export class EmailService {
           orderId: order.orderId,
           emailAddress: emailAddress,
           emailType: 'order_confirmation',
-          subject: emailConfig.subject,
-          deliveryStatus: 'sent',
+          status: 'sent',
         });
       }
       return true;
@@ -182,9 +179,7 @@ export class EmailService {
           orderId: order.orderId,
           emailAddress: order.email,
           emailType: 'payment_confirmation',
-          subject: emailConfig.subject,
-          deliveryStatus: result.error ? 'failed' : 'sent',
-          resendId: result.data?.id || null,
+          status: result.error ? 'failed' : 'sent',
         });
       } else {
         console.log(`[ORDER ${order.orderId}] Mock payment confirmation email sent to: ${order.email}`);
@@ -194,8 +189,7 @@ export class EmailService {
           orderId: order.orderId,
           emailAddress: order.email,
           emailType: 'payment_confirmation',
-          subject: emailConfig.subject,
-          deliveryStatus: 'sent',
+          status: 'sent',
         });
       }
       return true;
@@ -232,9 +226,7 @@ export class EmailService {
           orderId: order.orderId,
           emailAddress: order.email,
           emailType: 'order_completion',
-          subject: emailConfig.subject,
-          deliveryStatus: 'sent',
-          resendId: result.data?.id || null,
+          status: 'sent',
         });
       } else {
         console.log(`[ORDER ${order.orderId}] Mock order completion email sent to: ${order.email}`);
@@ -244,8 +236,7 @@ export class EmailService {
           orderId: order.orderId,
           emailAddress: order.email,
           emailType: 'order_completion',
-          subject: emailConfig.subject,
-          deliveryStatus: 'sent',
+          status: 'sent',
         });
       }
       return true;

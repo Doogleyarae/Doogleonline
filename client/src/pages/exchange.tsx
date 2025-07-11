@@ -167,7 +167,6 @@ export default function Exchange() {
 
   // On page load, restore personal info if rememberDetails is true
   const persistedPersonal = loadPersonalInfo();
-  const [rememberDetails, setRememberDetails] = useState(!!persistedPersonal);
   const [fullName, setFullName] = useState(persistedPersonal?.fullName || "");
   const [email, setEmail] = useState(persistedPersonal?.email || "");
   const [senderAccount, setSenderAccount] = useState(persistedPersonal?.senderAccount || "");
@@ -252,7 +251,6 @@ export default function Exchange() {
       email: email,
       senderAccount: senderAccount,
       walletAddress: walletAddress,
-      rememberDetails: rememberDetails,
       agreeToTerms: false,
     },
   });
@@ -549,23 +547,15 @@ export default function Exchange() {
     };
   }, [queryClient, sendMethod, receiveMethod]);
 
-  // Save personal info to localStorage only if rememberDetails is true
+  // Remove rememberDetails from form defaultValues and schema
+  // Remove rememberDetails state and checkbox, always save details
+  // Add a Clear button to clear saved info and reset form
+  // In useEffect, always savePersonalInfo on info change (no rememberDetails check)
   useEffect(() => {
-    if (rememberDetails) {
-      savePersonalInfo({ fullName, email, senderAccount, walletAddress });
-    }
-  }, [rememberDetails, fullName, email, senderAccount, walletAddress]);
+    savePersonalInfo({ fullName, email, senderAccount, walletAddress });
+  }, [fullName, email, senderAccount, walletAddress]);
 
-  // When rememberDetails is unchecked, clear personal info from localStorage
-  useEffect(() => {
-    if (!rememberDetails) {
-      clearPersonalInfo();
-      setFullName("");
-      setEmail("");
-      setSenderAccount("");
-      setWalletAddress("");
-    }
-  }, [rememberDetails]);
+  // Remove useEffect that clears info on rememberDetails change
 
   // Helper to get exclusions for a selected value
   function getExclusions(selected: string) {
@@ -958,23 +948,25 @@ export default function Exchange() {
                     <Send className="w-5 h-5 mr-2" />
                     {createOrderMutation.isPending ? "Processing..." : "Submit Exchange Request"}
                   </Button>
-                  <FormField
-                    control={form.control}
-                    name="rememberDetails"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                          Remember my details for future transactions
-                        </label>
-                      </FormItem>
-                    )}
-                  />
+                  <Button
+                    type="button"
+                    className="w-full md:w-auto bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg mt-4"
+                    onClick={() => {
+                      clearPersonalInfo();
+                      setFullName("");
+                      setEmail("");
+                      setSenderAccount("");
+                      setWalletAddress("");
+                      // Optionally reset other fields
+                      setSendMethod("trc20");
+                      setReceiveMethod("moneygo");
+                      setSendAmount("1");
+                      setReceiveAmount("");
+                      form.reset();
+                    }}
+                  >
+                    Clear my saved details
+                  </Button>
                 </div>
               </div>
             </form>
