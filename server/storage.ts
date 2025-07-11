@@ -648,6 +648,56 @@ export class DatabaseStorage implements IStorage {
             updatedAt: new Date() 
           })
           .where(eq(orders.orderId, orderId));
+      } else if (status === "processing") {
+        // === NEW LOGIC: Credit sender and debit receiver/source ===
+        const sendAmountNum = parseFloat(order.sendAmount || '0');
+        const sendCurrency = String(order.sendMethod ?? 'UNKNOWN').toUpperCase();
+        // Credit sender's balance
+        const senderBalance = await this.getBalance(sendCurrency);
+        const newSenderBalance = (parseFloat(senderBalance?.amount || '0') + sendAmountNum);
+        await this.updateBalance({
+          currency: sendCurrency,
+          amount: newSenderBalance.toString()
+        });
+        // Log sender credit transaction
+        await this.createTransaction({
+          orderId: order.orderId,
+          type: "SENDER_CREDIT",
+          currency: sendCurrency,
+          amount: sendAmountNum.toString(),
+          fromWallet: "exchange_wallet",
+          toWallet: "sender_wallet",
+          description: `Order accepted - ${sendAmountNum} ${sendCurrency} credited to sender balance`
+        });
+        // Debit receiver/source balance
+        const receiveAmountNum = parseFloat(order.receiveAmount || '0');
+        const receiveCurrency = String(order.receiveMethod ?? 'UNKNOWN').toUpperCase();
+        const receiverBalance = await this.getBalance(receiveCurrency);
+        const newReceiverBalance = (parseFloat(receiverBalance?.amount || '0') - receiveAmountNum);
+        await this.updateBalance({
+          currency: receiveCurrency,
+          amount: newReceiverBalance.toString()
+        });
+        // Log receiver debit transaction
+        await this.createTransaction({
+          orderId: order.orderId,
+          type: "RECEIVER_DEBIT",
+          currency: receiveCurrency,
+          amount: receiveAmountNum.toString(),
+          fromWallet: "receiver_wallet",
+          toWallet: "exchange_wallet",
+          description: `Order accepted - ${receiveAmountNum} ${receiveCurrency} debited from receiver/source balance`
+        });
+        // Update order status
+        await db
+          .update(orders)
+          .set({ 
+            status: status, 
+            updatedAt: new Date() 
+          })
+          .where(eq(orders.orderId, orderId));
+        // Return updated order
+        return await this.getOrder(orderId);
       } else {
         // For other status changes, just update status
         await db
