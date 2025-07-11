@@ -955,24 +955,37 @@ export default function Exchange() {
                   </Button>
                   <Button
                     type="button"
-                    className="w-full md:w-auto bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg mt-4"
+                    className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg mt-4"
                     onClick={() => {
-                      clearPersonalInfo();
+                      // Only clear payment methods and amounts, keep personal info
                       clearExchangePersist();
-                      setFullName("");
-                      setEmail("");
-                      setSenderAccount("");
-                      setWalletAddress("");
                       setSendMethod("trc20");
                       setReceiveMethod("moneygo");
                       setSendAmount("1");
                       setReceiveAmount("");
-                      form.reset();
+                      // Don't clear personal info - keep it saved
+                      // Don't reset the form completely
                     }}
                   >
-                    Clear all saved information
+                    Clear payment methods and amounts only
                   </Button>
                 </div>
+
+                {/* Separate button for clearing personal info only */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full md:w-auto border-gray-300 text-gray-600 hover:bg-gray-50 font-medium py-1 px-3 rounded text-sm mt-2"
+                  onClick={() => {
+                    clearPersonalInfo();
+                    setFullName("");
+                    setEmail("");
+                    setSenderAccount("");
+                    setWalletAddress("");
+                  }}
+                >
+                  Clear personal information only
+                </Button>
               </div>
             </form>
           </Form>
