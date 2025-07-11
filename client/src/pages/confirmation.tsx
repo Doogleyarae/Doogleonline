@@ -359,68 +359,28 @@ export default function Confirmation() {
             </CardContent>
           </Card>
 
-          {/* Sender and Receiver Account Details */}
-          <Card className="bg-white border mb-6">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Sender Account</h3>
-                  <div className="bg-gray-50 rounded px-3 py-2 text-left">
-                    <span className="text-xs text-gray-500 block mb-1">
-                      {(() => {
-                        switch (order.sendMethod) {
-                          case 'zaad': return 'Zaad Phone Number';
-                          case 'sahal': return 'Sahal Phone Number';
-                          case 'evc': return 'EVC Plus Phone Number';
-                          case 'edahab': return 'eDahab Phone Number';
-                          case 'premier': return 'Premier Bank Account Number';
-                          default: return `${order.sendMethod?.toUpperCase()} Account`;
-                        }
-                      })()}
-                    </span>
-                    <span className="font-mono text-gray-900 text-sm break-all">{order.senderAccount || 'Not provided'}</span>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Receiver Account</h3>
-                  <div className="bg-gray-50 rounded px-3 py-2 text-left">
-                    <span className="text-xs text-gray-500 block mb-1">
-                      {(() => {
-                        switch (order.receiveMethod) {
-                          case 'zaad': return 'Zaad Phone Number';
-                          case 'sahal': return 'Sahal Phone Number';
-                          case 'evc': return 'EVC Plus Phone Number';
-                          case 'edahab': return 'eDahab Phone Number';
-                          case 'premier': return 'Premier Bank Account Number';
-                          case 'moneygo': return 'MoneyGo Phone Number';
-                          case 'trc20': return 'TRC20 Wallet Address';
-                          case 'trx': return 'TRX Wallet Address';
-                          case 'peb20': return 'PEB20 Wallet Address';
-                          default: return `${order.receiveMethod?.toUpperCase()} Account`;
-                        }
-                      })()}
-                    </span>
-                    <span className="font-mono text-gray-900 text-sm break-all">{order.walletAddress || 'Not provided'}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+          {/* Send Payment To: Always show admin's wallet for sendMethod */}
           <Card className="bg-blue-50 border border-blue-200 mb-6">
             <CardContent className="p-4">
               <h3 className="text-sm font-semibold text-blue-900 mb-2">Send Payment To:</h3>
               <div className="flex items-center justify-between bg-white rounded-md px-3 py-2">
                 <span className="text-sm font-mono text-gray-900 flex-1 break-all">
                   {getFormattedPaymentString(
-                    walletAddresses?.[order.receiveMethod] || order.paymentWallet,
+                    walletAddresses?.[order.sendMethod] || order.paymentWallet,
                     order.sendAmount
                   )}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleCopyWallet}
+                  onClick={() => {
+                    const paymentString = getFormattedPaymentString(
+                      walletAddresses?.[order.sendMethod] || order.paymentWallet,
+                      order.sendAmount
+                    );
+                    copyToClipboard(paymentString);
+                    toast({ title: "Copied!", description: "Payment string copied to clipboard" });
+                  }}
                   className="ml-2 text-primary hover:text-blue-700"
                   title="Copy to clipboard"
                 >
