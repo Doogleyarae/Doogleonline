@@ -63,7 +63,7 @@ const createExchangeFormSchema = (
   minSendAmount: number = 5,
   maxSendAmount: number = 10000,
   minReceiveAmount: number = 5,
-  maxReceiveAmount: number = 10000,
+  maxReceiveAmount: number = 999999999,
   sendMethod: string = ""
 ) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
@@ -87,14 +87,13 @@ const createExchangeFormSchema = (
     (val) => {
       if (!val || val === "") return false;
       const amount = parseFloat(val);
-      return !isNaN(amount) && amount >= minReceiveAmount && amount <= maxReceiveAmount;
+      return !isNaN(amount) && amount >= minReceiveAmount;
     },
     (val) => {
       if (!val || val === "") return { message: "Amount is required" };
       const amount = parseFloat(val);
       if (isNaN(amount)) return { message: "Please enter a valid number" };
       if (amount < minReceiveAmount) return { message: `Minimum receive amount: $${minReceiveAmount.toFixed(2)}` };
-      if (amount > maxReceiveAmount) return { message: `Maximum receive amount: $${maxReceiveAmount.toLocaleString()}` };
       return { message: "Invalid amount" };
     }
   ),
