@@ -1006,7 +1006,8 @@ export default function AdminDashboard() {
     }
 
     // Message notifications
-    const unreadMessages = messages.filter(message => !message.response);
+    // Fix 1: Use 'adminResponse' instead of 'response' for unread messages
+    const unreadMessages = messages.filter(message => !message.adminResponse);
     const recentMessages = messages.filter(message => {
       const messageDate = new Date(message.createdAt);
       const oneDayAgo = new Date();
@@ -2031,7 +2032,7 @@ export default function AdminDashboard() {
                                             throw new Error('Failed to credit balance');
                                           }
                                         } catch (err) {
-                                          toast({ title: 'Credit failed', description: err.message, variant: 'destructive' });
+                                          toast({ title: 'Credit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
                                         }
                                       }}
                                     >
@@ -2063,7 +2064,7 @@ export default function AdminDashboard() {
                                             throw new Error('Failed to debit balance');
                                           }
                                         } catch (err) {
-                                          toast({ title: 'Debit failed', description: err.message, variant: 'destructive' });
+                                          toast({ title: 'Debit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
                                         }
                                       }}
                                     >

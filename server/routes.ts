@@ -186,7 +186,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('=== [ROUTE /api/orders] About to call createOrder ===');
-      const order = await storage.createOrder(validatedData);
+      
+      // Ensure fullName and phoneNumber are provided for required send methods
+      const orderData = {
+        ...validatedData,
+        fullName: validatedData.fullName || 'Anonymous User',
+        phoneNumber: typeof validatedData.phoneNumber === 'string' ? validatedData.phoneNumber : '' // Always a string
+      };
+      
+      const order = await storage.createOrder(orderData);
       console.log('=== [ROUTE /api/orders] Order created successfully:', order.orderId);
       
       // Send order confirmation email
