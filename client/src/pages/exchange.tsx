@@ -151,6 +151,45 @@ function clearPersonalInfo() {
   localStorage.removeItem(EXCHANGE_PERSONAL_KEY);
 }
 
+// Enhanced storage system for complete page state
+const EXCHANGE_COMPLETE_STATE_KEY = 'exchange-complete-state';
+
+function saveCompleteExchangeState(data: {
+  sendMethod: string;
+  receiveMethod: string;
+  sendAmount: string;
+  receiveAmount: string;
+  fullName: string;
+  email: string;
+  senderAccount: string;
+  walletAddress: string;
+  exchangeRate: number;
+  rateDisplay: string;
+  dynamicLimits: {
+    minSendAmount: number;
+    maxSendAmount: number;
+    minReceiveAmount: number;
+    maxReceiveAmount: number;
+  };
+  timestamp: number;
+}) {
+  localStorage.setItem(EXCHANGE_COMPLETE_STATE_KEY, JSON.stringify(data));
+}
+
+function loadCompleteExchangeState() {
+  try {
+    const raw = localStorage.getItem(EXCHANGE_COMPLETE_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function clearCompleteExchangeState() {
+  localStorage.removeItem(EXCHANGE_COMPLETE_STATE_KEY);
+}
+
 export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -165,32 +204,53 @@ export default function Exchange() {
     hasSavedData 
   } = useFormDataMemory('exchange');
 
-  // On page load, restore personal info if rememberDetails is true
+  // Load complete state on page load
+  const completeState = loadCompleteExchangeState();
   const persistedPersonal = loadPersonalInfo();
-  const [fullName, setFullName] = useState(persistedPersonal?.fullName || "");
-  const [email, setEmail] = useState(persistedPersonal?.email || "");
-  const [senderAccount, setSenderAccount] = useState(persistedPersonal?.senderAccount || "");
-  const [walletAddress, setWalletAddress] = useState(persistedPersonal?.walletAddress || "");
-
-  // Use localStorage for currency/amount persistence
   const persisted = loadExchangePersist();
-  const [sendMethod, setSendMethod] = useState(persisted?.sendMethod || "trc20");
-  const [receiveMethod, setReceiveMethod] = useState(persisted?.receiveMethod || "moneygo");
-  const [sendAmount, setSendAmount] = useState(persisted?.sendAmount || "1");
-  const [receiveAmount, setReceiveAmount] = useState(persisted?.receiveAmount || "");
-  const [exchangeRate, setExchangeRate] = useState<number>(0);
-  const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
-  const [dynamicLimits, setDynamicLimits] = useState({
+
+  // Use complete state if available, otherwise fall back to individual storage
+  const [fullName, setFullName] = useState(completeState?.fullName || persistedPersonal?.fullName || "");
+  const [email, setEmail] = useState(completeState?.email || persistedPersonal?.email || "");
+  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || persistedPersonal?.senderAccount || "");
+  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || persistedPersonal?.walletAddress || "");
+
+  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || persisted?.sendMethod || "trc20");
+  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || persisted?.receiveMethod || "moneygo");
+  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || persisted?.sendAmount || "1");
+  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || persisted?.receiveAmount || "");
+  const [exchangeRate, setExchangeRate] = useState<number>(completeState?.exchangeRate || 0);
+  const [rateDisplay, setRateDisplay] = useState(completeState?.rateDisplay || "1 USD = 1.05 EUR");
+  const [dynamicLimits, setDynamicLimits] = useState(completeState?.dynamicLimits || {
     minSendAmount: 5,
     maxSendAmount: 10000,
     minReceiveAmount: 5,
     maxReceiveAmount: 10000,
   });
 
-  // Add automatic saving of payment methods and amounts
+  // Save complete state whenever anything changes
   useEffect(() => {
-    saveExchangePersist({ sendMethod, receiveMethod, sendAmount, receiveAmount });
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount]);
+    saveCompleteExchangeState({
+      sendMethod,
+      receiveMethod,
+      sendAmount,
+      receiveAmount,
+      fullName,
+      email,
+      senderAccount,
+      walletAddress,
+      exchangeRate,
+      rateDisplay,
+      dynamicLimits,
+      timestamp: Date.now()
+    });
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
+
+  // On page load, restore personal info if rememberDetails is true
+  // Removed this useEffect as personal info is now saved globally
+
+  // Use localStorage for currency/amount persistence
+  // Removed this useEffect as currency/amount is now saved globally
 
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
@@ -556,9 +616,7 @@ export default function Exchange() {
   // Remove rememberDetails state and checkbox, always save details
   // Add a Clear button to clear saved info and reset form
   // In useEffect, always savePersonalInfo on info change (no rememberDetails check)
-  useEffect(() => {
-    savePersonalInfo({ fullName, email, senderAccount, walletAddress });
-  }, [fullName, email, senderAccount, walletAddress]);
+  // Removed this useEffect as personal info is now saved globally
 
   // Remove useEffect that clears info on rememberDetails change
 
@@ -957,17 +1015,25 @@ export default function Exchange() {
                     type="button"
                     className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg mt-4"
                     onClick={() => {
-                      // Only clear payment methods and amounts, keep personal info
+                      // Clear complete state and reset to defaults
+                      clearCompleteExchangeState();
                       clearExchangePersist();
                       setSendMethod("trc20");
                       setReceiveMethod("moneygo");
                       setSendAmount("1");
                       setReceiveAmount("");
-                      // Don't clear personal info - keep it saved
-                      // Don't reset the form completely
+                      setExchangeRate(0);
+                      setRateDisplay("1 USD = 1.05 EUR");
+                      setDynamicLimits({
+                        minSendAmount: 5,
+                        maxSendAmount: 10000,
+                        minReceiveAmount: 5,
+                        maxReceiveAmount: 10000,
+                      });
+                      // Keep personal info saved separately
                     }}
                   >
-                    Clear payment methods and amounts only
+                    Clear all exchange data (keep personal info)
                   </Button>
                 </div>
 
@@ -985,6 +1051,37 @@ export default function Exchange() {
                   }}
                 >
                   Clear personal information only
+                </Button>
+
+                {/* Button to clear everything */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full md:w-auto border-red-300 text-red-600 hover:bg-red-50 font-medium py-1 px-3 rounded text-sm mt-2"
+                  onClick={() => {
+                    clearCompleteExchangeState();
+                    clearPersonalInfo();
+                    clearExchangePersist();
+                    setFullName("");
+                    setEmail("");
+                    setSenderAccount("");
+                    setWalletAddress("");
+                    setSendMethod("trc20");
+                    setReceiveMethod("moneygo");
+                    setSendAmount("1");
+                    setReceiveAmount("");
+                    setExchangeRate(0);
+                    setRateDisplay("1 USD = 1.05 EUR");
+                    setDynamicLimits({
+                      minSendAmount: 5,
+                      maxSendAmount: 10000,
+                      minReceiveAmount: 5,
+                      maxReceiveAmount: 10000,
+                    });
+                    form.reset();
+                  }}
+                >
+                  Clear everything (complete reset)
                 </Button>
               </div>
             </form>
