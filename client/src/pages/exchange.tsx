@@ -807,22 +807,32 @@ export default function Exchange() {
                         control={form.control}
                         name="receiveAmount"
                         render={({ field }) => (
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              className="h-12 text-lg"
-                              value={field.value}
-                              onChange={(e) => {
-                                field.onChange(e.target.value);
-                                handleReceiveAmountChange(e.target.value);
-                                if (isReminded) {
-                                  updateSavedField('receiveAmount', e.target.value);
-                                }
-                              }}
-                            />
-                          </FormControl>
+                          <FormItem>
+                            <FormLabel className="text-lg font-semibold text-gray-700 flex items-center">
+                              Amount to Receive
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                step="0.01"
+                                placeholder="0.00"
+                                className="h-12 text-lg"
+                                value={field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value);
+                                  handleReceiveAmountChange(e.target.value);
+                                  if (isReminded) {
+                                    updateSavedField('receiveAmount', e.target.value);
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            {/* Show allowed min/max for receive amount */}
+                            <div className="text-xs text-gray-500 mt-1">
+                              Allowed: ${dynamicLimits.minReceiveAmount.toLocaleString()} - ${dynamicLimits.maxReceiveAmount.toLocaleString()} {receiveMethod.toUpperCase()}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
                         )}
                       />
                     </div>
