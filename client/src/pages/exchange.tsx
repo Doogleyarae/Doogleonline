@@ -1011,78 +1011,7 @@ export default function Exchange() {
                     <Send className="w-5 h-5 mr-2" />
                     {createOrderMutation.isPending ? "Processing..." : "Submit Exchange Request"}
                   </Button>
-                  <Button
-                    type="button"
-                    className="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg mt-4"
-                    onClick={() => {
-                      // Clear complete state and reset to defaults
-                      clearCompleteExchangeState();
-                      clearExchangePersist();
-                      setSendMethod("trc20");
-                      setReceiveMethod("moneygo");
-                      setSendAmount("1");
-                      setReceiveAmount("");
-                      setExchangeRate(0);
-                      setRateDisplay("1 USD = 1.05 EUR");
-                      setDynamicLimits({
-                        minSendAmount: 5,
-                        maxSendAmount: 10000,
-                        minReceiveAmount: 5,
-                        maxReceiveAmount: 10000,
-                      });
-                      // Keep personal info saved separately
-                    }}
-                  >
-                    Clear all exchange data (keep personal info)
-                  </Button>
                 </div>
-
-                {/* Separate button for clearing personal info only */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full md:w-auto border-gray-300 text-gray-600 hover:bg-gray-50 font-medium py-1 px-3 rounded text-sm mt-2"
-                  onClick={() => {
-                    clearPersonalInfo();
-                    setFullName("");
-                    setEmail("");
-                    setSenderAccount("");
-                    setWalletAddress("");
-                  }}
-                >
-                  Clear personal information only
-                </Button>
-
-                {/* Button to clear everything */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full md:w-auto border-red-300 text-red-600 hover:bg-red-50 font-medium py-1 px-3 rounded text-sm mt-2"
-                  onClick={() => {
-                    clearCompleteExchangeState();
-                    clearPersonalInfo();
-                    clearExchangePersist();
-                    setFullName("");
-                    setEmail("");
-                    setSenderAccount("");
-                    setWalletAddress("");
-                    setSendMethod("trc20");
-                    setReceiveMethod("moneygo");
-                    setSendAmount("1");
-                    setReceiveAmount("");
-                    setExchangeRate(0);
-                    setRateDisplay("1 USD = 1.05 EUR");
-                    setDynamicLimits({
-                      minSendAmount: 5,
-                      maxSendAmount: 10000,
-                      minReceiveAmount: 5,
-                      maxReceiveAmount: 10000,
-                    });
-                    form.reset();
-                  }}
-                >
-                  Clear everything (complete reset)
-                </Button>
               </div>
             </form>
           </Form>
