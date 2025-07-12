@@ -8,6 +8,7 @@ import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
 import { LanguageProvider } from "@/contexts/language-context";
+import { ErrorBoundary } from 'react-error-boundary';
 
 // Lazy load pages to improve initial loading
 const Home = lazy(() => import("@/pages/home"));
@@ -42,37 +43,52 @@ function LoadingSpinner() {
   );
 }
 
+function ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="text-red-600 text-xl font-bold mb-4">
+        Something went wrong: {error.message}
+      </div>
+      <button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-semibold">
+        Try Again
+      </button>
+    </div>
+  );
+}
+
 function Router() {
   // Initialize scroll memory for the entire app
   useScrollMemory();
   
   return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/about" component={About} />
-        <Route path="/services" component={Services} />
-        <Route path="/how-it-works" component={HowItWorks} />
-        <Route path="/exchange" component={Exchange} />
-        <Route path="/confirmation" component={Confirmation} />
-        <Route path="/order-completed" component={OrderCompleted} />
-        <Route path="/order-cancelled" component={OrderCancelled} />
-        <Route path="/track" component={TrackOrder} />
-        <Route path="/contact" component={Contact} />
-        <Route path="/orders" component={OrderHistory} />
-        <Route path="/completed" component={CompletedOrders} />
-        <Route path="/cancelled" component={CancelledOrders} />
-        <Route path="/signin" component={SignIn} />
-        <Route path="/signup" component={SignUp} />
-        <Route path="/forgot-password" component={ForgotPassword} />
-        <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/admin" component={AdminLogin} />
-        <Route path="/admin/dashboard" component={AdminDashboard} />
-        <Route path="/admin/analytics" component={AdminAnalytics} />
-        <Route path="/admin-exchange-rates" component={AdminExchangeRates} />
-        <Route component={NotFound} />
-      </Switch>
-    </Suspense>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/about" component={About} />
+          <Route path="/services" component={Services} />
+          <Route path="/how-it-works" component={HowItWorks} />
+          <Route path="/exchange" component={Exchange} />
+          <Route path="/confirmation" component={Confirmation} />
+          <Route path="/order-completed" component={OrderCompleted} />
+          <Route path="/order-cancelled" component={OrderCancelled} />
+          <Route path="/track" component={TrackOrder} />
+          <Route path="/contact" component={Contact} />
+          <Route path="/orders" component={OrderHistory} />
+          <Route path="/completed" component={CompletedOrders} />
+          <Route path="/cancelled" component={CancelledOrders} />
+          <Route path="/signin" component={SignIn} />
+          <Route path="/signup" component={SignUp} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
+          <Route path="/admin" component={AdminLogin} />
+          <Route path="/admin/dashboard" component={AdminDashboard} />
+          <Route path="/admin/analytics" component={AdminAnalytics} />
+          <Route path="/admin-exchange-rates" component={AdminExchangeRates} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
