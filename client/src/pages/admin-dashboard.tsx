@@ -1733,945 +1733,945 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Management Section with Sub-Tabs */}
-          <TabsContent value="management" className="space-y-6">
-            <Tabs defaultValue="rates" className="space-y-4">
-              <TabsList className="flex w-full max-w-2xl mx-auto h-auto p-1 bg-gray-100 dark:bg-gray-800/70 border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-sm mb-6">
-                <TabsTrigger value="rates" className="flex-1 data-[state=active]:bg-purple-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
-                  Rates
-                </TabsTrigger>
-                <TabsTrigger value="limits" className="flex-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
-                  Balance
-                </TabsTrigger>
-                <TabsTrigger value="wallets" className="flex-1 data-[state=active]:bg-teal-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
-                  Wallets
-                </TabsTrigger>
-                <TabsTrigger value="contact" className="flex-1 data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
-                  Contact
-                </TabsTrigger>
-              </TabsList>
-              {/* Sub-tab contents (moved from main TabsContent) */}
-              <TabsContent value="rates" className="space-y-6">
-                {/* Current Exchange Rates Display */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <TrendingUp className="w-5 h-5 mr-2" />
-                      Current Exchange Rates
-                    </CardTitle>
-                    <p className="text-sm text-gray-600">Live rates affecting all transaction calculations</p>
-                  </CardHeader>
-                  <CardContent>
-                    {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {allExchangeRates.map((rate: any) => (
-                          <div key={`${rate.fromCurrency}-${rate.toCurrency}`} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <p className="font-semibold text-sm">
-                                  {rate.fromCurrency.toUpperCase()} → {rate.toCurrency.toUpperCase()}
-                                </p>
-                                <p className="text-lg font-bold text-blue-900">
-                                  {parseFloat(rate.rate).toFixed(6)}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                  Updated: {new Date(rate.updatedAt).toLocaleString()}
-                                </p>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setFromCurrency(rate.fromCurrency);
-                                  setToCurrency(rate.toCurrency);
-                                  setExchangeRate(rate.rate);
-                                }}
-                              >
-                                Edit
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p>No exchange rates configured</p>
-                        <p className="text-sm">Use the form below to set your first rate</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Rate Update Form */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Settings className="w-5 h-5 mr-2" />
-                      Update Exchange Rate
-                    </CardTitle>
-                    <p className="text-sm text-gray-600">Changes apply immediately to all live calculations</p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <Label htmlFor="fromCurrency">From Currency</Label>
-                        <Select value={fromCurrency} onValueChange={setFromCurrency}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select from currency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {paymentMethods.map((method) => (
-                              <SelectItem key={method.value} value={method.value}>
-                                {method.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="toCurrency">To Currency</Label>
-                        <Select value={toCurrency} onValueChange={setToCurrency}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select to currency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {paymentMethods.map((method) => (
-                              <SelectItem key={method.value} value={method.value}>
-                                {method.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="rate">Exchange Rate</Label>
-                        <Input
-                          type="number"
-                          step="0.000001"
-                          placeholder="0.000000"
-                          value={exchangeRate}
-                          onChange={(e) => setExchangeRate(e.target.value)}
-                        />
-                      </div>
-                      
-                      <div className="flex items-end">
-                        <Button 
-                          onClick={handleRateUpdate} 
-                          disabled={updateRateMutation.isPending}
-                          className="w-full"
-                        >
-                          {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {fromCurrency && toCurrency && exchangeRate && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p className="text-sm text-green-800">
-                          <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
-                        </p>
-                        <p className="text-xs text-green-600 mt-1">
-                          This rate will immediately affect max amount calculations and all new transactions
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="limits" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Settings className="w-5 h-5 mr-2" />
-                      Balance Management
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Actual Currency Balance Management */}
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
-                      <h3 className="text-xl font-semibold text-green-900 mb-4">Currency Balance Management</h3>
-                      <p className="text-green-700 mb-6">Manage available balances for each currency - these control maximum outgoing amounts</p>
-                      
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {paymentMethods.map((method) => {
-                          const displayBalance = systemStatus === 'off' ? 0 : balances[method.value.toUpperCase()] || 0;
-                          return (
-                            <div key={method.value} className="bg-white border border-gray-200 rounded-lg p-4">
-                              <h4 className="font-semibold text-lg mb-4 flex items-center">
-                                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                                  <DollarSign className="w-4 h-4 text-green-600" />
-                                </div>
-                                {method.label}
-                              </h4>
-                              
-                              <div className="space-y-4">
-                                {/* Available Balance */}
+            <TabsContent value="management" className="space-y-6">
+              <Tabs defaultValue="rates" className="space-y-4">
+                <TabsList className="flex w-full max-w-2xl mx-auto h-auto p-1 bg-gray-100 dark:bg-gray-800/70 border border-gray-200/50 dark:border-gray-700/50 rounded-xl shadow-sm mb-6">
+                  <TabsTrigger value="rates" className="flex-1 data-[state=active]:bg-purple-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
+                    Rates
+                  </TabsTrigger>
+                  <TabsTrigger value="limits" className="flex-1 data-[state=active]:bg-orange-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
+                    Balance
+                  </TabsTrigger>
+                  <TabsTrigger value="wallets" className="flex-1 data-[state=active]:bg-teal-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
+                    Wallets
+                  </TabsTrigger>
+                  <TabsTrigger value="contact" className="flex-1 data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-sm py-2 px-4 rounded-lg transition-all duration-200 font-medium">
+                    Contact
+                  </TabsTrigger>
+                </TabsList>
+                {/* Sub-tab contents (moved from main TabsContent) */}
+                <TabsContent value="rates" className="space-y-6">
+                  {/* Current Exchange Rates Display */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <TrendingUp className="w-5 h-5 mr-2" />
+                        Current Exchange Rates
+                      </CardTitle>
+                      <p className="text-sm text-gray-600">Live rates affecting all transaction calculations</p>
+                    </CardHeader>
+                    <CardContent>
+                      {Array.isArray(allExchangeRates) && allExchangeRates.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {allExchangeRates.map((rate: any) => (
+                            <div key={`${rate.fromCurrency}-${rate.toCurrency}`} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <div className="flex justify-between items-center">
                                 <div>
-                                  <Label htmlFor={`balance-${method.value}`}>Available Balance ($)</Label>
-                                  <div className="flex items-center space-x-2">
-                                    <Input
-                                      id={`balance-${method.value}`}
-                                      type="number"
-                                      value={displayBalance}
-                                      onChange={(e) => setBalances(prev => ({
-                                        ...prev,
-                                        [method.value.toUpperCase()]: parseFloat(e.target.value) || 0
-                                      }))}
-                                      placeholder="0"
-                                      min="0"
-                                      step="0.01"
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      onClick={async () => {
-                                        try {
-                                          const balance = displayBalance;
-                                          const response = await apiRequest("POST", "/api/admin/balances", {
-                                            currency: method.value,
-                                            amount: balance,
-                                          });
-                                          
-                                          if (response.ok) {
-                                            // Force complete cache invalidation for instant synchronization
-                                            queryClient.removeQueries({ 
-                                              predicate: (query) => {
-                                                const key = query.queryKey[0];
-                                                return typeof key === 'string' && (
-                                                  key.includes('/api/admin/balances') ||
-                                                  key.includes('/api/currency-limits/') ||
-                                                  key.includes('/api/exchange-rate/')
-                                                );
-                                              }
-                                            });
-                                            
-                                            // Force complete cache reset for exchange form updates
-                                            queryClient.clear();
-                                            
-                                            // Force immediate refetch of all balance-related data
-                                            setTimeout(() => {
-                                              queryClient.invalidateQueries();
-                                            }, 100);
-                                            
-                                            setRecentlyUpdatedBalance(method.value);
-                                            setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
-                                            
-                                            toast({
-                                              title: "✓ NEW BALANCE PERSISTED - Old Data Replaced",
-                                              description: `${method.label}: $${balance.toLocaleString()} (NEW DATA KEPT, affects limits immediately)`,
-                                              duration: 4000,
-                                            });
-                                          } else {
-                                            throw new Error("Failed to update balance");
-                                          }
-                                        } catch (error) {
-                                          toast({
-                                            title: "❌ Update Failed",
-                                            description: "Failed to update balance",
-                                            variant: "destructive",
-                                          });
-                                        }
-                                      }}
-                                      size="sm"
-                                      className={recentlyUpdatedBalance === method.value ? "bg-green-600" : ""}
-                                    >
-                                      {recentlyUpdatedBalance === method.value ? "✓" : "Update"}
-                                    </Button>
-                                  </div>
+                                  <p className="font-semibold text-sm">
+                                    {rate.fromCurrency.toUpperCase()} → {rate.toCurrency.toUpperCase()}
+                                  </p>
+                                  <p className="text-lg font-bold text-blue-900">
+                                    {parseFloat(rate.rate).toFixed(6)}
+                                  </p>
+                                  <p className="text-xs text-gray-600">
+                                    Updated: {new Date(rate.updatedAt).toLocaleString()}
+                                  </p>
                                 </div>
-                                {/* Manual Credit/Debit Controls */}
-                                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                  <div className="flex flex-col sm:flex-row gap-2 items-end">
-                                    <div className="flex-1">
-                                      <Label htmlFor={`manual-amount-${method.value}`}>Manual Adjustment Amount</Label>
-                                      <Input
-                                        id={`manual-amount-${method.value}`}
-                                        type="number"
-                                        min="0.01"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={manualAmounts?.[method.value] || ''}
-                                        onChange={e => setManualAmounts(prev => ({ ...prev, [method.value]: e.target.value }))}
-                                        className="mb-2"
-                                      />
-                                    </div>
-                                    <div className="flex-1">
-                                      <Label htmlFor={`manual-reason-${method.value}`}>Reason (optional)</Label>
-                                      <Input
-                                        id={`manual-reason-${method.value}`}
-                                        type="text"
-                                        placeholder="Reason for adjustment"
-                                        value={manualReasons?.[method.value] || ''}
-                                        onChange={e => setManualReasons(prev => ({ ...prev, [method.value]: e.target.value }))}
-                                      />
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                                      onClick={async () => {
-                                        const amt = parseFloat(manualAmounts?.[method.value] || '0');
-                                        if (!amt || amt <= 0) {
-                                          toast({ title: 'Enter a valid amount', variant: 'destructive' });
-                                          return;
-                                        }
-                                        try {
-                                          const res = await apiRequest('POST', '/api/admin/balances/credit', {
-                                            currency: method.value,
-                                            amount: amt,
-                                            reason: manualReasons?.[method.value] || undefined,
-                                          });
-                                          if (res.ok) {
-                                            await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
-                                            const updated = await res.json();
-                                            toast({ title: `Credited $${amt} to ${method.label}. New balance: $${updated.balance?.amount}` });
-                                            setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
-                                            setManualReasons(prev => ({ ...prev, [method.value]: '' }));
-                                          } else {
-                                            throw new Error('Failed to credit balance');
-                                          }
-                                        } catch (err) {
-                                          toast({ title: 'Credit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
-                                        }
-                                      }}
-                                    >
-                                      Credit
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
-                                      onClick={async () => {
-                                        const amt = parseFloat(manualAmounts?.[method.value] || '0');
-                                        if (!amt || amt <= 0) {
-                                          toast({ title: 'Enter a valid amount', variant: 'destructive' });
-                                          return;
-                                        }
-                                        try {
-                                          const res = await apiRequest('POST', '/api/admin/balances/debit', {
-                                            currency: method.value,
-                                            amount: amt,
-                                            reason: manualReasons?.[method.value] || undefined,
-                                          });
-                                          if (res.ok) {
-                                            await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
-                                            const updated = await res.json();
-                                            toast({ title: `Debited $${amt} from ${method.label}. New balance: $${updated.balance?.amount}` });
-                                            setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
-                                            setManualReasons(prev => ({ ...prev, [method.value]: '' }));
-                                          } else {
-                                            throw new Error('Failed to debit balance');
-                                          }
-                                        } catch (err) {
-                                          toast({ title: 'Debit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
-                                        }
-                                      }}
-                                    >
-                                      Debit
-                                    </Button>
-                                  </div>
-                                </div>
-                                
-                                {/* Minimum Amount Override */}
-                                <div>
-                                  <Label htmlFor={`min-${method.value}`}>Minimum Amount Override ($)</Label>
-                                  <div className="flex items-center space-x-2">
-                                    <Input
-                                      id={`min-${method.value}`}
-                                      type="number"
-                                      value={currencyMinimums[method.value] || 5}
-                                      onChange={(e) => setCurrencyMinimums(prev => ({
-                                        ...prev,
-                                        [method.value]: parseFloat(e.target.value) || 5
-                                      }))}
-                                      placeholder="5.00"
-                                      min="0"
-                                      step="0.01"
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      onClick={async () => {
-                                        try {
-                                          const minAmount = currencyMinimums[method.value];
-                                          
-                                          // Use the new coordinated endpoint that preserves exchange rates
-                                          const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
-                                            minAmount: minAmount,
-                                            maxAmount: 10000 // Keep standard maximum
-                                          });
-                                          
-                                          if (response.ok) {
-                                            // Force immediate cache removal for instant updates
-                                            queryClient.removeQueries({ 
-                                              predicate: (query) => {
-                                                const key = query.queryKey[0];
-                                                return typeof key === 'string' && (
-                                                  key.includes('/api/currency-limits/') ||
-                                                  key.includes('/api/exchange-rate/')
-                                                );
-                                              }
-                                            });
-                                            
-                                            // Force complete cache reset for exchange form updates
-                                            queryClient.clear();
-                                            
-                                            // Force immediate refetch of all currency limits
-                                            setTimeout(() => {
-                                              queryClient.invalidateQueries();
-                                            }, 100);
-                                            
-                                            toast({
-                                              title: "Minimum Updated with Rate Coordination",
-                                              description: `${method.label} minimum: $${minAmount} (exchange rates preserved)`,
-                                              duration: 4000,
-                                            });
-                                          }
-                                        } catch (error) {
-                                          toast({
-                                            title: "Update Failed",
-                                            description: "Failed to update minimum amount",
-                                            variant: "destructive",
-                                          });
-                                        }
-                                      }}
-                                      size="sm"
-                                      variant="outline"
-                                    >
-                                      Set Min
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                {/* Maximum Amount Override */}
-                                <div>
-                                  <Label htmlFor={`max-${method.value}`}>Maximum Amount Override ($)</Label>
-                                  <div className="flex items-center space-x-2">
-                                    <Input
-                                      id={`max-${method.value}`}
-                                      type="number"
-                                      value={currencyMaximums[method.value]}
-                                      onChange={(e) => setCurrencyMaximums(prev => ({
-                                        ...prev,
-                                        [method.value]: parseFloat(e.target.value)
-                                      }))}
-                                      placeholder="50000.00"
-                                      min="0"
-                                      step="0.01"
-                                      className="flex-1"
-                                    />
-                                    <Button
-                                      onClick={async () => {
-                                        try {
-                                          const maxAmount = Math.min(currencyMaximums[method.value] || 10000, 10000); // Enforce $10,000 maximum
-                                          
-                                          // Use the new $10,000 enforcement endpoint that preserves exchange rates
-                                          const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
-                                            minAmount: currencyMinimums[method.value] || 5,
-                                            maxAmount: maxAmount
-                                          });
-                                          
-                                          if (response.ok) {
-                                            const result = await response.json();
-                                            
-                                            // Force immediate cache removal for instant updates
-                                            queryClient.removeQueries({ 
-                                              predicate: (query) => {
-                                                const key = query.queryKey[0];
-                                                return typeof key === 'string' && (
-                                                  key.includes('/api/currency-limits/') ||
-                                                  key.includes('/api/exchange-rate/')
-                                                );
-                                              }
-                                            });
-                                            
-                                            // Update local state to reflect the enforced maximum
-                                            setCurrencyMaximums(prev => ({
-                                              ...prev,
-                                              [method.value]: result.maxAmount || 10000
-                                            }));
-                                            
-                                            toast({
-                                              title: "Maximum Updated - $10,000 Enforced",
-                                              description: `${method.label}: $${(result.maxAmount || 10000).toLocaleString()} (exchange rates preserved)`,
-                                              duration: 4000,
-                                            });
-                                          }
-                                        } catch (error) {
-                                          toast({
-                                            title: "Update Failed",
-                                            description: "Failed to update maximum amount",
-                                            variant: "destructive",
-                                          });
-                                        }
-                                      }}
-                                      size="sm"
-                                      variant="outline"
-                                    >
-                                      Set Max ($10K)
-                                    </Button>
-                                  </div>
-                                </div>
-                                
-                                <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                                  <p><strong>Balance:</strong> Controls maximum outgoing amounts</p>
-                                  <p><strong>Limits:</strong> Override balance calculations when needed</p>
-                                  <p><strong>Exchange Rate Protection:</strong> All limits respect current rates</p>
-                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setFromCurrency(rate.fromCurrency);
+                                    setToCurrency(rate.toCurrency);
+                                    setExchangeRate(rate.rate);
+                                  }}
+                                >
+                                  Edit
+                                </Button>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                          <p>No exchange rates configured</p>
+                          <p className="text-sm">Use the form below to set your first rate</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                    {/* Transaction Limits Management */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                      <h3 className="text-xl font-semibold text-blue-900 mb-4">Universal Transaction Limits</h3>
-                      <p className="text-blue-700 mb-6">Configure minimum and maximum order amounts for all payment methods</p>
-                      
-                      <div className="bg-white border border-gray-200 rounded-lg p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <Label htmlFor="universal-min">Minimum Order Amount ($)</Label>
-                            <Input
-                              id="universal-min"
-                              type="number"
-                              value={universalLimits.min}
-                              onChange={(e) => setUniversalLimits(prev => ({
-                                ...prev,
-                                min: parseFloat(e.target.value) || 0
-                              }))}
-                              placeholder="5"
-                              min="1"
-                              step="0.01"
-                              className="mt-2"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="universal-max">Maximum Order Amount ($)</Label>
-                            <Input
-                              id="universal-max"
-                              type="number"
-                              value={universalLimits.max}
-                              onChange={(e) => setUniversalLimits(prev => ({
-                                ...prev,
-                                max: parseFloat(e.target.value) || 0
-                              }))}
-                              placeholder="10000"
-                              min="1"
-                              step="0.01"
-                              className="mt-2"
-                            />
-                          </div>
+                  {/* Rate Update Form */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Settings className="w-5 h-5 mr-2" />
+                        Update Exchange Rate
+                      </CardTitle>
+                      <p className="text-sm text-gray-600">Changes apply immediately to all live calculations</p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <Label htmlFor="fromCurrency">From Currency</Label>
+                          <Select value={fromCurrency} onValueChange={setFromCurrency}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select from currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {paymentMethods.map((method) => (
+                                <SelectItem key={method.value} value={method.value}>
+                                  {method.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         
-                        <div className="mt-6 flex items-center justify-between">
-                          <div className="text-sm text-gray-600">
-                            Current Range: <span className="font-semibold">${universalLimits.min} - ${universalLimits.max.toLocaleString()}</span>
-                          </div>
+                        <div>
+                          <Label htmlFor="toCurrency">To Currency</Label>
+                          <Select value={toCurrency} onValueChange={setToCurrency}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select to currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {paymentMethods.map((method) => (
+                                <SelectItem key={method.value} value={method.value}>
+                                  {method.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="rate">Exchange Rate</Label>
+                          <Input
+                            type="number"
+                            step="0.000001"
+                            placeholder="0.000000"
+                            value={exchangeRate}
+                            onChange={(e) => setExchangeRate(e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="flex items-end">
                           <Button 
-                            onClick={updateUniversalLimits}
-                            disabled={updateLimitsMutation.isPending}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={handleRateUpdate} 
+                            disabled={updateRateMutation.isPending}
+                            className="w-full"
                           >
-                            {updateLimitsMutation.isPending ? "Updating..." : "Update Limits"}
+                            {updateRateMutation.isPending ? "Updating..." : "Update Rate"}
                           </Button>
                         </div>
-                        
-                        <div className="mt-4 p-4 bg-gray-50 rounded">
-                          <p className="text-sm text-gray-700">
-                            <strong>Applies to:</strong> {paymentMethods.map(m => m.label).join(', ')}
-                          </p>
-                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="wallets" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Wallet Address Management */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Settings className="w-5 h-5 mr-2" />
-                        Payment Wallet Management
-                      </CardTitle>
-                      <p className="text-sm text-gray-600">
-                        Update wallet addresses and account numbers for each payment method
-                      </p>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {walletData ? (
-                        Object.entries(walletAddresses).map(([method, address]) => {
-                          const methodLabel = paymentMethods.find(p => p.value === method)?.label || method.toUpperCase();
-                          return (
-                            <div key={method} className={`space-y-2 p-3 rounded-lg transition-all duration-300 ${
-                              recentlyUpdated === method ? 'bg-green-50 border border-green-200' : 'bg-transparent'
-                            }`}>
-                              <Label htmlFor={`wallet-${method}`} className="text-sm font-semibold flex items-center gap-2">
-                                {methodLabel}
-                                {recentlyUpdated === method && (
-                                  <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                                    ✓ Updated
-                                  </span>
-                                )}
-                              </Label>
-                              <div className="flex gap-2">
-                                <Input
-                                  id={`wallet-${method}`}
-                                  value={address || ''}
-                                  onChange={(e) => setWalletAddresses(prev => ({
-                                    ...prev,
-                                    [method]: e.target.value
-                                  }))}
-                                  placeholder={`Enter ${methodLabel} wallet/account`}
-                                  className={`flex-1 transition-all duration-200 ${
-                                    recentlyUpdated === method ? 'border-green-300 focus:border-green-500' : ''
-                                  }`}
-                                />
-                                <Button
-                                  onClick={() => handleWalletUpdate(method, address)}
-                                  disabled={updateWalletMutation.isPending}
-                                  size="sm"
-                                  className={`transition-all duration-200 ${
-                                    updateWalletMutation.isPending 
-                                      ? "bg-gray-400 cursor-not-allowed" 
-                                      : recentlyUpdated === method
-                                      ? "bg-green-600 hover:bg-green-700"
-                                      : "bg-blue-600 hover:bg-blue-700"
-                                  }`}
-                                >
-                                  {updateWalletMutation.isPending ? (
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                                      Saving...
-                                    </div>
-                                  ) : recentlyUpdated === method ? (
-                                    "✓ Saved"
-                                  ) : (
-                                    "Save"
-                                  )}
-                                </Button>
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                Current: {address || 'Not configured'}
-                              </p>
-                              {recentlyUpdated === method && (
-                                <div className="flex items-center gap-2 text-sm text-green-700">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  Successfully saved to database
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="flex items-center justify-center p-8">
-                          <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                            <p className="text-sm text-gray-600">Loading wallet addresses...</p>
-                          </div>
-                        </div>
-                      )}
                       
-                      {lastUpdated && (
-                        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                      {fromCurrency && toCurrency && exchangeRate && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                           <p className="text-sm text-green-800">
-                            Last updated: {new Date(lastUpdated).toLocaleString()}
+                            <strong>Preview:</strong> 1 {fromCurrency.toUpperCase()} = {exchangeRate} {toCurrency.toUpperCase()}
+                          </p>
+                          <p className="text-xs text-green-600 mt-1">
+                            This rate will immediately affect max amount calculations and all new transactions
                           </p>
                         </div>
                       )}
                     </CardContent>
                   </Card>
-
-                  {/* API Endpoints Management */}
+                </TabsContent>
+                <TabsContent value="limits" className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         <Settings className="w-5 h-5 mr-2" />
-                        API Endpoint Configuration
+                        Balance Management
                       </CardTitle>
-                      <p className="text-sm text-gray-600">
-                        Configure API endpoints for external integrations
-                      </p>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {apiData ? (
-                        Object.entries(apiEndpoints).map(([endpoint, url]) => {
-                          const endpointLabel = endpoint.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                          return (
-                            <div key={endpoint} className="space-y-2">
-                              <Label htmlFor={`api-${endpoint}`} className="text-sm font-semibold">
-                                {endpointLabel}
-                              </Label>
-                              <div className="flex gap-2">
-                                <Input
-                                  id={`api-${endpoint}`}
-                                  value={url || ''}
-                                  onChange={(e) => setApiEndpoints(prev => ({
-                                    ...prev,
-                                    [endpoint]: e.target.value
-                                  }))}
-                                  placeholder={`Enter ${endpointLabel} URL`}
-                                  className="flex-1"
-                                />
-                                <Button
-                                  onClick={() => handleApiEndpointUpdate(endpoint, url)}
-                                  disabled={updateApiEndpointMutation.isPending}
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  {updateApiEndpointMutation.isPending ? "Saving..." : "Save"}
-                                </Button>
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                Current: {url || 'Not configured'}
-                              </p>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="flex items-center justify-center p-8">
-                          <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
-                            <p className="text-sm text-gray-600">Loading API endpoints...</p>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Current Wallet Overview */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Current Wallet Configuration</CardTitle>
-                    <p className="text-sm text-gray-600">
-                      Overview of all configured payment methods and their addresses
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
-                        <thead>
-                          <tr className="bg-gray-50">
-                            <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Payment Method</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Type</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Address/Account</th>
-                            <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(walletAddresses).map(([method, address]) => {
-                            const methodData = paymentMethods.find(p => p.value === method);
-                            const methodLabel = methodData?.label || method.toUpperCase();
-                            
-                            let methodType = "Digital Wallet";
-                            if (method === 'premier') methodType = "Bank Account";
-                            else if (['zaad', 'sahal', 'evc'].includes(method)) methodType = "Mobile Money";
-                            else if (['trc20', 'trx', 'peb20'].includes(method)) methodType = "Cryptocurrency";
-                            
+                    <CardContent className="space-y-6">
+                      {/* Actual Currency Balance Management */}
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+                        <h3 className="text-xl font-semibold text-green-900 mb-4">Currency Balance Management</h3>
+                        <p className="text-green-700 mb-6">Manage available balances for each currency - these control maximum outgoing amounts</p>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {paymentMethods.map((method) => {
+                            const displayBalance = systemStatus === 'off' ? 0 : balances[method.value.toUpperCase()] || 0;
                             return (
-                              <tr key={method} className="hover:bg-gray-50">
-                                <td className="border border-gray-300 px-4 py-2 font-medium">{methodLabel}</td>
-                                <td className="border border-gray-300 px-4 py-2">{methodType}</td>
-                                <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
-                                  {address || 'Not configured'}
-                                </td>
-                                <td className="border border-gray-300 px-4 py-2">
-                                  <Badge 
-                                    variant="outline" 
-                                    className={address ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}
-                                  >
-                                    {address ? 'Configured' : 'Missing'}
-                                  </Badge>
-                                </td>
-                              </tr>
+                              <div key={method.value} className="bg-white border border-gray-200 rounded-lg p-4">
+                                <h4 className="font-semibold text-lg mb-4 flex items-center">
+                                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                    <DollarSign className="w-4 h-4 text-green-600" />
+                                  </div>
+                                  {method.label}
+                                </h4>
+                                
+                                <div className="space-y-4">
+                                  {/* Available Balance */}
+                                  <div>
+                                    <Label htmlFor={`balance-${method.value}`}>Available Balance ($)</Label>
+                                    <div className="flex items-center space-x-2">
+                                      <Input
+                                        id={`balance-${method.value}`}
+                                        type="number"
+                                        value={displayBalance}
+                                        onChange={(e) => setBalances(prev => ({
+                                          ...prev,
+                                          [method.value.toUpperCase()]: parseFloat(e.target.value) || 0
+                                        }))}
+                                        placeholder="0"
+                                        min="0"
+                                        step="0.01"
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        onClick={async () => {
+                                          try {
+                                            const balance = displayBalance;
+                                            const response = await apiRequest("POST", "/api/admin/balances", {
+                                              currency: method.value,
+                                              amount: balance,
+                                            });
+                                            
+                                            if (response.ok) {
+                                              // Force complete cache invalidation for instant synchronization
+                                              queryClient.removeQueries({ 
+                                                predicate: (query) => {
+                                                  const key = query.queryKey[0];
+                                                  return typeof key === 'string' && (
+                                                    key.includes('/api/admin/balances') ||
+                                                    key.includes('/api/currency-limits/') ||
+                                                    key.includes('/api/exchange-rate/')
+                                                  );
+                                                }
+                                              });
+                                              
+                                              // Force complete cache reset for exchange form updates
+                                              queryClient.clear();
+                                              
+                                              // Force immediate refetch of all balance-related data
+                                              setTimeout(() => {
+                                                queryClient.invalidateQueries();
+                                              }, 100);
+                                              
+                                              setRecentlyUpdatedBalance(method.value);
+                                              setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
+                                              
+                                              toast({
+                                                title: "✓ NEW BALANCE PERSISTED - Old Data Replaced",
+                                                description: `${method.label}: $${balance.toLocaleString()} (NEW DATA KEPT, affects limits immediately)`,
+                                                duration: 4000,
+                                              });
+                                            } else {
+                                              throw new Error("Failed to update balance");
+                                            }
+                                          } catch (error) {
+                                            toast({
+                                              title: "❌ Update Failed",
+                                              description: "Failed to update balance",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
+                                        size="sm"
+                                        className={recentlyUpdatedBalance === method.value ? "bg-green-600" : ""}
+                                      >
+                                        {recentlyUpdatedBalance === method.value ? "✓" : "Update"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  {/* Manual Credit/Debit Controls */}
+                                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div className="flex flex-col sm:flex-row gap-2 items-end">
+                                      <div className="flex-1">
+                                        <Label htmlFor={`manual-amount-${method.value}`}>Manual Adjustment Amount</Label>
+                                        <Input
+                                          id={`manual-amount-${method.value}`}
+                                          type="number"
+                                          min="0.01"
+                                          step="0.01"
+                                          placeholder="0.00"
+                                          value={manualAmounts?.[method.value] || ''}
+                                          onChange={e => setManualAmounts(prev => ({ ...prev, [method.value]: e.target.value }))}
+                                          className="mb-2"
+                                        />
+                                      </div>
+                                      <div className="flex-1">
+                                        <Label htmlFor={`manual-reason-${method.value}`}>Reason (optional)</Label>
+                                        <Input
+                                          id={`manual-reason-${method.value}`}
+                                          type="text"
+                                          placeholder="Reason for adjustment"
+                                          value={manualReasons?.[method.value] || ''}
+                                          onChange={e => setManualReasons(prev => ({ ...prev, [method.value]: e.target.value }))}
+                                        />
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                                        onClick={async () => {
+                                          const amt = parseFloat(manualAmounts?.[method.value] || '0');
+                                          if (!amt || amt <= 0) {
+                                            toast({ title: 'Enter a valid amount', variant: 'destructive' });
+                                            return;
+                                          }
+                                          try {
+                                            const res = await apiRequest('POST', '/api/admin/balances/credit', {
+                                              currency: method.value,
+                                              amount: amt,
+                                              reason: manualReasons?.[method.value] || undefined,
+                                            });
+                                            if (res.ok) {
+                                              await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                                              const updated = await res.json();
+                                              toast({ title: `Credited $${amt} to ${method.label}. New balance: $${updated.balance?.amount}` });
+                                              setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
+                                              setManualReasons(prev => ({ ...prev, [method.value]: '' }));
+                                            } else {
+                                              throw new Error('Failed to credit balance');
+                                            }
+                                          } catch (err) {
+                                            toast({ title: 'Credit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
+                                          }
+                                        }}
+                                      >
+                                        Credit
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
+                                        onClick={async () => {
+                                          const amt = parseFloat(manualAmounts?.[method.value] || '0');
+                                          if (!amt || amt <= 0) {
+                                            toast({ title: 'Enter a valid amount', variant: 'destructive' });
+                                            return;
+                                          }
+                                          try {
+                                            const res = await apiRequest('POST', '/api/admin/balances/debit', {
+                                              currency: method.value,
+                                              amount: amt,
+                                              reason: manualReasons?.[method.value] || undefined,
+                                            });
+                                            if (res.ok) {
+                                              await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                                              const updated = await res.json();
+                                              toast({ title: `Debited $${amt} from ${method.label}. New balance: $${updated.balance?.amount}` });
+                                              setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
+                                              setManualReasons(prev => ({ ...prev, [method.value]: '' }));
+                                            } else {
+                                              throw new Error('Failed to debit balance');
+                                            }
+                                          } catch (err) {
+                                            toast({ title: 'Debit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
+                                          }
+                                        }}
+                                      >
+                                        Debit
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Minimum Amount Override */}
+                                  <div>
+                                    <Label htmlFor={`min-${method.value}`}>Minimum Amount Override ($)</Label>
+                                    <div className="flex items-center space-x-2">
+                                      <Input
+                                        id={`min-${method.value}`}
+                                        type="number"
+                                        value={currencyMinimums[method.value] || 5}
+                                        onChange={(e) => setCurrencyMinimums(prev => ({
+                                          ...prev,
+                                          [method.value]: parseFloat(e.target.value) || 5
+                                        }))}
+                                        placeholder="5.00"
+                                        min="0"
+                                        step="0.01"
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        onClick={async () => {
+                                          try {
+                                            const minAmount = currencyMinimums[method.value];
+                                            
+                                            // Use the new coordinated endpoint that preserves exchange rates
+                                            const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
+                                              minAmount: minAmount,
+                                              maxAmount: 10000 // Keep standard maximum
+                                            });
+                                            
+                                            if (response.ok) {
+                                              // Force immediate cache removal for instant updates
+                                              queryClient.removeQueries({ 
+                                                predicate: (query) => {
+                                                  const key = query.queryKey[0];
+                                                  return typeof key === 'string' && (
+                                                    key.includes('/api/currency-limits/') ||
+                                                    key.includes('/api/exchange-rate/')
+                                                  );
+                                                }
+                                              });
+                                              
+                                              // Force complete cache reset for exchange form updates
+                                              queryClient.clear();
+                                              
+                                              // Force immediate refetch of all currency limits
+                                              setTimeout(() => {
+                                                queryClient.invalidateQueries();
+                                              }, 100);
+                                              
+                                              toast({
+                                                title: "Minimum Updated with Rate Coordination",
+                                                description: `${method.label} minimum: $${minAmount} (exchange rates preserved)`,
+                                                duration: 4000,
+                                              });
+                                            }
+                                          } catch (error) {
+                                            toast({
+                                              title: "Update Failed",
+                                              description: "Failed to update minimum amount",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
+                                        size="sm"
+                                        variant="outline"
+                                      >
+                                        Set Min
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Maximum Amount Override */}
+                                  <div>
+                                    <Label htmlFor={`max-${method.value}`}>Maximum Amount Override ($)</Label>
+                                    <div className="flex items-center space-x-2">
+                                      <Input
+                                        id={`max-${method.value}`}
+                                        type="number"
+                                        value={currencyMaximums[method.value]}
+                                        onChange={(e) => setCurrencyMaximums(prev => ({
+                                          ...prev,
+                                          [method.value]: parseFloat(e.target.value)
+                                        }))}
+                                        placeholder="50000.00"
+                                        min="0"
+                                        step="0.01"
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        onClick={async () => {
+                                          try {
+                                            const maxAmount = Math.min(currencyMaximums[method.value] || 10000, 10000); // Enforce $10,000 maximum
+                                            
+                                            // Use the new $10,000 enforcement endpoint that preserves exchange rates
+                                            const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
+                                              minAmount: currencyMinimums[method.value] || 5,
+                                              maxAmount: maxAmount
+                                            });
+                                            
+                                            if (response.ok) {
+                                              const result = await response.json();
+                                              
+                                              // Force immediate cache removal for instant updates
+                                              queryClient.removeQueries({ 
+                                                predicate: (query) => {
+                                                  const key = query.queryKey[0];
+                                                  return typeof key === 'string' && (
+                                                    key.includes('/api/currency-limits/') ||
+                                                    key.includes('/api/exchange-rate/')
+                                                  );
+                                                }
+                                              });
+                                              
+                                              // Update local state to reflect the enforced maximum
+                                              setCurrencyMaximums(prev => ({
+                                                ...prev,
+                                                [method.value]: result.maxAmount || 10000
+                                              }));
+                                              
+                                              toast({
+                                                title: "Maximum Updated - $10,000 Enforced",
+                                                description: `${method.label}: $${(result.maxAmount || 10000).toLocaleString()} (exchange rates preserved)`,
+                                                duration: 4000,
+                                              });
+                                            }
+                                          } catch (error) {
+                                            toast({
+                                              title: "Update Failed",
+                                              description: "Failed to update maximum amount",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
+                                        size="sm"
+                                        variant="outline"
+                                      >
+                                        Set Max ($10K)
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                                    <p><strong>Balance:</strong> Controls maximum outgoing amounts</p>
+                                    <p><strong>Limits:</strong> Override balance calculations when needed</p>
+                                    <p><strong>Exchange Rate Protection:</strong> All limits respect current rates</p>
+                                  </div>
+                                </div>
+                              </div>
                             );
                           })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Security and Usage Guidelines */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Security Guidelines</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold text-blue-800 mb-2">Wallet Security</h4>
-                        <ul className="text-sm text-blue-700 space-y-1">
-                          <li>• Verify wallet addresses before saving</li>
-                          <li>• Use secure, dedicated business accounts</li>
-                          <li>• Enable two-factor authentication when available</li>
-                          <li>• Regularly monitor account balances</li>
-                        </ul>
-                      </div>
-                      <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                        <h4 className="font-semibold text-orange-800 mb-2">API Configuration</h4>
-                        <ul className="text-sm text-orange-700 space-y-1">
-                          <li>• Test endpoints before applying changes</li>
-                          <li>• Use HTTPS URLs for security</li>
-                          <li>• Validate API responses in testing</li>
-                          <li>• Keep backup of working configurations</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="contact" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Settings className="w-5 h-5 mr-2" />
-                      Admin Contact Information
-                    </CardTitle>
-                    <p className="text-sm text-gray-600">
-                      Manage your business contact details for customer support
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {/* Email Configuration */}
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-email" className="text-sm font-semibold flex items-center gap-2">
-                          Email Address
-                        </Label>
-                        <Input
-                          id="admin-email"
-                          type="email"
-                          value={adminContact.email}
-                          onChange={(e) => setAdminContact(prev => ({ ...prev, email: e.target.value }))}
-                          placeholder="your-email@example.com"
-                          className="font-mono text-sm"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Primary email for customer inquiries and notifications
-                        </p>
+                        </div>
                       </div>
 
-                      {/* WhatsApp Configuration */}
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-whatsapp" className="text-sm font-semibold flex items-center gap-2">
-                          WhatsApp Number
-                        </Label>
-                        <Input
-                          id="admin-whatsapp"
-                          type="text"
-                          value={adminContact.whatsapp}
-                          onChange={(e) => setAdminContact(prev => ({ ...prev, whatsapp: e.target.value }))}
-                          placeholder="252611681818"
-                          className="font-mono text-sm"
-                        />
-                        <p className="text-xs text-gray-500">
-                          WhatsApp number for instant customer support
-                        </p>
-                      </div>
-
-                      {/* Telegram Configuration */}
-                      <div className="space-y-2">
-                        <Label htmlFor="admin-telegram" className="text-sm font-semibold flex items-center gap-2">
-                          Telegram Username
-                        </Label>
-                        <Input
-                          id="admin-telegram"
-                          type="text"
-                          value={adminContact.telegram}
-                          onChange={(e) => setAdminContact(prev => ({ ...prev, telegram: e.target.value }))}
-                          placeholder="@doogle143"
-                          className="font-mono text-sm"
-                        />
-                        <p className="text-xs text-gray-500">
-                          Telegram username for secure communications
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-center pt-4">
-                      <Button 
-                        onClick={() => updateContactMutation.mutate(adminContact)}
-                        disabled={updateContactMutation.isPending}
-                        className="px-6"
-                      >
-                        {updateContactMutation.isPending ? "Updating..." : "Update Contact Information"}
-                      </Button>
-                      <p className="text-xs text-gray-500 text-center mt-2">
-                        Leave fields empty to hide that contact method on the Contact page
-                      </p>
-                    </div>
-
-                    {/* Current Contact Overview */}
-                    <Card className="bg-gray-50">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Current Contact Configuration</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="p-4 bg-white rounded-lg border">
-                            <h4 className="font-semibold text-gray-800 mb-2">Email Support</h4>
-                            <p className="text-sm text-gray-600 break-all">{adminContact.email}</p>
-                            <Badge variant="outline" className="mt-2 bg-blue-50 text-blue-700 border-blue-200">
-                              Primary Contact
-                            </Badge>
+                      {/* Transaction Limits Management */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <h3 className="text-xl font-semibold text-blue-900 mb-4">Universal Transaction Limits</h3>
+                        <p className="text-blue-700 mb-6">Configure minimum and maximum order amounts for all payment methods</p>
+                        
+                        <div className="bg-white border border-gray-200 rounded-lg p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <Label htmlFor="universal-min">Minimum Order Amount ($)</Label>
+                              <Input
+                                id="universal-min"
+                                type="number"
+                                value={universalLimits.min}
+                                onChange={(e) => setUniversalLimits(prev => ({
+                                  ...prev,
+                                  min: parseFloat(e.target.value) || 0
+                                }))}
+                                placeholder="5"
+                                min="1"
+                                step="0.01"
+                                className="mt-2"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="universal-max">Maximum Order Amount ($)</Label>
+                              <Input
+                                id="universal-max"
+                                type="number"
+                                value={universalLimits.max}
+                                onChange={(e) => setUniversalLimits(prev => ({
+                                  ...prev,
+                                  max: parseFloat(e.target.value) || 0
+                                }))}
+                                placeholder="10000"
+                                min="1"
+                                step="0.01"
+                                className="mt-2"
+                              />
+                            </div>
                           </div>
-                          <div className="p-4 bg-white rounded-lg border">
-                            <h4 className="font-semibold text-gray-800 mb-2">WhatsApp</h4>
-                            <p className="text-sm text-gray-600 font-mono">{adminContact.whatsapp}</p>
-                            <Badge variant="outline" className="mt-2 bg-green-50 text-green-700 border-green-200">
-                              Instant Messaging
-                            </Badge>
+                          
+                          <div className="mt-6 flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              Current Range: <span className="font-semibold">${universalLimits.min} - ${universalLimits.max.toLocaleString()}</span>
+                            </div>
+                            <Button 
+                              onClick={updateUniversalLimits}
+                              disabled={updateLimitsMutation.isPending}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {updateLimitsMutation.isPending ? "Updating..." : "Update Limits"}
+                            </Button>
                           </div>
-                          <div className="p-4 bg-white rounded-lg border">
-                            <h4 className="font-semibold text-gray-800 mb-2">Telegram</h4>
-                            <p className="text-sm text-gray-600 font-mono">{adminContact.telegram}</p>
-                            <Badge variant="outline" className="mt-2 bg-purple-50 text-purple-700 border-purple-200">
-                              Secure Chat
-                            </Badge>
+                          
+                          <div className="mt-4 p-4 bg-gray-50 rounded">
+                            <p className="text-sm text-gray-700">
+                              <strong>Applies to:</strong> {paymentMethods.map(m => m.label).join(', ')}
+                            </p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Usage Guidelines */}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="wallets" className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Wallet Address Management */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Contact Management Guidelines</CardTitle>
+                        <CardTitle className="flex items-center">
+                          <Settings className="w-5 h-5 mr-2" />
+                          Payment Wallet Management
+                        </CardTitle>
+                        <p className="text-sm text-gray-600">
+                          Update wallet addresses and account numbers for each payment method
+                        </p>
                       </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <h4 className="font-semibold text-blue-800 mb-2">Best Practices</h4>
-                            <ul className="text-sm text-blue-700 space-y-1">
-                              <li>• Use business email addresses for professional communication</li>
-                              <li>• Keep WhatsApp number active for instant support</li>
-                              <li>• Verify Telegram username is correct and accessible</li>
-                              <li>• Update contact info immediately if any details change</li>
-                            </ul>
+                      <CardContent className="space-y-4">
+                        {walletData ? (
+                          Object.entries(walletAddresses).map(([method, address]) => {
+                            const methodLabel = paymentMethods.find(p => p.value === method)?.label || method.toUpperCase();
+                            return (
+                              <div key={method} className={`space-y-2 p-3 rounded-lg transition-all duration-300 ${
+                                recentlyUpdated === method ? 'bg-green-50 border border-green-200' : 'bg-transparent'
+                              }`}>
+                                <Label htmlFor={`wallet-${method}`} className="text-sm font-semibold flex items-center gap-2">
+                                  {methodLabel}
+                                  {recentlyUpdated === method && (
+                                    <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                                      ✓ Updated
+                                    </span>
+                                  )}
+                                </Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    id={`wallet-${method}`}
+                                    value={address || ''}
+                                    onChange={(e) => setWalletAddresses(prev => ({
+                                      ...prev,
+                                      [method]: e.target.value
+                                    }))}
+                                    placeholder={`Enter ${methodLabel} wallet/account`}
+                                    className={`flex-1 transition-all duration-200 ${
+                                      recentlyUpdated === method ? 'border-green-300 focus:border-green-500' : ''
+                                    }`}
+                                  />
+                                  <Button
+                                    onClick={() => handleWalletUpdate(method, address)}
+                                    disabled={updateWalletMutation.isPending}
+                                    size="sm"
+                                    className={`transition-all duration-200 ${
+                                      updateWalletMutation.isPending 
+                                        ? "bg-gray-400 cursor-not-allowed" 
+                                        : recentlyUpdated === method
+                                        ? "bg-green-600 hover:bg-green-700"
+                                        : "bg-blue-600 hover:bg-blue-700"
+                                    }`}
+                                  >
+                                    {updateWalletMutation.isPending ? (
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                        Saving...
+                                      </div>
+                                    ) : recentlyUpdated === method ? (
+                                      "✓ Saved"
+                                    ) : (
+                                      "Save"
+                                    )}
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  Current: {address || 'Not configured'}
+                                </p>
+                                {recentlyUpdated === method && (
+                                  <div className="flex items-center gap-2 text-sm text-green-700">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    Successfully saved to database
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="flex items-center justify-center p-8">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                              <p className="text-sm text-gray-600">Loading wallet addresses...</p>
+                            </div>
                           </div>
-                          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                            <h4 className="font-semibold text-green-800 mb-2">Customer Experience</h4>
-                            <ul className="text-sm text-green-700 space-y-1">
-                              <li>• Customers see these details on exchange forms</li>
-                              <li>• Contact information appears in email notifications</li>
-                              <li>• Multiple channels provide support flexibility</li>
-                              <li>• Clear contact options build customer trust</li>
-                            </ul>
+                        )}
+                        
+                        {lastUpdated && (
+                          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                            <p className="text-sm text-green-800">
+                              Last updated: {new Date(lastUpdated).toLocaleString()}
+                            </p>
                           </div>
-                        </div>
+                        )}
                       </CardContent>
                     </Card>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
+
+                    {/* API Endpoints Management */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Settings className="w-5 h-5 mr-2" />
+                          API Endpoint Configuration
+                        </CardTitle>
+                        <p className="text-sm text-gray-600">
+                          Configure API endpoints for external integrations
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {apiData ? (
+                          Object.entries(apiEndpoints).map(([endpoint, url]) => {
+                            const endpointLabel = endpoint.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            return (
+                              <div key={endpoint} className="space-y-2">
+                                <Label htmlFor={`api-${endpoint}`} className="text-sm font-semibold">
+                                  {endpointLabel}
+                                </Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    id={`api-${endpoint}`}
+                                    value={url || ''}
+                                    onChange={(e) => setApiEndpoints(prev => ({
+                                      ...prev,
+                                      [endpoint]: e.target.value
+                                    }))}
+                                    placeholder={`Enter ${endpointLabel} URL`}
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    onClick={() => handleApiEndpointUpdate(endpoint, url)}
+                                    disabled={updateApiEndpointMutation.isPending}
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    {updateApiEndpointMutation.isPending ? "Saving..." : "Save"}
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                  Current: {url || 'Not configured'}
+                                </p>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="flex items-center justify-center p-8">
+                            <div className="text-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                              <p className="text-sm text-gray-600">Loading API endpoints...</p>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Current Wallet Overview */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Current Wallet Configuration</CardTitle>
+                      <p className="text-sm text-gray-600">
+                        Overview of all configured payment methods and their addresses
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-gray-300">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Payment Method</th>
+                              <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Type</th>
+                              <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Address/Account</th>
+                              <th className="border border-gray-300 px-4 py-2 text-left font-semibold">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.entries(walletAddresses).map(([method, address]) => {
+                              const methodData = paymentMethods.find(p => p.value === method);
+                              const methodLabel = methodData?.label || method.toUpperCase();
+                              
+                              let methodType = "Digital Wallet";
+                              if (method === 'premier') methodType = "Bank Account";
+                              else if (['zaad', 'sahal', 'evc'].includes(method)) methodType = "Mobile Money";
+                              else if (['trc20', 'trx', 'peb20'].includes(method)) methodType = "Cryptocurrency";
+                              
+                              return (
+                                <tr key={method} className="hover:bg-gray-50">
+                                  <td className="border border-gray-300 px-4 py-2 font-medium">{methodLabel}</td>
+                                  <td className="border border-gray-300 px-4 py-2">{methodType}</td>
+                                  <td className="border border-gray-300 px-4 py-2 font-mono text-sm">
+                                    {address || 'Not configured'}
+                                  </td>
+                                  <td className="border border-gray-300 px-4 py-2">
+                                    <Badge 
+                                      variant="outline" 
+                                      className={address ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}
+                                    >
+                                      {address ? 'Configured' : 'Missing'}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Security and Usage Guidelines */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Security Guidelines</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <h4 className="font-semibold text-blue-800 mb-2">Wallet Security</h4>
+                          <ul className="text-sm text-blue-700 space-y-1">
+                            <li>• Verify wallet addresses before saving</li>
+                            <li>• Use secure, dedicated business accounts</li>
+                            <li>• Enable two-factor authentication when available</li>
+                            <li>• Regularly monitor account balances</li>
+                          </ul>
+                        </div>
+                        <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                          <h4 className="font-semibold text-orange-800 mb-2">API Configuration</h4>
+                          <ul className="text-sm text-orange-700 space-y-1">
+                            <li>• Test endpoints before applying changes</li>
+                            <li>• Use HTTPS URLs for security</li>
+                            <li>• Validate API responses in testing</li>
+                            <li>• Keep backup of working configurations</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="contact" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Settings className="w-5 h-5 mr-2" />
+                        Admin Contact Information
+                      </CardTitle>
+                      <p className="text-sm text-gray-600">
+                        Manage your business contact details for customer support
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Email Configuration */}
+                        <div className="space-y-2">
+                          <Label htmlFor="admin-email" className="text-sm font-semibold flex items-center gap-2">
+                            Email Address
+                          </Label>
+                          <Input
+                            id="admin-email"
+                            type="email"
+                            value={adminContact.email}
+                            onChange={(e) => setAdminContact(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="your-email@example.com"
+                            className="font-mono text-sm"
+                          />
+                          <p className="text-xs text-gray-500">
+                            Primary email for customer inquiries and notifications
+                          </p>
+                        </div>
+
+                        {/* WhatsApp Configuration */}
+                        <div className="space-y-2">
+                          <Label htmlFor="admin-whatsapp" className="text-sm font-semibold flex items-center gap-2">
+                            WhatsApp Number
+                          </Label>
+                          <Input
+                            id="admin-whatsapp"
+                            type="text"
+                            value={adminContact.whatsapp}
+                            onChange={(e) => setAdminContact(prev => ({ ...prev, whatsapp: e.target.value }))}
+                            placeholder="252611681818"
+                            className="font-mono text-sm"
+                          />
+                          <p className="text-xs text-gray-500">
+                            WhatsApp number for instant customer support
+                          </p>
+                        </div>
+
+                        {/* Telegram Configuration */}
+                        <div className="space-y-2">
+                          <Label htmlFor="admin-telegram" className="text-sm font-semibold flex items-center gap-2">
+                            Telegram Username
+                          </Label>
+                          <Input
+                            id="admin-telegram"
+                            type="text"
+                            value={adminContact.telegram}
+                            onChange={(e) => setAdminContact(prev => ({ ...prev, telegram: e.target.value }))}
+                            placeholder="@doogle143"
+                            className="font-mono text-sm"
+                          />
+                          <p className="text-xs text-gray-500">
+                            Telegram username for secure communications
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center pt-4">
+                        <Button 
+                          onClick={() => updateContactMutation.mutate(adminContact)}
+                          disabled={updateContactMutation.isPending}
+                          className="px-6"
+                        >
+                          {updateContactMutation.isPending ? "Updating..." : "Update Contact Information"}
+                        </Button>
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          Leave fields empty to hide that contact method on the Contact page
+                        </p>
+                      </div>
+
+                      {/* Current Contact Overview */}
+                      <Card className="bg-gray-50">
+                        <CardHeader>
+                          <CardTitle className="text-lg">Current Contact Configuration</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="p-4 bg-white rounded-lg border">
+                              <h4 className="font-semibold text-gray-800 mb-2">Email Support</h4>
+                              <p className="text-sm text-gray-600 break-all">{adminContact.email}</p>
+                              <Badge variant="outline" className="mt-2 bg-blue-50 text-blue-700 border-blue-200">
+                                Primary Contact
+                              </Badge>
+                            </div>
+                            <div className="p-4 bg-white rounded-lg border">
+                              <h4 className="font-semibold text-gray-800 mb-2">WhatsApp</h4>
+                              <p className="text-sm text-gray-600 font-mono">{adminContact.whatsapp}</p>
+                              <Badge variant="outline" className="mt-2 bg-green-50 text-green-700 border-green-200">
+                                Instant Messaging
+                              </Badge>
+                            </div>
+                            <div className="p-4 bg-white rounded-lg border">
+                              <h4 className="font-semibold text-gray-800 mb-2">Telegram</h4>
+                              <p className="text-sm text-gray-600 font-mono">{adminContact.telegram}</p>
+                              <Badge variant="outline" className="mt-2 bg-purple-50 text-purple-700 border-purple-200">
+                                Secure Chat
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Usage Guidelines */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Contact Management Guidelines</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                              <h4 className="font-semibold text-blue-800 mb-2">Best Practices</h4>
+                              <ul className="text-sm text-blue-700 space-y-1">
+                                <li>• Use business email addresses for professional communication</li>
+                                <li>• Keep WhatsApp number active for instant support</li>
+                                <li>• Verify Telegram username is correct and accessible</li>
+                                <li>• Update contact info immediately if any details change</li>
+                              </ul>
+                            </div>
+                            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                              <h4 className="font-semibold text-green-800 mb-2">Customer Experience</h4>
+                              <ul className="text-sm text-green-700 space-y-1">
+                                <li>• Customers see these details on exchange forms</li>
+                                <li>• Contact information appears in email notifications</li>
+                                <li>• Multiple channels provide support flexibility</li>
+                                <li>• Clear contact options build customer trust</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
 
           {/* Messages Tab */}
           <TabsContent value="messages" className="space-y-6">

@@ -10,7 +10,7 @@ interface LanguageSelectorProps {
 }
 
 export default function LanguageSelector({ className, onLanguageChange }: LanguageSelectorProps) {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>('so');
+  const [currentLanguage, setCurrentLanguage] = useState<Language>('el');
 
   useEffect(() => {
     const lang = getCurrentLanguage();
