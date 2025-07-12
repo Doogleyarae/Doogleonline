@@ -6,7 +6,11 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  createUser(user: InsertUser & { fullName: string; email: string; phone: string }): Promise<User>;
+  updateUserResetToken(userId: number, token: string, expiry: Date): Promise<void>;
+  updateUserPassword(userId: number, hashedPassword: string): Promise<void>;
   
   // Order methods
   createOrder(order: InsertOrder): Promise<Order>;
@@ -88,12 +92,41 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser & { fullName: string; email: string; phone: string }): Promise<User> {
     const [user] = await db
       .insert(users)
       .values({ ...insertUser, role: "user" })
       .returning();
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.resetToken, token));
+    return user || undefined;
+  }
+
+  async updateUserResetToken(userId: number, token: string, expiry: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({ resetToken: token, resetTokenExpiry: expiry })
+      .where(eq(users.id, userId));
+  }
+
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        password: hashedPassword, 
+        resetToken: null, 
+        resetTokenExpiry: null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {

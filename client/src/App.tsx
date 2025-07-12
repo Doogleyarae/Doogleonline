@@ -26,6 +26,10 @@ const AdminExchangeRates = lazy(() => import("@/pages/admin-exchange-rates"));
 const OrderHistory = lazy(() => import("@/pages/order-history"));
 const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
 const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
+const SignIn = lazy(() => import("@/pages/signin"));
+const SignUp = lazy(() => import("@/pages/signup"));
+const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
+const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Loading component
@@ -57,6 +61,10 @@ function Router() {
         <Route path="/orders" component={OrderHistory} />
         <Route path="/completed" component={CompletedOrders} />
         <Route path="/cancelled" component={CancelledOrders} />
+        <Route path="/signin" component={SignIn} />
+        <Route path="/signup" component={SignUp} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/admin" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
@@ -70,15 +78,17 @@ function Router() {
 function App() {
   const [location] = useLocation();
   const isAdminRoute = location.startsWith("/admin");
+  const isAuthRoute = location.startsWith("/signin") || location.startsWith("/signup") || 
+                     location.startsWith("/forgot-password") || location.startsWith("/reset-password");
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="min-h-screen bg-gray-50 flex flex-col">
-          {!isAdminRoute && <Navigation />}
+          {!isAdminRoute && !isAuthRoute && <Navigation />}
           <main className="flex-1">
             <Router />
           </main>
-          {!isAdminRoute && <Footer />}
+          {!isAdminRoute && !isAuthRoute && <Footer />}
         </div>
         <Toaster />
       </TooltipProvider>

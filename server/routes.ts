@@ -6,6 +6,8 @@ import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { orderProcessor } from "./orderProcessor";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { requireAdminAuth } from './middleware'; // Adjust path if needed
 
 // NO DEFAULT RATES - Only admin-configured rates are allowed
@@ -548,6 +550,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Message response error:', error);
       res.status(500).json({ message: "Failed to send response" });
+    }
+  });
+
+  // User sign up
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { fullName, email, phone, password } = req.body;
+      
+      // Validate required fields
+      if (!fullName || !email || !phone || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "All fields are required" 
+        });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "User with this email already exists" 
+        });
+      }
+
+      // Create user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUser({
+        fullName,
+        email,
+        phone,
+        password: hashedPassword,
+        username: email, // Use email as username for now
+      });
+
+      res.json({ 
+        success: true, 
+        message: "User created successfully. Please check your email to verify your account.",
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+        }
+      });
+    } catch (error) {
+      console.error('Sign up error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to create account" 
+      });
+    }
+  });
+
+  // User sign in
+  app.post("/api/auth/signin", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email and password are required" 
+        });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Invalid email or password" 
+        });
+      }
+
+      // Check password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ 
+          success: false, 
+          message: "Invalid email or password" 
+        });
+      }
+
+      // Generate token (in production, use JWT)
+      const token = `user-token-${user.id}-${Date.now()}`;
+
+      res.json({ 
+        success: true, 
+        token,
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+        }
+      });
+    } catch (error) {
+      console.error('Sign in error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Sign in failed" 
+      });
+    }
+  });
+
+  // Forgot password
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Email is required" 
+        });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if user exists or not for security
+        return res.json({ 
+          success: true, 
+          message: "If an account with that email exists, a reset link has been sent" 
+        });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+      // Update user with reset token
+      await storage.updateUserResetToken(user.id, resetToken, resetTokenExpiry);
+
+      // Send reset email (in production, implement actual email sending)
+      console.log(`Password reset link: ${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`);
+
+      res.json({ 
+        success: true, 
+        message: "If an account with that email exists, a reset link has been sent" 
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to process request" 
+      });
+    }
+  });
+
+  // Reset password
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Token and password are required" 
+        });
+      }
+
+      // Find user by reset token
+      const user = await storage.getUserByResetToken(token);
+      if (!user) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid or expired reset token" 
+        });
+      }
+
+      // Check if token is expired
+      if (user.resetTokenExpiry && new Date() > new Date(user.resetTokenExpiry)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Reset token has expired" 
+        });
+      }
+
+      // Update password and clear reset token
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      res.json({ 
+        success: true, 
+        message: "Password has been reset successfully" 
+      });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to reset password" 
+      });
     }
   });
 

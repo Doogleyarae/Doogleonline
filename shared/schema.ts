@@ -90,8 +90,16 @@ export type ExchangeRate = typeof exchangeRates.$inferSelect;
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  phone: text("phone").notNull(),
+  fullName: text("full_name").notNull(),
   password: text("password").notNull(),
   role: text("role").notNull().default("user"), // user, admin
+  emailVerified: text("email_verified").default("false"),
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

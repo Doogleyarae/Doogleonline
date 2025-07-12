@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Reminder from "@/components/reminder";
 
 const navigationItems = [
   { href: "/", label: "Home" },
@@ -52,6 +53,21 @@ export default function Navigation() {
                   </span>
                 </Link>
               ))}
+              
+              {/* Authentication Buttons */}
+              <div className="flex items-center space-x-2 ml-4">
+                <Reminder />
+                <Link href="/signin">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -88,6 +104,22 @@ export default function Navigation() {
                       </span>
                     </Link>
                   ))}
+                  
+                  {/* Mobile Authentication Buttons */}
+                  <div className="pt-4 border-t border-gray-200 mt-4">
+                    <div className="flex flex-col space-y-2">
+                      <Link href="/signin">
+                        <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                          Sign In
+                        </Button>
+                      </Link>
+                      <Link href="/signup">
+                        <Button className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                          Sign Up
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

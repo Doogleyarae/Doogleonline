@@ -1,0 +1,10 @@
+[33ma2e6940[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix: Add logo property to paymentMethods to prevent Management tab crash
+[33mfaa5213[m feat: Add admin password change and currency management UI to admin dashboard management tab
+[33mc75550c[m[33m ([m[1;31morigin/rollback-browser-fix[m[33m, [m[1;32mrollback-browser-fix[m[33m)[m fix: Add browser compatibility props to receive amount input for desktop support
+[33m9902d60[m fix: Allow any length/number in receive amount by using text input
+[33m9f2ea81[m fix: Remove max restriction from receive amount field so any number can be entered
+[33md12c19e[m feat: Show allowed min/max for receive amount and improve error clarity on exchange page
+[33m7ef8c47[m fix: Show correct available balances on exchange page based on system status (on=real, off=zero)
+[33ma094a24[m fix: Hide public navigation and footer on all /admin pages for privacy and security
+[33mb91ae79[m fix: Show correct admin wallet for sendMethod in 'Send Payment To' on confirmation screen
+[33m23ae289[m fix: Show correct sender and receiver account details on confirmation screen for all currencies
