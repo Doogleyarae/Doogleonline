@@ -2,6 +2,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Zap, Shield, TrendingUp } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
+import SimpleLanguageSwitcher from "@/components/simple-language-switcher";
 
 const paymentMethods = [
   { name: "Zaad", type: "Mobile Money" },
@@ -40,6 +42,8 @@ const features = [
 ];
 
 export default function Home() {
+  const { t } = useLanguage();
+  
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -54,17 +58,22 @@ export default function Home() {
               />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Fast & Secure<br />
-              <span className="text-yellow-300">Currency Exchange</span>
+              {t("exchange")}<br />
+              <span className="text-yellow-300">{t("exchange")}</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
               Exchange between Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, and cryptocurrencies with the best rates.
             </p>
-            <Link href="/exchange">
-              <Button size="lg" className="bg-white text-primary hover:bg-gray-100 text-lg px-8 py-4 h-auto">
-                Start Exchange
-              </Button>
-            </Link>
+            <div className="space-y-4">
+              <Link href="/exchange">
+                <Button size="lg" className="bg-white text-primary hover:bg-gray-100 text-lg px-8 py-4 h-auto">
+                  {t("exchange")}
+                </Button>
+              </Link>
+              <div className="flex justify-center">
+                <SimpleLanguageSwitcher />
+              </div>
+            </div>
           </div>
         </div>
       </div>

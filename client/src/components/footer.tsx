@@ -1,4 +1,8 @@
+import { useLanguage } from "@/contexts/language-context";
+
 export default function Footer() {
+  const { t } = useLanguage();
+  
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,35 +16,35 @@ export default function Footer() {
               />
               <h3 className="text-xl font-bold">Doogle Online</h3>
             </div>
-            <p className="text-gray-400">Fast, secure, and reliable currency exchange platform for all your needs.</p>
+            <p className="text-gray-400">{t("services")}</p>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">Services</h4>
+            <h4 className="font-semibold mb-4">{t("services")}</h4>
             <ul className="space-y-2 text-gray-400">
-              <li>Currency Exchange</li>
-              <li>Order Tracking</li>
-              <li>24/7 Support</li>
+              <li>{t("exchange")}</li>
+              <li>{t("trackOrder")}</li>
+              <li>24/7 {t("contact")}</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">Support</h4>
+            <h4 className="font-semibold mb-4">{t("contact")}</h4>
             <ul className="space-y-2 text-gray-400">
-              <li>Help Center</li>
-              <li>Contact Us</li>
+              <li>{t("contact")}</li>
+              <li>{t("contact")}</li>
               <li>FAQ</li>
             </ul>
           </div>
           <div>
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-gray-400">
-              <li>Privacy Policy</li>
-              <li>Terms of Service</li>
+              <li>{t("privacyPolicy")}</li>
+              <li>{t("termsOfService")}</li>
               <li>Security</li>
             </ul>
           </div>
         </div>
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 DoogleOnline. All rights reserved.</p>
+          <p>{t("copyright")}</p>
         </div>
       </div>
     </footer>

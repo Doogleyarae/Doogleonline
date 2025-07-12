@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Link } from "wouter";
+import { useLanguage } from "@/contexts/language-context";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,6 +27,7 @@ export default function SignIn() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useLanguage();
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -87,8 +89,8 @@ export default function SignIn() {
             <User className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Welcome back</CardTitle>
-            <p className="text-gray-600 mt-2">Sign in to your account to continue</p>
+            <CardTitle className="text-2xl font-bold text-gray-900">{t("welcomeBack")}</CardTitle>
+            <p className="text-gray-600 mt-2">{t("signInToAccount")}</p>
           </div>
         </CardHeader>
         <CardContent>
@@ -99,12 +101,12 @@ export default function SignIn() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Email address</FormLabel>
+                    <FormLabel className="text-gray-700">{t("email")}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
-                          placeholder="Enter your email" 
+                          placeholder={t("email")}
                           className="pl-10"
                           {...field} 
                         />
@@ -120,13 +122,13 @@ export default function SignIn() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Password</FormLabel>
+                    <FormLabel className="text-gray-700">{t("password")}</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password" 
+                          placeholder={t("password")}
                           className="pl-10 pr-10"
                           {...field} 
                         />
@@ -163,14 +165,14 @@ export default function SignIn() {
                         />
                       </FormControl>
                       <FormLabel className="text-sm text-gray-600 cursor-pointer">
-                        Remember me
+                        {t("rememberMe")}
                       </FormLabel>
                     </FormItem>
                   )}
                 />
                 <Link href="/forgot-password">
                   <span className="text-sm text-primary hover:text-primary/80 cursor-pointer">
-                    Forgot password?
+                    {t("forgotPassword")}
                   </span>
                 </Link>
               </div>
@@ -180,17 +182,17 @@ export default function SignIn() {
                 className="w-full"
                 disabled={signInMutation.isPending}
               >
-                {signInMutation.isPending ? "Signing in..." : "Sign In"}
+                {signInMutation.isPending ? t("loading") : t("signIn")}
               </Button>
             </form>
           </Form>
           
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
+              {t("alreadyHaveAccount")}{" "}
               <Link href="/signup">
                 <span className="text-primary hover:text-primary/80 cursor-pointer font-medium">
-                  Sign up
+                  {t("signUp")}
                 </span>
               </Link>
             </p>

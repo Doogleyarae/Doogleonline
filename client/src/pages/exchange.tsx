@@ -16,6 +16,7 @@ import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff } from "lucide-reac
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { useLanguage } from "@/contexts/language-context";
 
 interface ExchangeRateResponse {
   rate: number;
@@ -193,6 +194,7 @@ export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
   const { 
     isReminded, 

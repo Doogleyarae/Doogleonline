@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
+import { LanguageProvider } from "@/contexts/language-context";
 
 // Lazy load pages to improve initial loading
 const Home = lazy(() => import("@/pages/home"));
@@ -82,16 +83,18 @@ function App() {
                      location.startsWith("/forgot-password") || location.startsWith("/reset-password");
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          {!isAdminRoute && !isAuthRoute && <Navigation />}
-          <main className="flex-1">
-            <Router />
-          </main>
-          {!isAdminRoute && !isAuthRoute && <Footer />}
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <div className="min-h-screen bg-gray-50 flex flex-col">
+            {!isAdminRoute && !isAuthRoute && <Navigation />}
+            <main className="flex-1">
+              <Router />
+            </main>
+            {!isAdminRoute && !isAuthRoute && <Footer />}
+          </div>
+          <Toaster />
+        </TooltipProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
