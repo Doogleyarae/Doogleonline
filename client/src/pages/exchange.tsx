@@ -194,7 +194,11 @@ export default function Exchange() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
+  const { setLanguage } = useLanguage();
+
+  useEffect(() => {
+    setLanguage('so');
+  }, [setLanguage]);
 
   const { 
     isReminded, 

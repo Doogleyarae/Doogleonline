@@ -10,7 +10,7 @@ interface LanguageSelectorProps {
 }
 
 export default function LanguageSelector({ className, onLanguageChange }: LanguageSelectorProps) {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>('en');
+  const [currentLanguage, setCurrentLanguage] = useState<Language>('so');
 
   useEffect(() => {
     const lang = getCurrentLanguage();
@@ -21,8 +21,6 @@ export default function LanguageSelector({ className, onLanguageChange }: Langua
     setCurrentLanguage(language);
     setLanguageToStorage(language);
     onLanguageChange?.(language);
-    
-    // Reload the page to apply language changes
     window.location.reload();
   };
 
