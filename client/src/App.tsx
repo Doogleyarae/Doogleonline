@@ -61,34 +61,30 @@ function Router() {
   useScrollMemory();
   
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <Suspense fallback={<LoadingSpinner />}>
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/about" component={About} />
-          <Route path="/services" component={Services} />
-          <Route path="/how-it-works" component={HowItWorks} />
-          <Route path="/exchange" component={Exchange} />
-          <Route path="/confirmation" component={Confirmation} />
-          <Route path="/order-completed" component={OrderCompleted} />
-          <Route path="/order-cancelled" component={OrderCancelled} />
-          <Route path="/track" component={TrackOrder} />
-          <Route path="/contact" component={Contact} />
-          <Route path="/orders" component={OrderHistory} />
-          <Route path="/completed" component={CompletedOrders} />
-          <Route path="/cancelled" component={CancelledOrders} />
-          <Route path="/signin" component={SignIn} />
-          <Route path="/signup" component={SignUp} />
-          <Route path="/forgot-password" component={ForgotPassword} />
-          <Route path="/reset-password" component={ResetPassword} />
-          <Route path="/admin" component={AdminLogin} />
-          <Route path="/admin/dashboard" component={AdminDashboard} />
-          <Route path="/admin/analytics" component={AdminAnalytics} />
-          <Route path="/admin-exchange-rates" component={AdminExchangeRates} />
-          <Route component={NotFound} />
-        </Switch>
-      </Suspense>
-    </ErrorBoundary>
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/about" component={About} />
+      <Route path="/services" component={Services} />
+      <Route path="/how-it-works" component={HowItWorks} />
+      <Route path="/exchange" component={Exchange} />
+      <Route path="/confirmation" component={Confirmation} />
+      <Route path="/order-completed" component={OrderCompleted} />
+      <Route path="/order-cancelled" component={OrderCancelled} />
+      <Route path="/track" component={TrackOrder} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/orders" component={OrderHistory} />
+      <Route path="/completed" component={CompletedOrders} />
+      <Route path="/cancelled" component={CancelledOrders} />
+      <Route path="/signin" component={SignIn} />
+      <Route path="/signup" component={SignUp} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/admin" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/analytics" component={AdminAnalytics} />
+      <Route path="/admin-exchange-rates" component={AdminExchangeRates} />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
@@ -101,14 +97,18 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <TooltipProvider>
-          <div className="min-h-screen bg-gray-50 flex flex-col">
-            {!isAdminRoute && !isAuthRoute && <Navigation />}
-            <main className="flex-1">
-              <Router />
-            </main>
-            {!isAdminRoute && !isAuthRoute && <Footer />}
-          </div>
-          <Toaster />
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Suspense fallback={<LoadingSpinner />}>
+              <div className="min-h-screen bg-gray-50 flex flex-col">
+                {!isAdminRoute && !isAuthRoute && <Navigation />}
+                <main className="flex-1">
+                  <Router />
+                </main>
+                {!isAdminRoute && !isAuthRoute && <Footer />}
+              </div>
+              <Toaster />
+            </Suspense>
+          </ErrorBoundary>
         </TooltipProvider>
       </LanguageProvider>
     </QueryClientProvider>
