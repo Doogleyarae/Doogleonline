@@ -6,8 +6,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import WelcomeBanner from "@/components/welcome-banner";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
 import { LanguageProvider } from "@/contexts/language-context";
+import { AuthProvider } from "@/contexts/auth-context";
 import { ErrorBoundary } from 'react-error-boundary';
 
 // Lazy load pages to improve initial loading
@@ -32,6 +34,8 @@ const SignIn = lazy(() => import("@/pages/signin"));
 const SignUp = lazy(() => import("@/pages/signup"));
 const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
+const Profile = lazy(() => import("@/pages/profile"));
+const MyOrders = lazy(() => import("@/pages/my-orders"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Loading component
@@ -79,6 +83,8 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/profile" component={Profile} />
+      <Route path="/my-orders" component={MyOrders} />
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
@@ -96,20 +102,23 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <TooltipProvider>
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <Suspense fallback={<LoadingSpinner />}>
-              <div className="min-h-screen bg-gray-50 flex flex-col">
+        <AuthProvider>
+          <TooltipProvider>
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <Suspense fallback={<LoadingSpinner />}>
+                              <div className="min-h-screen bg-gray-50 flex flex-col">
                 {!isAdminRoute && !isAuthRoute && <Navigation />}
+                {!isAdminRoute && !isAuthRoute && <WelcomeBanner />}
                 <main className="flex-1">
                   <Router />
                 </main>
                 {!isAdminRoute && !isAuthRoute && <Footer />}
               </div>
-              <Toaster />
-            </Suspense>
-          </ErrorBoundary>
-        </TooltipProvider>
+                <Toaster />
+              </Suspense>
+            </ErrorBoundary>
+          </TooltipProvider>
+        </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
   );

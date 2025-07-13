@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import Reminder from "@/components/reminder";
 import LanguageSelector from "@/components/language-selector";
 import { useLanguage } from "@/contexts/language-context";
+import { useAuth } from "@/contexts/auth-context";
+import UserProfileDropdown from "@/components/user-profile-dropdown";
 
 const navigationItems = [
   { href: "/", label: "Home" },
@@ -23,6 +25,7 @@ export default function Navigation() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLanguage();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const translatedNavigationItems = [
     { href: "/", label: t("home") },
@@ -72,16 +75,22 @@ export default function Navigation() {
               <div className="flex items-center space-x-2 ml-4">
                 <LanguageSelector />
                 <Reminder />
-                <Link href="/signin">
-                  <Button variant="ghost" size="sm">
-                    {t("signIn")}
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm">
-                    {t("signUp")}
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <UserProfileDropdown />
+                ) : (
+                  <>
+                    <Link href="/signin">
+                      <Button variant="ghost" size="sm">
+                        {t("signIn")}
+                      </Button>
+                    </Link>
+                    <Link href="/signup">
+                      <Button size="sm">
+                        {t("signUp")}
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -124,16 +133,54 @@ export default function Navigation() {
                   <div className="pt-4 border-t border-gray-200 mt-4">
                     <div className="flex flex-col space-y-2">
                       <LanguageSelector className="w-full justify-start" />
-                      <Link href="/signin">
-                        <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
-                          {t("signIn")}
-                        </Button>
-                      </Link>
-                      <Link href="/signup">
-                        <Button className="w-full justify-start" onClick={() => setIsOpen(false)}>
-                          {t("signUp")}
-                        </Button>
-                      </Link>
+                      {isAuthenticated ? (
+                        <>
+                          <div className="px-3 py-2">
+                            <div className="flex items-center space-x-3">
+                              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                                {user?.fullName?.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
+                                <p className="text-xs text-gray-500">{user?.email}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <Link href="/profile">
+                            <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                              {t("profile")}
+                            </Button>
+                          </Link>
+                          <Link href="/my-orders">
+                            <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                              {t("myOrders")}
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start text-red-600" 
+                            onClick={() => {
+                              setIsOpen(false);
+                              logout();
+                            }}
+                          >
+                            {t("signOut")}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Link href="/signin">
+                            <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                              {t("signIn")}
+                            </Button>
+                          </Link>
+                          <Link href="/signup">
+                            <Button className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                              {t("signUp")}
+                            </Button>
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/language-context";
+import { useAuth } from "@/contexts/auth-context";
 import HomeFeatureGrid from "@/components/home-feature-grid";
 import Navigation from "@/components/navigation";
 
@@ -30,6 +31,7 @@ export default function SignIn() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useLanguage();
+  const { login } = useAuth();
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -48,20 +50,8 @@ export default function SignIn() {
     },
     onSuccess: (data) => {
       if (data.success) {
-        // Store token and user data
-        if (form.getValues("rememberMe")) {
-          localStorage.setItem("userToken", data.token);
-          localStorage.setItem("userData", JSON.stringify(data.user));
-        } else {
-          sessionStorage.setItem("userToken", data.token);
-          sessionStorage.setItem("userData", JSON.stringify(data.user));
-        }
-        
-        setLocation("/");
-        toast({
-          title: "Welcome back!",
-          description: "Successfully signed in to your account",
-        });
+        // Use the auth context to handle login
+        login(data.token, data.user, form.getValues("rememberMe"));
       } else {
         toast({
           title: "Sign in failed",
