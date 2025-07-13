@@ -15,6 +15,7 @@ import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/language-context";
 import HomeFeatureGrid from "@/components/home-feature-grid";
+import Navigation from "@/components/navigation";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -83,130 +84,133 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-4xl flex flex-col lg:flex-row gap-8 items-center justify-center">
-        {/* Feature Grid Section (left on desktop, above form on mobile) */}
-        <section className="w-full lg:w-1/2 flex flex-col gap-6">
-          <HomeFeatureGrid />
-        </section>
-        {/* Form Card */}
-        <Card className="w-full max-w-md shadow-xl mt-8 lg:mt-0">
-          <CardHeader className="text-center space-y-4">
-            <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
-              <User className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold text-gray-900">{t("welcomeBack")}</CardTitle>
-              <p className="text-gray-600 mt-2">{t("signInToAccount")}</p>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">{t("email")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input 
-                            placeholder={t("email")}
-                            className="pl-10"
-                            {...field} 
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-700">{t("password")}</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input 
-                            type={showPassword ? "text" : "password"}
-                            placeholder={t("password")}
-                            className="pl-10 pr-10"
-                            {...field} 
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-gray-400" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-gray-400" />
-                            )}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex items-center justify-between">
+    <>
+      <Navigation />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-4xl flex flex-col lg:flex-row gap-8 items-center justify-center">
+          {/* Feature Grid Section (left on desktop, above form on mobile) */}
+          <section className="w-full lg:w-1/2 flex flex-col gap-6">
+            <HomeFeatureGrid />
+          </section>
+          {/* Form Card */}
+          <Card className="w-full max-w-md shadow-xl mt-8 lg:mt-0">
+            <CardHeader className="text-center space-y-4">
+              <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
+                <User className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold text-gray-900">{t("welcomeBack")}</CardTitle>
+                <p className="text-gray-600 mt-2">{t("signInToAccount")}</p>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="rememberMe"
+                    name="email"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormItem>
+                        <FormLabel className="text-gray-700">{t("email")}</FormLabel>
                         <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Input 
+                              placeholder={t("email")}
+                              className="pl-10"
+                              {...field} 
+                            />
+                          </div>
                         </FormControl>
-                        <FormLabel className="text-sm text-gray-600 cursor-pointer">
-                          {t("rememberMe")}
-                        </FormLabel>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <Link href="/forgot-password">
-                    <span className="text-sm text-primary hover:text-primary/80 cursor-pointer">
-                      {t("forgotPassword")}
+                  
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">{t("password")}</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Input 
+                              type={showPassword ? "text" : "password"}
+                              placeholder={t("password")}
+                              className="pl-10 pr-10"
+                              {...field} 
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4 text-gray-400" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-gray-400" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex items-center justify-between">
+                    <FormField
+                      control={form.control}
+                      name="rememberMe"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm text-gray-600 cursor-pointer">
+                            {t("rememberMe")}
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <Link href="/forgot-password">
+                      <span className="text-sm text-primary hover:text-primary/80 cursor-pointer">
+                        {t("forgotPassword")}
+                      </span>
+                    </Link>
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={signInMutation.isPending}
+                  >
+                    {signInMutation.isPending ? t("loading") : t("signIn")}
+                  </Button>
+                </form>
+              </Form>
+              
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600">
+                  {t("alreadyHaveAccount")}{" "}
+                  <Link href="/signup">
+                    <span className="text-primary hover:text-primary/80 cursor-pointer font-medium">
+                      {t("signUp")}
                     </span>
                   </Link>
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={signInMutation.isPending}
-                >
-                  {signInMutation.isPending ? t("loading") : t("signIn")}
-                </Button>
-              </form>
-            </Form>
-            
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                {t("alreadyHaveAccount")}{" "}
-                <Link href="/signup">
-                  <span className="text-primary hover:text-primary/80 cursor-pointer font-medium">
-                    {t("signUp")}
-                  </span>
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 } 
