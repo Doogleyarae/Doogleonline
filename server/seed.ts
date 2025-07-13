@@ -13,6 +13,9 @@ async function seedDatabase() {
     if (existingAdmin.length === 0) {
       await db.insert(users).values({
         username: adminUsername,
+        email: "admin@doogleonline.com",
+        phone: "1234567890",
+        fullName: "Admin User",
         password: adminPassword,
         role: "admin"
       });
@@ -26,8 +29,22 @@ async function seedDatabase() {
 
     // Add sample users
     const sampleUsers = [
-      { username: "user1", password: "User1Pass!2024", role: "user" },
-      { username: "user2", password: "User2Pass!2024", role: "user" }
+      { 
+        username: "user1", 
+        email: "user1@example.com",
+        phone: "1234567891",
+        fullName: "Sample User 1",
+        password: "User1Pass!2024", 
+        role: "user" 
+      },
+      { 
+        username: "user2", 
+        email: "user2@example.com",
+        phone: "1234567892",
+        fullName: "Sample User 2",
+        password: "User2Pass!2024", 
+        role: "user" 
+      }
     ];
     for (const user of sampleUsers) {
       const exists = await db.select().from(users).where(eq(users.username, user.username));

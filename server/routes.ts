@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertOrderSchema, insertOrderSchemaValidated, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema, insertWalletAddressSchema } from "@shared/schema";
+import { insertOrderSchema, insertOrderSchemaValidated, insertContactMessageSchema, insertExchangeRateSchema, insertCurrencyLimitSchema, insertWalletAddressSchema, insertUserSchema } from "@shared/schema";
 import { emailService } from "./email";
 import { wsManager } from "./websocket";
 import { orderProcessor } from "./orderProcessor";
@@ -556,18 +556,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User sign up
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { fullName, email, phone, password } = req.body;
+      console.log('=== [ROUTE /api/auth/signup] Route hit ===');
+      console.log('=== [ROUTE /api/auth/signup] Request body:', JSON.stringify(req.body, null, 2));
       
-      // Validate required fields
-      if (!fullName || !email || !phone || !password) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "All fields are required" 
-        });
-      }
+      // Validate the request body using the schema
+      const validatedData = insertUserSchema.parse({
+        ...req.body,
+        username: req.body.email // Use email as username
+      });
+      
+      console.log('=== [ROUTE /api/auth/signup] Validated data:', JSON.stringify(validatedData, null, 2));
 
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
+      const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
         return res.status(400).json({ 
           success: false, 
@@ -576,14 +577,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create user
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
       const user = await storage.createUser({
-        fullName,
-        email,
-        phone,
+        fullName: validatedData.fullName,
+        email: validatedData.email,
+        phone: validatedData.phone,
         password: hashedPassword,
-        username: email, // Use email as username for now
+        username: validatedData.username,
       });
+
+      console.log('=== [ROUTE /api/auth/signup] User created successfully:', user.id);
 
       res.json({ 
         success: true, 
@@ -596,7 +599,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error('=== [ROUTE /api/auth/signup] ERROR ===', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid signup data", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ 
         success: false, 
         message: "Failed to create account" 
