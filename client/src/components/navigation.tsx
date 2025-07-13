@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
@@ -10,7 +10,6 @@ import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
 import UserProfileDropdown from "@/components/user-profile-dropdown";
 import Logo from "../assets/doogle-logo.png";
-import { Link } from "react-router-dom";
 
 const navigationItems = [
   { href: "/", label: "Home" },
@@ -24,7 +23,7 @@ const navigationItems = [
 ];
 
 export default function Navigation() {
-  const [location] = useLocation();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLanguage();
   const { isAuthenticated, user, logout } = useAuth();
@@ -56,10 +55,10 @@ export default function Navigation() {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
               {translatedNavigationItems.map((item) => (
-                <Link key={item.href} href={item.href}>
+                <Link key={item.href} to={item.href}>
                   <span className={cn(
                     "px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                    location === item.href
+                    location.pathname === item.href
                       ? "text-primary bg-blue-50"
                       : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                   )}>
@@ -76,12 +75,12 @@ export default function Navigation() {
                   <UserProfileDropdown />
                 ) : (
                   <>
-                    <Link href="/signin">
+                    <Link to="/signin">
                       <Button variant="ghost" size="sm">
                         {t("signIn")}
                       </Button>
                     </Link>
-                    <Link href="/signup">
+                    <Link to="/signup">
                       <Button size="sm">
                         {t("signUp")}
                       </Button>
@@ -103,23 +102,22 @@ export default function Navigation() {
               <SheetContent side="right" className="w-64">
                 <div className="flex items-center space-x-2 mb-6 px-3">
                   <img 
-                    src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
-                    alt="Doogle Online"
-                    className="h-8 w-8 rounded-full"
+                    src={Logo}
+                    alt="Doogle Online Logo"
+                    className="h-8 w-8 object-contain"
                   />
                   <span className="font-bold text-primary">Doogle Online</span>
                 </div>
                 <div className="flex flex-col space-y-1">
                   {translatedNavigationItems.map((item) => (
-                    <Link key={item.href} href={item.href}>
+                    <Link key={item.href} to={item.href} onClick={() => setIsOpen(false)}>
                       <span 
                         className={cn(
                           "block px-3 py-2 rounded-md text-base font-medium transition-colors cursor-pointer",
-                          location === item.href
+                          location.pathname === item.href
                             ? "text-primary bg-blue-50"
                             : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         )}
-                        onClick={() => setIsOpen(false)}
                       >
                         {item.label}
                       </span>
@@ -143,13 +141,13 @@ export default function Navigation() {
                               </div>
                             </div>
                           </div>
-                          <Link href="/profile">
-                            <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                          <Link to="/profile" onClick={() => setIsOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start">
                               {t("profile")}
                             </Button>
                           </Link>
-                          <Link href="/my-orders">
-                            <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                          <Link to="/my-orders" onClick={() => setIsOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start">
                               {t("myOrders")}
                             </Button>
                           </Link>
@@ -166,13 +164,13 @@ export default function Navigation() {
                         </>
                       ) : (
                         <>
-                          <Link href="/signin">
-                            <Button variant="ghost" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                          <Link to="/signin" onClick={() => setIsOpen(false)}>
+                            <Button variant="ghost" className="w-full justify-start">
                               {t("signIn")}
                             </Button>
                           </Link>
-                          <Link href="/signup">
-                            <Button className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                          <Link to="/signup" onClick={() => setIsOpen(false)}>
+                            <Button className="w-full justify-start">
                               {t("signUp")}
                             </Button>
                           </Link>
