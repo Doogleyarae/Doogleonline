@@ -1,4 +1,5 @@
 import { useLanguage } from "@/contexts/language-context";
+import Logo from "../assets/doogle-logo.png";
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -8,13 +9,8 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <div className="flex items-center space-x-3 mb-4">
-              <img 
-                src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
-                alt="Doogle Online"
-                className="h-12 w-12 rounded-full"
-              />
-              <h3 className="text-xl font-bold">Doogle Online</h3>
+            <div className="flex items-center justify-center py-4">
+              <img src={Logo} alt="Doogle Online Logo" className="h-10 w-10 object-contain" />
             </div>
             <p className="text-gray-400">{t("services")}</p>
           </div>

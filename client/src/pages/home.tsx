@@ -5,6 +5,7 @@ import { Zap, Shield, TrendingUp } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
 import SimpleLanguageSwitcher from "@/components/simple-language-switcher";
 import HomeFeatureGrid from "@/components/home-feature-grid";
+import Logo from "../assets/doogle-logo.png";
 
 const paymentMethods = [
   { name: "Zaad", type: "Mobile Money" },
@@ -53,9 +54,9 @@ export default function Home() {
           <div className="text-center">
             <div className="flex justify-center mb-8">
               <img 
-                src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
-                alt="Doogle Online"
-                className="h-24 w-24 rounded-full border-4 border-white shadow-lg"
+                src={Logo}
+                alt="Doogle Online Logo"
+                className="h-24 w-24 object-contain border-4 border-white shadow-lg"
               />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">

@@ -9,6 +9,8 @@ import LanguageSelector from "@/components/language-selector";
 import { useLanguage } from "@/contexts/language-context";
 import { useAuth } from "@/contexts/auth-context";
 import UserProfileDropdown from "@/components/user-profile-dropdown";
+import Logo from "../assets/doogle-logo.png";
+import { Link } from "react-router-dom";
 
 const navigationItems = [
   { href: "/", label: "Home" },
@@ -43,15 +45,10 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/">
-              <div className="flex items-center space-x-2">
-                <img 
-                  src="/attached_assets/WhatsApp Image 2025-06-13 at 17.58.11_cbc00289_1749826746862.jpg"
-                  alt="Doogle Online"
-                  className="h-10 w-10 rounded-full"
-                />
-                <h1 className="text-xl font-bold text-primary">Doogle Online</h1>
-              </div>
+            <Link to="/" className="flex items-center gap-2">
+              <img src={Logo} alt="Doogle Online Logo" className="h-10 w-10 object-contain" />
+              {/* Optionally, add text next to the logo: */}
+              {/* <span className="font-bold text-xl text-primary">DoogleOnline</span> */}
             </Link>
           </div>
           
