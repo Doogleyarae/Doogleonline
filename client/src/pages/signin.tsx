@@ -87,12 +87,8 @@ export default function SignIn() {
     <>
       <Navigation />
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-4xl flex flex-col lg:flex-row gap-8 items-center justify-center">
-          {/* Feature Grid Section (left on desktop, above form on mobile) */}
-          <section className="w-full lg:w-1/2 flex flex-col gap-6">
-            <HomeFeatureGrid />
-          </section>
-          {/* Form Card */}
+        <div className="w-full max-w-4xl flex flex-col lg:flex-row-reverse gap-8 items-center justify-center">
+          {/* Form Card (first/top/right) */}
           <Card className="w-full max-w-md shadow-xl mt-8 lg:mt-0">
             <CardHeader className="text-center space-y-4">
               <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto">
@@ -209,6 +205,10 @@ export default function SignIn() {
               </div>
             </CardContent>
           </Card>
+          {/* Feature Grid Section (second/below/left) */}
+          <section className="w-full lg:w-1/2 flex flex-col gap-6">
+            <HomeFeatureGrid />
+          </section>
         </div>
       </div>
     </>
