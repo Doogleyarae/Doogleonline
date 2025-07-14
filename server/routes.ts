@@ -8,7 +8,7 @@ import { orderProcessor } from "./orderProcessor";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { requireAdminAuth } from './middleware'; // Adjust path if needed
+import { requireAdminAuth, adminLogin, adminLogout } from './middleware'; // Adjust path if needed
 
 // NO DEFAULT RATES - Only admin-configured rates are allowed
 
@@ -63,6 +63,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test endpoint to verify API is working
   app.get("/api/test", (req, res) => {
     res.json({ message: "API is working", timestamp: new Date().toISOString() });
+  });
+
+  // Admin authentication routes
+  app.post("/api/admin/login", (req: any, res) => {
+    try {
+      const { password } = req.body;
+      
+      if (!password) {
+        return res.status(400).json({ message: "Password is required" });
+      }
+      
+      if (adminLogin(password)) {
+        // Set admin session
+        req.session.isAdmin = true;
+        res.json({ message: "Admin login successful", authenticated: true });
+      } else {
+        res.status(401).json({ message: "Invalid admin password", authenticated: false });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/admin/logout", (req: any, res) => {
+    try {
+      adminLogout(req);
+      res.json({ message: "Admin logout successful" });
+    } catch (error) {
+      res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  app.get("/api/admin/check-auth", (req: any, res) => {
+    const isAuthenticated = req.session.isAdmin;
+    res.json({ authenticated: isAuthenticated });
   });
   
   // Get exchange rate with bidirectional support and no-cache headers
@@ -361,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get admin contact information
-  app.get("/api/admin/contact-info", async (req, res) => {
+  app.get("/api/admin/contact-info", requireAdminAuth, async (req, res) => {
     try {
       res.set({
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -427,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update admin contact information
-  app.post("/api/admin/contact-info", async (req, res) => {
+  app.post("/api/admin/contact-info", requireAdminAuth, async (req, res) => {
     try {
       const { email, whatsapp, telegram } = req.body;
       
@@ -451,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update universal transaction limits
-  app.post("/api/admin/universal-limits", async (req, res) => {
+  app.post("/api/admin/universal-limits", requireAdminAuth, async (req, res) => {
     try {
       const { min, max } = req.body;
       
@@ -758,18 +793,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin login
-  app.post("/api/admin/login", async (req, res) => {
-    try {
-      // DISABLED: Always allow admin login for development
-      res.json({ success: true, token: "admin-token-123" });
-    } catch (error) {
-      res.status(500).json({ message: "Login failed" });
-    }
-  });
+
 
   // Update exchange rate (admin only) with complete data preservation
-  app.post("/api/admin/exchange-rates", async (req, res) => {
+  app.post("/api/admin/exchange-rates", requireAdminAuth, async (req, res) => {
     try {
       const validatedData = insertExchangeRateSchema.parse(req.body);
       
@@ -838,7 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all exchange rates (admin only)
-  app.get("/api/admin/exchange-rates", async (req, res) => {
+  app.get("/api/admin/exchange-rates", requireAdminAuth, async (req, res) => {
     try {
       const rates = await storage.getAllExchangeRates();
       res.json(rates);
@@ -848,7 +875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get exchange rate history (admin only)
-  app.get("/api/admin/exchange-rate-history", async (req, res) => {
+  app.get("/api/admin/exchange-rate-history", requireAdminAuth, async (req, res) => {
     try {
       const { from, to } = req.query;
       const history = await storage.getExchangeRateHistory(
@@ -886,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update individual currency limits (admin only) with exchange rate preservation
-  app.post("/api/admin/currency-limits/:currency", async (req, res) => {
+  app.post("/api/admin/currency-limits/:currency", requireAdminAuth, async (req, res) => {
     try {
       const { currency } = req.params;
       const { minAmount, maxAmount } = req.body;
@@ -953,7 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all currency limits (admin only)
-  app.get("/api/admin/balance-limits", async (req, res) => {
+  app.get("/api/admin/balance-limits", requireAdminAuth, async (req, res) => {
     try {
       const currencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20', 'usdc'];
       const allLimits: Record<string, { min: number; max: number }> = {};
@@ -969,7 +996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update individual currency limits (admin only)
-  app.post("/api/admin/balance-limits", async (req, res) => {
+  app.post("/api/admin/balance-limits", requireAdminAuth, async (req, res) => {
     try {
       const { currency, minAmount, maxAmount } = req.body;
       
@@ -998,7 +1025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get wallet addresses (admin only) - ENHANCED VERSION
-  app.get("/api/admin/wallet-addresses", async (req, res) => {
+  app.get("/api/admin/wallet-addresses", requireAdminAuth, async (req, res) => {
     try {
       console.log(' [WALLET-ADDRESSES] Fetching wallet addresses from database...');
       
@@ -1053,7 +1080,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update wallet address (admin only) - ENHANCED VERSION
-  app.post("/api/admin/wallet-addresses", async (req, res) => {
+  app.post("/api/admin/wallet-addresses", requireAdminAuth, async (req, res) => {
     try {
       console.log(' [WALLET-UPDATE] Updating wallet address:', req.body);
       
@@ -1085,7 +1112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all balances (admin only)
-  app.get("/api/admin/balances", async (req, res) => {
+  app.get("/api/admin/balances", requireAdminAuth, async (req, res) => {
     try {
       const status = await storage.getSystemStatus();
       const balances = await storage.getAllBalances(status === 'off');
@@ -1101,7 +1128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update balance (admin only)
-  app.post("/api/admin/balances", async (req, res) => {
+  app.post("/api/admin/balances", requireAdminAuth, async (req, res) => {
     try {
       const { currency, amount } = req.body;
       
@@ -1154,7 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get API endpoints (admin only)
-  app.get("/api/admin/api-endpoints", async (req, res) => {
+  app.get("/api/admin/api-endpoints", requireAdminAuth, async (req, res) => {
     try {
       // Return current API endpoint configurations
       const apiEndpoints = {
@@ -1171,7 +1198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update API endpoint (admin only)
-  app.post("/api/admin/api-endpoints", async (req, res) => {
+  app.post("/api/admin/api-endpoints", requireAdminAuth, async (req, res) => {
     try {
       const { endpoint, url } = req.body;
       
@@ -1200,7 +1227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update currency limit with maximum $10,000 enforcement and exchange rate preservation
-  app.post("/api/admin/currency-limits/:currency", async (req, res) => {
+  app.post("/api/admin/currency-limits/:currency", requireAdminAuth, async (req, res) => {
     try {
       const { currency } = req.params;
       const { minAmount, maxAmount } = req.body;
@@ -1262,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update currency limit (admin only) - legacy endpoint with exchange rate preservation
-  app.post("/api/admin/currency-limits", async (req, res) => {
+  app.post("/api/admin/currency-limits", requireAdminAuth, async (req, res) => {
     try {
       const validatedData = insertCurrencyLimitSchema.parse(req.body);
       
@@ -1299,7 +1326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all currency limits (admin only)
-  app.get("/api/admin/currency-limits", async (req, res) => {
+  app.get("/api/admin/currency-limits", requireAdminAuth, async (req, res) => {
     try {
       const limits = await storage.getAllCurrencyLimits();
       res.json(limits);
@@ -1309,7 +1336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get API endpoints configuration (admin only)
-  app.get("/api/admin/api-endpoints", async (req, res) => {
+  app.get("/api/admin/api-endpoints", requireAdminAuth, async (req, res) => {
     try {
       const apiEndpoints = {
         'rate_update': '/api/exchange-rate',
@@ -1324,7 +1351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update API endpoints (admin only)
-  app.post("/api/admin/api-endpoints", async (req, res) => {
+  app.post("/api/admin/api-endpoints", requireAdminAuth, async (req, res) => {
     try {
       const { endpoint, url } = req.body;
       
@@ -1351,7 +1378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update transaction limits (admin only)
-  app.post("/api/admin/transaction-limits", async (req, res) => {
+  app.post("/api/admin/transaction-limits", requireAdminAuth, async (req, res) => {
     try {
       const { minAmount, maxAmount } = req.body;
       
@@ -1410,53 +1437,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all balances (public/user-facing)
+  // Get all balances (public/user-facing) - HIDDEN FROM PUBLIC
   app.get("/api/balances", async (req, res) => {
     try {
-      // Add aggressive no-cache headers to prevent any caching
-      res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Surrogate-Control': 'no-store'
-      });
-      
-      // Check system status - if system is off, return all zeros
+      // Check system status - if system is off, return service unavailable
       const systemStatus = await storage.getSystemStatus();
-      const forceZero = systemStatus === 'off';
-      
-      const balances = await storage.getAllBalances(forceZero);
-      const orders = await storage.getAllOrders();
-      // The balance.amount in database is already the reduced balance after deductions
-      // No need to calculate held amounts or subtract them
-      const balanceMap = balances.reduce((acc, balance) => {
-        const currency = balance.currency.toUpperCase();
-        // The balance.amount is already the reduced balance after deductions
-        // No need to subtract held amounts again
-        acc[currency] = parseFloat(balance.amount);
-        return acc;
-      }, {} as Record<string, number>);
-      // Handle EVC Plus currency synchronization - EVCPLUS and EVC should use the same balance
-      if (balanceMap['EVCPLUS'] && !balanceMap['EVC']) {
-        balanceMap['EVC'] = balanceMap['EVCPLUS'];
-      } else if (balanceMap['EVC'] && !balanceMap['EVCPLUS']) {
-        balanceMap['EVCPLUS'] = balanceMap['EVC'];
-      } else if (balanceMap['EVCPLUS'] && balanceMap['EVC']) {
-        const maxBalance = Math.max(balanceMap['EVCPLUS'], balanceMap['EVC']);
-        balanceMap['EVC'] = maxBalance;
-        balanceMap['EVCPLUS'] = maxBalance;
+      if (systemStatus === 'off') {
+        return res.status(503).json({ 
+          message: "Service temporarily unavailable",
+          status: "offline"
+        });
       }
-      // Initialize default balances for currencies not in database
-      const defaultCurrencies = ['zaad', 'sahal', 'evc', 'edahab', 'premier', 'moneygo', 'trx', 'trc20', 'peb20'];
-      defaultCurrencies.forEach(currency => {
-        if (!(currency.toUpperCase() in balanceMap)) {
-          balanceMap[currency.toUpperCase()] = 0;
-        }
+      // Return generic response - balance information is private
+      res.json({ 
+        message: "Service is operational",
+        status: "online",
+        available: true
       });
-      res.json(balanceMap);
     } catch (error) {
       console.error("Balance fetch error (public):", error);
-      res.status(500).json({ message: "Failed to fetch balances" });
+      res.status(500).json({ message: "Service error" });
     }
   });
 
@@ -1489,7 +1489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get system status
-  app.get('/api/admin/system-status', async (req, res) => {
+  app.get('/api/admin/system-status', requireAdminAuth, async (req, res) => {
     try {
       console.log('System status endpoint called');
       const status = await storage.getSystemStatus();
@@ -1503,7 +1503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update system status
-  app.post('/api/admin/system-status', async (req, res) => {
+  app.post('/api/admin/system-status', requireAdminAuth, async (req, res) => {
     try {
       const { status } = req.body;
       if (status !== 'on' && status !== 'off') {

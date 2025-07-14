@@ -965,7 +965,7 @@ export default function Exchange() {
                             : receiveMethod === 'premier'
                             ? 'Premier Bank Account Number *'
                             : receiveMethod === 'moneygo'
-                            ? 'MoneyGo Address or Wallet *'
+                            ? 'MoneyGo Address *'
                             : `${receiveMethod.toUpperCase()} Wallet Address *`
                           }
                         </FormLabel>
