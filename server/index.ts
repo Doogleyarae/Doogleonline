@@ -70,6 +70,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint for Redis/session
+app.get('/api/health', async (req, res) => {
+  try {
+    const redisStatus = redisClient.isOpen ? 'open' : 'closed';
+    let redisPing = null;
+    try {
+      redisPing = await redisClient.ping();
+    } catch (err) {
+      redisPing = 'error';
+    }
+    res.json({
+      status: 'ok',
+      redis: redisStatus,
+      redisPing,
+      session: req.session ? 'ok' : 'missing',
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
 (async () => {
   const server = await registerRoutes(app);
 

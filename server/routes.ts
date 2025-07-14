@@ -66,22 +66,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin authentication routes
-  app.post("/api/admin/login", (req: any, res) => {
+  app.post("/api/admin/login", async (req: any, res) => {
     try {
       const { username, password } = req.body;
-      
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
       }
-      
+      // Check Redis connection
+      if (!req.session) {
+        console.error('[ADMIN LOGIN] Session object missing!');
+        return res.status(500).json({ message: 'Session error: session object missing' });
+      }
+      if (!req.sessionStore) {
+        console.error('[ADMIN LOGIN] Session store missing!');
+        return res.status(500).json({ message: 'Session error: session store missing' });
+      }
+      if (typeof req.sessionStore.all !== 'function') {
+        console.error('[ADMIN LOGIN] Session store is not a valid store!');
+        return res.status(500).json({ message: 'Session error: invalid session store' });
+      }
       if (adminLogin(username, password)) {
-        // Set admin session
         req.session.isAdmin = true;
         res.json({ 
           success: true, 
           message: "Admin login successful", 
           authenticated: true,
-          token: "admin-session-" + Date.now() // Generate a simple token for frontend compatibility
+          token: "admin-session-" + Date.now() 
         });
       } else {
         res.status(401).json({ 
@@ -91,7 +101,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error) {
-      res.status(500).json({ message: "Login failed" });
+      console.error('[ADMIN LOGIN] Exception:', error);
+      res.status(500).json({ message: "Login failed", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

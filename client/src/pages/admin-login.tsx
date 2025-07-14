@@ -34,10 +34,36 @@ export default function AdminLogin() {
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
       console.log("Frontend - Sending login data:", data);
-      const response = await apiRequest("POST", "/api/admin/login", data);
-      const result = await response.json();
-      console.log("Frontend - Received response:", result);
-      return result;
+      // Add a 10s timeout to the login request
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      try {
+        const response = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+          credentials: "include",
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        if (!response.ok) {
+          let msg = "Login failed";
+          try {
+            const err = await response.json();
+            msg = err.message || msg;
+          } catch {}
+          throw new Error(msg);
+        }
+        const result = await response.json();
+        console.log("Frontend - Received response:", result);
+        return result;
+      } catch (err: any) {
+        clearTimeout(timeout);
+        if (err.name === "AbortError") {
+          throw new Error("Login request timed out. Please try again.");
+        }
+        throw err;
+      }
     },
     onSuccess: (data) => {
       console.log("Frontend - Login success:", data);
@@ -51,7 +77,7 @@ export default function AdminLogin() {
       } else {
         toast({
           title: "Login Failed",
-          description: "Invalid username or password",
+          description: data.message || "Invalid username or password",
           variant: "destructive",
         });
       }
