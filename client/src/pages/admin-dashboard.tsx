@@ -218,31 +218,41 @@ export default function AdminDashboard() {
       return;
     }
     
-    // Verify admin session with backend
-    fetch("/api/admin/check-auth", {
-      credentials: "include"
-    })
-      .then(response => response.json())
-      .then(data => {
-        if (!data.authenticated) {
+    // Add a small delay to ensure session is established
+    const checkAuth = () => {
+      fetch("/api/admin/check-auth", {
+        credentials: "include"
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log("Auth check response:", data);
+          if (!data.authenticated) {
+            sessionStorage.removeItem("adminToken");
+            toast({
+              title: "Session Expired",
+              description: "Please log in again",
+              variant: "destructive",
+            });
+            setLocation("/admin/login");
+          } else {
+            console.log("Admin authentication confirmed");
+          }
+        })
+        .catch((error) => {
+          console.error("Auth check error:", error);
           sessionStorage.removeItem("adminToken");
           toast({
-            title: "Session Expired",
+            title: "Authentication Error",
             description: "Please log in again",
             variant: "destructive",
           });
           setLocation("/admin/login");
-        }
-      })
-      .catch(() => {
-        sessionStorage.removeItem("adminToken");
-        toast({
-          title: "Authentication Error",
-          description: "Please log in again",
-          variant: "destructive",
         });
-        setLocation("/admin/login");
-      });
+    };
+    
+    // Check immediately and also after a short delay
+    checkAuth();
+    setTimeout(checkAuth, 1000);
   }, [toast, setLocation]);
   
   // State for order management

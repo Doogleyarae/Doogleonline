@@ -90,20 +90,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[ADMIN LOGIN] Credentials valid, setting session');
         req.session.isAdmin = true;
         
-        // Save session explicitly
+        // Force session save and wait for it to complete
         req.session.save((err: any) => {
           if (err) {
             console.error('[ADMIN LOGIN] Session save error:', err);
             return res.status(500).json({ message: 'Session save failed' });
           }
           
-          console.log('[ADMIN LOGIN] Session saved successfully');
-          res.json({ 
-            success: true, 
-            message: "Admin login successful", 
-            authenticated: true,
-            token: "admin-session-" + Date.now() 
-          });
+          console.log('[ADMIN LOGIN] Session saved successfully, isAdmin:', req.session.isAdmin);
+          
+          // Verify session was saved correctly
+          if (req.session.isAdmin) {
+            res.json({ 
+              success: true, 
+              message: "Admin login successful", 
+              authenticated: true,
+              token: "admin-session-" + Date.now() 
+            });
+          } else {
+            console.error('[ADMIN LOGIN] Session isAdmin not set after save');
+            res.status(500).json({ message: 'Session not properly set' });
+          }
         });
       } else {
         console.log('[ADMIN LOGIN] Invalid credentials');
@@ -131,7 +138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/check-auth", (req: any, res) => {
     console.log('[CHECK AUTH] Request received');
     console.log('[CHECK AUTH] Session exists:', !!req.session);
+    console.log('[CHECK AUTH] Session ID:', req.sessionID);
     console.log('[CHECK AUTH] Session isAdmin:', req.session?.isAdmin);
+    console.log('[CHECK AUTH] Full session data:', req.session);
     
     const isAuthenticated = req.session?.isAdmin || false;
     console.log('[CHECK AUTH] Returning authenticated:', isAuthenticated);
