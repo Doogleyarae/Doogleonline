@@ -68,32 +68,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin authentication routes
   app.post("/api/admin/login", async (req: any, res) => {
     try {
+      console.log('[ADMIN LOGIN] Login attempt received');
       const { username, password } = req.body;
+      console.log('[ADMIN LOGIN] Username:', username);
+      
       if (!username || !password) {
+        console.log('[ADMIN LOGIN] Missing credentials');
         return res.status(400).json({ message: "Username and password are required" });
       }
-      // Check Redis connection
+      
+      // Check session object
       if (!req.session) {
         console.error('[ADMIN LOGIN] Session object missing!');
         return res.status(500).json({ message: 'Session error: session object missing' });
       }
-      if (!req.sessionStore) {
-        console.error('[ADMIN LOGIN] Session store missing!');
-        return res.status(500).json({ message: 'Session error: session store missing' });
-      }
-      if (typeof req.sessionStore.all !== 'function') {
-        console.error('[ADMIN LOGIN] Session store is not a valid store!');
-        return res.status(500).json({ message: 'Session error: invalid session store' });
-      }
+      
+      console.log('[ADMIN LOGIN] Session object exists:', !!req.session);
+      console.log('[ADMIN LOGIN] Current session isAdmin:', req.session.isAdmin);
+      
       if (adminLogin(username, password)) {
+        console.log('[ADMIN LOGIN] Credentials valid, setting session');
         req.session.isAdmin = true;
-        res.json({ 
-          success: true, 
-          message: "Admin login successful", 
-          authenticated: true,
-          token: "admin-session-" + Date.now() 
+        
+        // Save session explicitly
+        req.session.save((err: any) => {
+          if (err) {
+            console.error('[ADMIN LOGIN] Session save error:', err);
+            return res.status(500).json({ message: 'Session save failed' });
+          }
+          
+          console.log('[ADMIN LOGIN] Session saved successfully');
+          res.json({ 
+            success: true, 
+            message: "Admin login successful", 
+            authenticated: true,
+            token: "admin-session-" + Date.now() 
+          });
         });
       } else {
+        console.log('[ADMIN LOGIN] Invalid credentials');
         res.status(401).json({ 
           success: false,
           message: "Invalid admin credentials", 
@@ -116,7 +129,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/admin/check-auth", (req: any, res) => {
-    const isAuthenticated = req.session.isAdmin;
+    console.log('[CHECK AUTH] Request received');
+    console.log('[CHECK AUTH] Session exists:', !!req.session);
+    console.log('[CHECK AUTH] Session isAdmin:', req.session?.isAdmin);
+    
+    const isAuthenticated = req.session?.isAdmin || false;
+    console.log('[CHECK AUTH] Returning authenticated:', isAuthenticated);
+    
     res.json({ authenticated: isAuthenticated });
   });
   

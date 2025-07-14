@@ -219,7 +219,9 @@ export default function AdminDashboard() {
     }
     
     // Verify admin session with backend
-    fetch("/api/admin/check-auth")
+    fetch("/api/admin/check-auth", {
+      credentials: "include"
+    })
       .then(response => response.json())
       .then(data => {
         if (!data.authenticated) {
@@ -264,6 +266,7 @@ export default function AdminDashboard() {
         method: "PATCH",
         body: JSON.stringify({ status: "completed" }),
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
       
       if (!response.ok) {
@@ -294,6 +297,7 @@ export default function AdminDashboard() {
         method: "PATCH",
         body: JSON.stringify({ status: "cancelled" }),
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
       
       if (!response.ok) {
@@ -1115,7 +1119,9 @@ export default function AdminDashboard() {
   // Fetch system status on mount
   useEffect(() => {
     console.log('Fetching system status...');
-    fetch('/api/admin/system-status')
+    fetch('/api/admin/system-status', {
+      credentials: "include"
+    })
       .then(res => {
         console.log('System status response:', res.status);
         return res.json();
@@ -1137,7 +1143,8 @@ export default function AdminDashboard() {
     await fetch('/api/admin/system-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
+      body: JSON.stringify({ status: newStatus }),
+      credentials: "include"
     });
     setSystemStatus(newStatus);
     await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
@@ -1221,7 +1228,10 @@ export default function AdminDashboard() {
                 size="sm"
                 onClick={() => {
                   sessionStorage.removeItem("adminToken");
-                  fetch("/api/admin/logout", { method: "POST" });
+                  fetch("/api/admin/logout", { 
+                    method: "POST",
+                    credentials: "include"
+                  });
                   setLocation("/admin/login");
                   toast({
                     title: "Logged Out",
