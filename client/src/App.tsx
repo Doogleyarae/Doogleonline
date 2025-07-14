@@ -87,6 +87,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/my-orders" component={MyOrders} />
       <Route path="/admin" component={AdminLogin} />
+      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/admin-exchange-rates" component={AdminExchangeRates} />
