@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff, Eye, EyeOff } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { formatAmount } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -32,7 +32,7 @@ interface CurrencyLimitsResponse {
 
 // Import currency logos
 import zaadLogo from "@assets/zaad_1749853582330.png";
-import evcLogo from "@assets/evc plus_1749853582322.png";
+import evcLogo from "@assets/evc plus_1749853582330.png";
 import edahabLogo from "@assets/edahab_1749853582320.png";
 import golisLogo from "@assets/golis_1749853582323.png";
 import premierLogo from "@assets/premier bank_1749853582326.png";
@@ -79,8 +79,8 @@ const createExchangeFormSchema = (
       if (!val || val === "") return { message: "Amount is required" };
       const amount = parseFloat(val);
       if (isNaN(amount)) return { message: "Please enter a valid number" };
-      if (amount < minSendAmount) return { message: `Minimum send amount: $${minSendAmount.toFixed(2)}` };
-      if (amount > maxSendAmount) return { message: `Maximum send amount: $${maxSendAmount.toLocaleString()}` };
+      if (amount < minSendAmount) return { message: `Minimum allowed amount is $${minSendAmount.toFixed(2)}` };
+      if (amount > maxSendAmount) return { message: `Maximum allowed amount is $${maxSendAmount.toLocaleString()}` };
       return { message: "Invalid amount" };
     }
   ),
@@ -88,13 +88,14 @@ const createExchangeFormSchema = (
     (val) => {
       if (!val || val === "") return false;
       const amount = parseFloat(val);
-      return !isNaN(amount) && amount >= minReceiveAmount;
+      return !isNaN(amount) && amount >= minReceiveAmount && amount <= maxReceiveAmount;
     },
     (val) => {
       if (!val || val === "") return { message: "Amount is required" };
       const amount = parseFloat(val);
       if (isNaN(amount)) return { message: "Please enter a valid number" };
-      if (amount < minReceiveAmount) return { message: `Minimum receive amount: $${minReceiveAmount.toFixed(2)}` };
+      if (amount < minReceiveAmount) return { message: `Minimum allowed amount is $${minReceiveAmount.toFixed(2)}` };
+      if (amount > maxReceiveAmount) return { message: `Maximum allowed amount is $${maxReceiveAmount.toLocaleString()}` };
       return { message: "Invalid amount" };
     }
   ),
@@ -109,47 +110,11 @@ const createExchangeFormSchema = (
     ? z.string().min(1, "Sender account is required") 
     : z.string().optional(),
   walletAddress: z.string().min(1, "Wallet address is required"),
-  rememberDetails: z.boolean().optional(),
+  doNotRemember: z.boolean().optional(),
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
 });
 
 type ExchangeFormData = z.infer<ReturnType<typeof createExchangeFormSchema>>;
-
-// Utility functions for localStorage persistence
-const EXCHANGE_PERSIST_KEY = 'exchange-persist';
-function saveExchangePersist(data: { sendMethod: string, receiveMethod: string, sendAmount: string, receiveAmount: string }) {
-  localStorage.setItem(EXCHANGE_PERSIST_KEY, JSON.stringify(data));
-}
-function loadExchangePersist() {
-  try {
-    const raw = localStorage.getItem(EXCHANGE_PERSIST_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-function clearExchangePersist() {
-  localStorage.removeItem(EXCHANGE_PERSIST_KEY);
-}
-
-// Utility functions for personal info persistence
-const EXCHANGE_PERSONAL_KEY = 'exchange-personal';
-function savePersonalInfo(data: { fullName?: string, email?: string, senderAccount?: string, walletAddress?: string }) {
-  localStorage.setItem(EXCHANGE_PERSONAL_KEY, JSON.stringify(data));
-}
-function loadPersonalInfo() {
-  try {
-    const raw = localStorage.getItem(EXCHANGE_PERSONAL_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-function clearPersonalInfo() {
-  localStorage.removeItem(EXCHANGE_PERSONAL_KEY);
-}
 
 // Enhanced storage system for complete page state
 const EXCHANGE_COMPLETE_STATE_KEY = 'exchange-complete-state';
@@ -171,6 +136,7 @@ function saveCompleteExchangeState(data: {
     minReceiveAmount: number;
     maxReceiveAmount: number;
   };
+  doNotRemember: boolean;
   timestamp: number;
 }) {
   localStorage.setItem(EXCHANGE_COMPLETE_STATE_KEY, JSON.stringify(data));
@@ -211,21 +177,20 @@ export default function Exchange() {
 
   // Load complete state on page load
   const completeState = loadCompleteExchangeState();
-  const persistedPersonal = loadPersonalInfo();
-  const persisted = loadExchangePersist();
 
   // Use complete state if available, otherwise fall back to individual storage
-  const [fullName, setFullName] = useState(completeState?.fullName || persistedPersonal?.fullName || "");
-  const [email, setEmail] = useState(completeState?.email || persistedPersonal?.email || "");
-  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || persistedPersonal?.senderAccount || "");
-  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || persistedPersonal?.walletAddress || "");
+  const [fullName, setFullName] = useState(completeState?.fullName || "");
+  const [email, setEmail] = useState(completeState?.email || "");
+  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || "");
+  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || "");
 
-  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || persisted?.sendMethod || "trc20");
-  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || persisted?.receiveMethod || "moneygo");
-  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || persisted?.sendAmount || "1");
-  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || persisted?.receiveAmount || "");
+  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || "trc20");
+  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || "moneygo");
+  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || "1");
+  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || "");
   const [exchangeRate, setExchangeRate] = useState<number>(completeState?.exchangeRate || 0);
   const [rateDisplay, setRateDisplay] = useState(completeState?.rateDisplay || "1 USD = 1.05 EUR");
+  const [doNotRemember, setDoNotRemember] = useState(completeState?.doNotRemember || false);
   const [dynamicLimits, setDynamicLimits] = useState(completeState?.dynamicLimits || {
     minSendAmount: 5,
     maxSendAmount: 10000,
@@ -233,29 +198,34 @@ export default function Exchange() {
     maxReceiveAmount: 10000,
   });
 
-  // Save complete state whenever anything changes
+  // Save complete state whenever anything changes (only if doNotRemember is false)
   useEffect(() => {
-    saveCompleteExchangeState({
-      sendMethod,
-      receiveMethod,
-      sendAmount,
-      receiveAmount,
-      fullName,
-      email,
-      senderAccount,
-      walletAddress,
-      exchangeRate,
-      rateDisplay,
-      dynamicLimits,
-      timestamp: Date.now()
-    });
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
+    if (!doNotRemember) {
+      saveCompleteExchangeState({
+        sendMethod,
+        receiveMethod,
+        sendAmount,
+        receiveAmount,
+        fullName,
+        email,
+        senderAccount,
+        walletAddress,
+        exchangeRate,
+        rateDisplay,
+        dynamicLimits,
+        doNotRemember,
+        timestamp: Date.now()
+      });
+    }
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits, doNotRemember]);
 
-  // On page load, restore personal info if rememberDetails is true
-  // Removed this useEffect as personal info is now saved globally
-
-  // Use localStorage for currency/amount persistence
-  // Removed this useEffect as currency/amount is now saved globally
+  // Clear saved data when doNotRemember is enabled
+  useEffect(() => {
+    if (doNotRemember) {
+      clearCompleteExchangeState();
+      forceRemoveData();
+    }
+  }, [doNotRemember, forceRemoveData]);
 
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
@@ -321,6 +291,7 @@ export default function Exchange() {
       email: email,
       senderAccount: senderAccount,
       walletAddress: walletAddress,
+      doNotRemember: doNotRemember,
       agreeToTerms: false,
     },
   });
@@ -362,8 +333,8 @@ export default function Exchange() {
     const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
     effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
 
-    // Apply balance limits if available
-    if (balances && typeof balances === 'object') {
+    // Apply balance limits if available and system is ON
+    if (balances && typeof balances === 'object' && systemStatus?.status === 'on') {
       const currencyMapping: Record<string, string> = {
         'evc': 'EVCPLUS',
         'trc20': 'TRC20',
@@ -392,7 +363,7 @@ export default function Exchange() {
       minReceiveAmount: receiveCurrencyLimits.minAmount,
       maxReceiveAmount: effectiveMaxReceive,
     });
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, systemStatus]);
 
   useEffect(() => {
     calculateDynamicLimits();
@@ -494,15 +465,15 @@ export default function Exchange() {
     console.log('Form submission data:', data);
     console.log('Form errors:', form.formState.errors);
     
-    // Check if system is closed - hidden
-    // if (systemStatus?.status === 'off') {
-    //   toast({
-    //     title: "System Closed",
-    //     description: "Exchange services are temporarily unavailable. Please try again later.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
+    // Check if system is closed
+    if (systemStatus?.status === 'off') {
+      toast({
+        title: "System Closed",
+        description: "Exchange services are temporarily unavailable. Please try again later.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (sendMethod === receiveMethod) {
       toast({
@@ -617,18 +588,32 @@ export default function Exchange() {
     };
   }, [queryClient, sendMethod, receiveMethod]);
 
-  // Remove rememberDetails from form defaultValues and schema
-  // Remove rememberDetails state and checkbox, always save details
-  // Add a Clear button to clear saved info and reset form
-  // In useEffect, always savePersonalInfo on info change (no rememberDetails check)
-  // Removed this useEffect as personal info is now saved globally
-
-  // Remove useEffect that clears info on rememberDetails change
-
   // Helper to get exclusions for a selected value
   function getExclusions(selected: string) {
     return specialExclusions[selected] || [selected];
   }
+
+  // Get display balance based on system status
+  const getDisplayBalance = (currency: string) => {
+    if (systemStatus?.status === 'off') {
+      return 0;
+    }
+    
+    const currencyMapping: Record<string, string> = {
+      'evc': 'EVCPLUS',
+      'trc20': 'TRC20',
+      'zaad': 'ZAAD',
+      'sahal': 'SAHAL',
+      'moneygo': 'MONEYGO',
+      'premier': 'PREMIER',
+      'edahab': 'EDAHAB',
+      'trx': 'TRX',
+      'peb20': 'PEB20'
+    };
+    
+    const balanceKey = currencyMapping[currency.toLowerCase()] || currency.toUpperCase();
+    return balances?.[balanceKey] || 0;
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -667,21 +652,10 @@ export default function Exchange() {
                   ) : balances && (
                     <div className="text-xs text-center mt-1 text-green-600 flex items-center justify-center gap-2">
                       <span>
-                        Available: ${(() => {
-                          const currencyMapping: Record<string, string> = {
-                            'evc': 'EVCPLUS',
-                            'trc20': 'TRC20', 
-                            'zaad': 'ZAAD',
-                            'sahal': 'SAHAL',
-                            'moneygo': 'MONEYGO',
-                            'premier': 'PREMIER',
-                            'edahab': 'EDAHAB',
-                            'trx': 'TRX',
-                            'peb20': 'PEB20'
-                          };
-                          const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
-                          return (balances[balanceKey] || 0).toLocaleString();
-                        })()} {receiveMethod.toUpperCase()}
+                        Available: ${getDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
+                        {systemStatus?.status === 'off' && (
+                          <span className="text-red-600 ml-1">(System Closed)</span>
+                        )}
                       </span>
                       <Button
                         type="button"
@@ -720,7 +694,7 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 field.onChange(value);
                                 setSendMethod(value);
-                                if (isReminded) {
+                                if (!doNotRemember) {
                                   updateSavedField('sendMethod', value);
                                 }
                               }}
@@ -756,7 +730,7 @@ export default function Exchange() {
                               onChange={(e) => {
                                 field.onChange(e.target.value);
                                 handleSendAmountChange(e.target.value);
-                                if (isReminded) {
+                                if (!doNotRemember) {
                                   updateSavedField('sendAmount', e.target.value);
                                 }
                               }}
@@ -787,7 +761,7 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 field.onChange(value);
                                 setReceiveMethod(value);
-                                if (isReminded) {
+                                if (!doNotRemember) {
                                   updateSavedField('receiveMethod', value);
                                 }
                               }}
@@ -831,7 +805,7 @@ export default function Exchange() {
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
                                   handleReceiveAmountChange(e.target.value);
-                                  if (isReminded) {
+                                  if (!doNotRemember) {
                                     updateSavedField('receiveAmount', e.target.value);
                                   }
                                 }}
@@ -868,7 +842,7 @@ export default function Exchange() {
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e.target.value);
-                                if (isReminded) {
+                                if (!doNotRemember) {
                                   updateSavedField('fullName', e.target.value);
                                 }
                               }}
@@ -908,7 +882,7 @@ export default function Exchange() {
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e.target.value);
-                                if (isReminded) {
+                                if (!doNotRemember) {
                                   updateSavedField('senderAccount', e.target.value);
                                 }
                               }}
@@ -940,7 +914,7 @@ export default function Exchange() {
                             {...field}
                             onChange={(e) => {
                               field.onChange(e.target.value);
-                              if (isReminded) {
+                              if (!doNotRemember) {
                                 updateSavedField('email', e.target.value);
                               }
                             }}
@@ -987,7 +961,7 @@ export default function Exchange() {
                             {...field}
                             onChange={(e) => {
                               field.onChange(e.target.value);
-                              if (isReminded) {
+                              if (!doNotRemember) {
                                 updateSavedField('walletAddress', e.target.value);
                               }
                             }}
@@ -1000,7 +974,36 @@ export default function Exchange() {
                 </div>
               </div>
 
-              {/* Remember Details and Terms */}
+              {/* Do Not Remember Toggle */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <FormField
+                  control={form.control}
+                  name="doNotRemember"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            setDoNotRemember(checked as boolean);
+                          }}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium">
+                          Do not remember my information
+                        </FormLabel>
+                        <p className="text-xs text-gray-500">
+                          When enabled, your form data will not be saved locally and forms will not auto-fill on revisit
+                        </p>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Terms and Submit */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                 <FormField
                   control={form.control}
