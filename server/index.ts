@@ -2,10 +2,19 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import cors from "cors";
+import RedisStore from "connect-redis";
+import { createClient } from "redis";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// --- REDIS SESSION STORE SETUP ---
+const redisClient = createClient({
+  url: process.env.REDIS_URL || "redis://localhost:6379"
+});
+redisClient.connect().catch(console.error);
+const redisStore = new RedisStore({ client: redisClient });
 
 // --- CORS CONFIGURATION ---
 app.use(cors({
@@ -16,16 +25,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Configure session middleware
+// --- SESSION CONFIGURATION ---
 app.use(session({
+  store: redisStore,
   secret: process.env.SESSION_SECRET || 'doogle-admin-secret-key-2024',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax', // Use 'none' if frontend/backend are on different domains and HTTPS
-    // domain: '.doogleonline.com', // Uncomment and set if using subdomains
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    // domain: process.env.COOKIE_DOMAIN || undefined, // Set to your domain for production if needed
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
