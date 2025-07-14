@@ -68,18 +68,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin authentication routes
   app.post("/api/admin/login", (req: any, res) => {
     try {
-      const { password } = req.body;
+      const { username, password } = req.body;
       
-      if (!password) {
-        return res.status(400).json({ message: "Password is required" });
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
       }
       
-      if (adminLogin(password)) {
+      if (adminLogin(username, password)) {
         // Set admin session
         req.session.isAdmin = true;
         res.json({ message: "Admin login successful", authenticated: true });
       } else {
-        res.status(401).json({ message: "Invalid admin password", authenticated: false });
+        res.status(401).json({ message: "Invalid admin credentials", authenticated: false });
       }
     } catch (error) {
       res.status(500).json({ message: "Login failed" });

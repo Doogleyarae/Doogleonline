@@ -23,9 +23,10 @@ export function requireAdminAuth(req: RequestWithSession, res: Response, next: N
 }
 
 // Admin login function
-export function adminLogin(password: string): boolean {
+export function adminLogin(username: string, password: string): boolean {
+  const correctUsername = "Doogle";
   const correctPassword = "Aa121322@Doogle143";
-  return password === correctPassword;
+  return username === correctUsername && password === correctPassword;
 }
 
 // Admin logout function
