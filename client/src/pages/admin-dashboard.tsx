@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -202,6 +203,45 @@ const paymentMethods = [
 
 export default function AdminDashboard() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  
+  // Check admin authentication
+  useEffect(() => {
+    const adminToken = sessionStorage.getItem("adminToken");
+    if (!adminToken) {
+      toast({
+        title: "Access Denied",
+        description: "Please log in as admin to access this page",
+        variant: "destructive",
+      });
+      setLocation("/admin/login");
+      return;
+    }
+    
+    // Verify admin session with backend
+    fetch("/api/admin/check-auth")
+      .then(response => response.json())
+      .then(data => {
+        if (!data.authenticated) {
+          sessionStorage.removeItem("adminToken");
+          toast({
+            title: "Session Expired",
+            description: "Please log in again",
+            variant: "destructive",
+          });
+          setLocation("/admin/login");
+        }
+      })
+      .catch(() => {
+        sessionStorage.removeItem("adminToken");
+        toast({
+          title: "Authentication Error",
+          description: "Please log in again",
+          variant: "destructive",
+        });
+        setLocation("/admin/login");
+      });
+  }, [toast, setLocation]);
   
   // State for order management
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
@@ -1174,6 +1214,24 @@ export default function AdminDashboard() {
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 Real-time sync active
               </div>
+              
+              {/* Logout Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  sessionStorage.removeItem("adminToken");
+                  fetch("/api/admin/logout", { method: "POST" });
+                  setLocation("/admin/login");
+                  toast({
+                    title: "Logged Out",
+                    description: "You have been successfully logged out",
+                  });
+                }}
+                className="text-red-600 border-red-200 hover:bg-red-50"
+              >
+                Logout
+              </Button>
               
               {/* Notification Bell */}
               <div className="relative notification-bell">

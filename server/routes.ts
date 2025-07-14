@@ -77,9 +77,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (adminLogin(username, password)) {
         // Set admin session
         req.session.isAdmin = true;
-        res.json({ message: "Admin login successful", authenticated: true });
+        res.json({ 
+          success: true, 
+          message: "Admin login successful", 
+          authenticated: true,
+          token: "admin-session-" + Date.now() // Generate a simple token for frontend compatibility
+        });
       } else {
-        res.status(401).json({ message: "Invalid admin credentials", authenticated: false });
+        res.status(401).json({ 
+          success: false,
+          message: "Invalid admin credentials", 
+          authenticated: false 
+        });
       }
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
