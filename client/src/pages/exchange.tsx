@@ -846,10 +846,6 @@ export default function Exchange() {
                         )}
                       />
                     </div>
-                    {/* Show allowed min/max for receive amount */}
-                    <div className="text-xs text-gray-500 mt-1">
-                      Allowed: ${dynamicLimits.minReceiveAmount.toLocaleString()} - ${dynamicLimits.maxReceiveAmount.toLocaleString()} {receiveMethod.toUpperCase()}
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -969,7 +965,7 @@ export default function Exchange() {
                             : receiveMethod === 'premier'
                             ? 'Premier Bank Account Number *'
                             : receiveMethod === 'moneygo'
-                            ? 'MoneyGo Phone Number *'
+                            ? 'MoneyGo Address or Wallet *'
                             : `${receiveMethod.toUpperCase()} Wallet Address *`
                           }
                         </FormLabel>
