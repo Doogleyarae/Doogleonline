@@ -1,10 +1,18 @@
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+
+// --- CORS CONFIGURATION ---
+app.use(cors({
+  origin: process.env.FRONTEND_ORIGIN || "http://localhost:5173", // Set to your frontend URL in production
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -16,6 +24,8 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: 'lax', // Use 'none' if frontend/backend are on different domains and HTTPS
+    // domain: '.doogleonline.com', // Uncomment and set if using subdomains
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
