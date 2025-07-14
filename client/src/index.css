@@ -57,6 +57,30 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* Improved focus indicators for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Ensure sufficient color contrast */
+  .text-muted-foreground {
+    color: hsl(25, 5.3%, 44.7%);
+  }
+
+  /* Improve button focus states */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Ensure form elements have proper focus indicators */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
 }
 
 /* Custom styles for the currency exchange platform */

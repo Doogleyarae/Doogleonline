@@ -108,14 +108,21 @@ function App() {
             <TooltipProvider>
               <ErrorBoundary FallbackComponent={ErrorFallback}>
                 <Suspense fallback={<LoadingSpinner />}>
-                                <div className="min-h-screen bg-gray-50 flex flex-col">
-                  {!isAdminRoute && !isAuthRoute && <Navigation />}
-                  {!isAdminRoute && !isAuthRoute && <WelcomeBanner />}
-                  <main className="flex-1">
-                    <Router />
-                  </main>
-                  {!isAdminRoute && !isAuthRoute && <Footer />}
-                </div>
+                  {/* Skip link for accessibility */}
+                  <a 
+                    href="#main-content" 
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:rounded"
+                  >
+                    Skip to main content
+                  </a>
+                  <div className="min-h-screen bg-gray-50 flex flex-col">
+                    {!isAdminRoute && !isAuthRoute && <Navigation />}
+                    {!isAdminRoute && !isAuthRoute && <WelcomeBanner />}
+                    <main className="flex-1" id="main-content">
+                      <Router />
+                    </main>
+                    {!isAdminRoute && !isAuthRoute && <Footer />}
+                  </div>
                   <Toaster />
                 </Suspense>
               </ErrorBoundary>

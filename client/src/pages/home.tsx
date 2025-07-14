@@ -61,7 +61,7 @@ export default function Home() {
         <link rel="canonical" href="https://doogleonline.com/" />
       </Helmet>
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary to-blue-600 text-white">
+      <section className="bg-gradient-to-r from-primary to-blue-600 text-white" aria-labelledby="hero-heading">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <div className="flex justify-center mb-8">
@@ -71,16 +71,16 @@ export default function Home() {
                 className="h-24 w-24 object-contain border-4 border-white shadow-lg"
               />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 id="hero-heading" className="text-4xl md:text-6xl font-bold mb-6">
               {t("exchange")}<br />
-              <span className="text-yellow-300">{t("exchange")}</span>
+              <span className="text-yellow-200">{t("exchange")}</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
               Exchange between Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, and cryptocurrencies with the best rates.
             </p>
             <div className="space-y-4">
               <Link href="/exchange">
-                <Button size="lg" className="bg-white text-primary hover:bg-gray-100 text-lg px-8 py-4 h-auto">
+                <Button size="lg" className="bg-white text-primary hover:bg-gray-100 text-lg px-8 py-4 h-auto" aria-label="Start currency exchange">
                   {t("exchange")}
                 </Button>
               </Link>
@@ -90,22 +90,24 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Features Section */}
-      <HomeFeatureGrid />
+      <section aria-labelledby="features-heading">
+        <HomeFeatureGrid />
+      </section>
 
       {/* Supported Currencies */}
-      <div className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50" aria-labelledby="payment-methods-heading">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Supported Payment Methods</h2>
+            <h2 id="payment-methods-heading" className="text-3xl font-bold text-gray-900 mb-4">Supported Payment Methods</h2>
             <p className="text-xl text-gray-600">Wide range of popular payment options</p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6" role="list" aria-label="Supported payment methods">
             {paymentMethods.map((method, index) => (
-              <Card key={index} className="text-center p-6 shadow-sm">
+              <Card key={index} className="text-center p-6 shadow-sm" role="listitem">
                 <CardContent className="pt-6">
                   <div className="text-2xl font-bold text-primary mb-2">{method.name}</div>
                   <div className="text-sm text-gray-600">{method.type}</div>
@@ -114,7 +116,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

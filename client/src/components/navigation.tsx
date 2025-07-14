@@ -40,11 +40,11 @@ export default function Navigation() {
   ];
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="bg-white shadow-sm border-b border-gray-200" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2" aria-label="Go to homepage">
               <img src={Logo} alt="Doogle Online Logo" className="h-10 w-10 object-contain" />
               {/* Optionally, add text next to the logo: */}
               {/* <span className="font-bold text-xl text-primary">DoogleOnline</span> */}
@@ -53,15 +53,19 @@ export default function Navigation() {
           
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
+            <div className="ml-10 flex items-baseline space-x-4" role="menubar">
               {translatedNavigationItems.map((item) => (
                 <Link key={item.href} to={item.href}>
-                  <span className={cn(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                    location.pathname === item.href
-                      ? "text-primary bg-blue-50"
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  )}>
+                  <span 
+                    className={cn(
+                      "px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
+                      location.pathname === item.href
+                        ? "text-primary bg-blue-50"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    )}
+                    role="menuitem"
+                    aria-current={location.pathname === item.href ? "page" : undefined}
+                  >
                     {item.label}
                   </span>
                 </Link>
@@ -76,12 +80,12 @@ export default function Navigation() {
                 ) : (
                   <>
                     <Link to="/signin">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" aria-label="Sign in to your account">
                         {t("signIn")}
                       </Button>
                     </Link>
                     <Link to="/signup">
-                      <Button size="sm">
+                      <Button size="sm" aria-label="Create a new account">
                         {t("signUp")}
                       </Button>
                     </Link>
@@ -95,11 +99,17 @@ export default function Navigation() {
           <div className="md:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  aria-label="Open navigation menu"
+                  aria-expanded={isOpen}
+                  aria-controls="mobile-navigation"
+                >
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-64">
+              <SheetContent side="right" className="w-64" id="mobile-navigation">
                 <div className="flex items-center space-x-2 mb-6 px-3">
                   <img 
                     src={Logo}
@@ -108,7 +118,7 @@ export default function Navigation() {
                   />
                   <span className="font-bold text-primary">Doogle Online</span>
                 </div>
-                <div className="flex flex-col space-y-1">
+                <div className="flex flex-col space-y-1" role="menu">
                   {translatedNavigationItems.map((item) => (
                     <Link key={item.href} to={item.href} onClick={() => setIsOpen(false)}>
                       <span 
@@ -118,6 +128,8 @@ export default function Navigation() {
                             ? "text-primary bg-blue-50"
                             : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         )}
+                        role="menuitem"
+                        aria-current={location.pathname === item.href ? "page" : undefined}
                       >
                         {item.label}
                       </span>
@@ -132,7 +144,7 @@ export default function Navigation() {
                         <>
                           <div className="px-3 py-2">
                             <div className="flex items-center space-x-3">
-                              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium" aria-label={`User avatar for ${user?.fullName}`}>
                                 {user?.fullName?.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2)}
                               </div>
                               <div>
@@ -142,12 +154,12 @@ export default function Navigation() {
                             </div>
                           </div>
                           <Link to="/profile" onClick={() => setIsOpen(false)}>
-                            <Button variant="ghost" className="w-full justify-start">
+                            <Button variant="ghost" className="w-full justify-start" aria-label="View your profile">
                               {t("profile")}
                             </Button>
                           </Link>
                           <Link to="/my-orders" onClick={() => setIsOpen(false)}>
-                            <Button variant="ghost" className="w-full justify-start">
+                            <Button variant="ghost" className="w-full justify-start" aria-label="View your orders">
                               {t("myOrders")}
                             </Button>
                           </Link>
@@ -158,6 +170,7 @@ export default function Navigation() {
                               setIsOpen(false);
                               logout();
                             }}
+                            aria-label="Sign out of your account"
                           >
                             {t("signOut")}
                           </Button>
@@ -165,12 +178,12 @@ export default function Navigation() {
                       ) : (
                         <>
                           <Link to="/signin" onClick={() => setIsOpen(false)}>
-                            <Button variant="ghost" className="w-full justify-start">
+                            <Button variant="ghost" className="w-full justify-start" aria-label="Sign in to your account">
                               {t("signIn")}
                             </Button>
                           </Link>
                           <Link to="/signup" onClick={() => setIsOpen(false)}>
-                            <Button className="w-full justify-start">
+                            <Button className="w-full justify-start" aria-label="Create a new account">
                               {t("signUp")}
                             </Button>
                           </Link>
