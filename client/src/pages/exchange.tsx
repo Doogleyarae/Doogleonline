@@ -32,7 +32,7 @@ interface CurrencyLimitsResponse {
 
 // Import currency logos
 import zaadLogo from "@assets/zaad_1749853582330.png";
-import evcLogo from "@assets/evc plus_1749853582330.png";
+import evcLogo from "@assets/evc plus_1749853582322.png";
 import edahabLogo from "@assets/edahab_1749853582320.png";
 import golisLogo from "@assets/golis_1749853582323.png";
 import premierLogo from "@assets/premier bank_1749853582326.png";
