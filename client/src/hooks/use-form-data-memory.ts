@@ -23,7 +23,7 @@ const FORM_DATA_STORAGE_KEY = 'doogle_form_data';
 const DATA_EXPIRY_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export function useFormDataMemory(formKey: string = 'default') {
-  const [isReminded, setIsReminded] = useState(false);
+  const [isReminded, setIsReminded] = useState(true); // Default to true (save by default)
   const [savedData, setSavedData] = useState<FormData>({});
 
   const storageKey = `${FORM_DATA_STORAGE_KEY}_${formKey}`;
@@ -60,6 +60,10 @@ export function useFormDataMemory(formKey: string = 'default') {
         email: data.email || savedData.email || '',
         phoneNumber: data.phoneNumber || savedData.phoneNumber || '',
         walletAddress: data.walletAddress || savedData.walletAddress || '',
+        sendMethod: data.sendMethod || savedData.sendMethod || '',
+        receiveMethod: data.receiveMethod || savedData.receiveMethod || '',
+        sendAmount: data.sendAmount || savedData.sendAmount || '',
+        receiveAmount: data.receiveAmount || savedData.receiveAmount || '',
         ...data // Include any additional fields
       };
 

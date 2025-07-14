@@ -179,15 +179,15 @@ export default function Exchange() {
   const completeState = loadCompleteExchangeState();
 
   // Use complete state if available, otherwise fall back to individual storage
-  const [fullName, setFullName] = useState(completeState?.fullName || "");
-  const [email, setEmail] = useState(completeState?.email || "");
-  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || "");
-  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || "");
+  const [fullName, setFullName] = useState(completeState?.fullName || savedData?.fullName || "");
+  const [email, setEmail] = useState(completeState?.email || savedData?.email || "");
+  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || savedData?.senderAccount || "");
+  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || savedData?.walletAddress || "");
 
-  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || "trc20");
-  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || "moneygo");
-  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || "1");
-  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || "");
+  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || savedData?.sendMethod || "trc20");
+  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || savedData?.receiveMethod || "moneygo");
+  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || savedData?.sendAmount || "1");
+  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || savedData?.receiveAmount || "");
   const [exchangeRate, setExchangeRate] = useState<number>(completeState?.exchangeRate || 0);
   const [rateDisplay, setRateDisplay] = useState(completeState?.rateDisplay || "1 USD = 1.05 EUR");
   const [doNotRemember, setDoNotRemember] = useState(completeState?.doNotRemember || false);
@@ -216,8 +216,18 @@ export default function Exchange() {
         doNotRemember,
         timestamp: Date.now()
       });
+      
+      // Also save to form data memory for cross-page persistence
+      updateSavedField('sendMethod', sendMethod);
+      updateSavedField('receiveMethod', receiveMethod);
+      updateSavedField('sendAmount', sendAmount);
+      updateSavedField('receiveAmount', receiveAmount);
+      updateSavedField('fullName', fullName);
+      updateSavedField('email', email);
+      updateSavedField('senderAccount', senderAccount);
+      updateSavedField('walletAddress', walletAddress);
     }
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits, doNotRemember]);
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits, doNotRemember, updateSavedField]);
 
   // Clear saved data when doNotRemember is enabled
   useEffect(() => {
@@ -800,7 +810,6 @@ export default function Exchange() {
                                 autoComplete="off"
                                 spellCheck={false}
                                 inputMode="numeric"
-                                pattern="[0-9]*"
                                 value={field.value}
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
@@ -1041,4 +1050,5 @@ export default function Exchange() {
       </Card>
     </div>
   );
-}
+}/ /   D e p l o y m e n t   t r i g g e r  
+ 
