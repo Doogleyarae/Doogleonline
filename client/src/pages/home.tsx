@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/language-context";
 import SimpleLanguageSwitcher from "@/components/simple-language-switcher";
 import HomeFeatureGrid from "@/components/home-feature-grid";
 import Logo from "../assets/doogle-logo.png";
+import { Helmet } from "react-helmet-async";
 
 const paymentMethods = [
   { name: "Zaad", type: "Mobile Money" },
@@ -48,6 +49,17 @@ export default function Home() {
   
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>Doogle Online - Fast & Secure Currency Exchange</title>
+        <meta name="description" content="Exchange between Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, and cryptocurrencies with the best rates. Fast, secure, and reliable currency exchange platform." />
+        <meta name="keywords" content="currency exchange, Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, TRX, TRC20, PEB20, crypto, secure, fast, best rates, Doogle Online" />
+        <meta property="og:title" content="Doogle Online - Fast & Secure Currency Exchange" />
+        <meta property="og:description" content="Exchange between Zaad, Sahal, EVC Plus, eDahab, Premier Bank, MoneyGo, and cryptocurrencies with the best rates." />
+        <meta property="og:image" content="/src/assets/doogle-logo.png" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://doogleonline.com/" />
+        <link rel="canonical" href="https://doogleonline.com/" />
+      </Helmet>
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-primary to-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

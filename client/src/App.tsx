@@ -11,6 +11,7 @@ import { useScrollMemory } from "@/hooks/use-scroll-memory";
 import { LanguageProvider } from "@/contexts/language-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ErrorBoundary } from 'react-error-boundary';
+import { HelmetProvider } from "react-helmet-async";
 
 // Lazy load pages to improve initial loading
 const Home = lazy(() => import("@/pages/home"));
@@ -100,27 +101,29 @@ function App() {
   const isAuthRoute = location.startsWith("/signin") || location.startsWith("/signup") || 
                      location.startsWith("/forgot-password") || location.startsWith("/reset-password");
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <ErrorBoundary FallbackComponent={ErrorFallback}>
-              <Suspense fallback={<LoadingSpinner />}>
-                              <div className="min-h-screen bg-gray-50 flex flex-col">
-                {!isAdminRoute && !isAuthRoute && <Navigation />}
-                {!isAdminRoute && !isAuthRoute && <WelcomeBanner />}
-                <main className="flex-1">
-                  <Router />
-                </main>
-                {!isAdminRoute && !isAuthRoute && <Footer />}
-              </div>
-                <Toaster />
-              </Suspense>
-            </ErrorBoundary>
-          </TooltipProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <ErrorBoundary FallbackComponent={ErrorFallback}>
+                <Suspense fallback={<LoadingSpinner />}>
+                                <div className="min-h-screen bg-gray-50 flex flex-col">
+                  {!isAdminRoute && !isAuthRoute && <Navigation />}
+                  {!isAdminRoute && !isAuthRoute && <WelcomeBanner />}
+                  <main className="flex-1">
+                    <Router />
+                  </main>
+                  {!isAdminRoute && !isAuthRoute && <Footer />}
+                </div>
+                  <Toaster />
+                </Suspense>
+              </ErrorBoundary>
+            </TooltipProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 
