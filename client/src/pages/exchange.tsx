@@ -169,6 +169,7 @@ export default function Exchange() {
   const { 
     isReminded, 
     savedData, 
+    isLoaded,
     toggleRemind, 
     updateSavedField,
     forceRemoveData,
@@ -179,15 +180,15 @@ export default function Exchange() {
   const completeState = loadCompleteExchangeState();
 
   // Use complete state if available, otherwise fall back to individual storage
-  const [fullName, setFullName] = useState(completeState?.fullName || savedData?.fullName || "");
-  const [email, setEmail] = useState(completeState?.email || savedData?.email || "");
-  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || savedData?.senderAccount || "");
-  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || savedData?.walletAddress || "");
+  const [fullName, setFullName] = useState(completeState?.fullName || "");
+  const [email, setEmail] = useState(completeState?.email || "");
+  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || "");
+  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || "");
 
-  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || savedData?.sendMethod || "trc20");
-  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || savedData?.receiveMethod || "moneygo");
-  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || savedData?.sendAmount || "1");
-  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || savedData?.receiveAmount || "");
+  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || "trc20");
+  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || "moneygo");
+  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || "1");
+  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || "");
   const [exchangeRate, setExchangeRate] = useState<number>(completeState?.exchangeRate || 0);
   const [rateDisplay, setRateDisplay] = useState(completeState?.rateDisplay || "1 USD = 1.05 EUR");
   const [doNotRemember, setDoNotRemember] = useState(completeState?.doNotRemember || false);
@@ -198,10 +199,27 @@ export default function Exchange() {
     maxReceiveAmount: 10000,
   });
 
+  // Load saved data when it becomes available (for cross-page persistence)
+  useEffect(() => {
+    if (isLoaded && savedData && Object.keys(savedData).length > 0 && !completeState) {
+      console.log('Loading saved data from form memory:', savedData);
+      
+      // Load all available saved data, prioritizing saved data over empty values
+      if (savedData.fullName) setFullName(savedData.fullName);
+      if (savedData.email) setEmail(savedData.email);
+      if (savedData.senderAccount) setSenderAccount(savedData.senderAccount);
+      if (savedData.walletAddress) setWalletAddress(savedData.walletAddress);
+      if (savedData.sendMethod) setSendMethod(savedData.sendMethod);
+      if (savedData.receiveMethod) setReceiveMethod(savedData.receiveMethod);
+      if (savedData.sendAmount) setSendAmount(savedData.sendAmount);
+      if (savedData.receiveAmount) setReceiveAmount(savedData.receiveAmount);
+    }
+  }, [isLoaded, savedData, completeState]);
+
   // Save complete state whenever anything changes (only if doNotRemember is false)
   useEffect(() => {
     if (!doNotRemember) {
-      saveCompleteExchangeState({
+      const stateToSave = {
         sendMethod,
         receiveMethod,
         sendAmount,
@@ -215,7 +233,10 @@ export default function Exchange() {
         dynamicLimits,
         doNotRemember,
         timestamp: Date.now()
-      });
+      };
+      
+      saveCompleteExchangeState(stateToSave);
+      console.log('Saving complete exchange state:', stateToSave);
       
       // Also save to form data memory for cross-page persistence
       updateSavedField('sendMethod', sendMethod);
@@ -234,6 +255,7 @@ export default function Exchange() {
     if (doNotRemember) {
       clearCompleteExchangeState();
       forceRemoveData();
+      console.log('Cleared all saved data due to doNotRemember being enabled');
     }
   }, [doNotRemember, forceRemoveData]);
 
@@ -308,6 +330,18 @@ export default function Exchange() {
 
   // Update form values when state changes (for persistence)
   useEffect(() => {
+    console.log('Updating form values with current state:', {
+      sendMethod,
+      receiveMethod,
+      sendAmount,
+      receiveAmount,
+      fullName,
+      email,
+      senderAccount,
+      walletAddress,
+      doNotRemember
+    });
+    
     form.setValue("sendMethod", sendMethod);
     form.setValue("receiveMethod", receiveMethod);
     form.setValue("sendAmount", sendAmount);

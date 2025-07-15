@@ -25,6 +25,7 @@ const DATA_EXPIRY_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 export function useFormDataMemory(formKey: string = 'default') {
   const [isReminded, setIsReminded] = useState(true); // Default to true (save by default)
   const [savedData, setSavedData] = useState<FormData>({});
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const storageKey = `${FORM_DATA_STORAGE_KEY}_${formKey}`;
 
@@ -39,15 +40,21 @@ export function useFormDataMemory(formKey: string = 'default') {
         if (Date.now() - savedFormData.timestamp < DATA_EXPIRY_DURATION) {
           setSavedData(savedFormData.data);
           setIsReminded(savedFormData.isReminded);
+          setIsLoaded(true);
           console.log('Loaded saved form data:', savedFormData.data);
         } else {
           // Remove expired data
           localStorage.removeItem(storageKey);
+          setIsLoaded(true);
           console.log('Removed expired form data');
         }
+      } else {
+        setIsLoaded(true);
+        console.log('No saved form data found');
       }
     } catch (error) {
       console.warn('Failed to load saved form data:', error);
+      setIsLoaded(true);
     }
   }, [storageKey]);
 
@@ -167,6 +174,7 @@ export function useFormDataMemory(formKey: string = 'default') {
   return {
     isReminded,
     savedData,
+    isLoaded,
     saveFormData,
     toggleRemind,
     clearSavedData,
