@@ -64,8 +64,6 @@ const specialExclusions: Record<string, string[]> = {
 const createExchangeFormSchema = (
   minSendAmount: number = 5,
   maxSendAmount: number = 10000,
-  minReceiveAmount: number = 5,
-  maxReceiveAmount: number = 999999999,
   sendMethod: string = ""
 ) => z.object({
   sendMethod: z.string().min(1, "Please select a send method"),
@@ -89,14 +87,13 @@ const createExchangeFormSchema = (
     (val) => {
       if (!val || val === "") return false;
       const amount = parseFloat(val);
-      return !isNaN(amount) && amount >= minReceiveAmount && amount <= maxReceiveAmount;
+      return !isNaN(amount) && amount > 0;
     },
     (val) => {
       if (!val || val === "") return { message: "Amount is required" };
       const amount = parseFloat(val);
       if (isNaN(amount)) return { message: "Please enter a valid number" };
-      if (amount < minReceiveAmount) return { message: `Minimum allowed amount is $${minReceiveAmount.toFixed(2)}` };
-      if (amount > maxReceiveAmount) return { message: `Maximum allowed amount is $${maxReceiveAmount.toLocaleString()}` };
+      if (amount <= 0) return { message: "Amount must be greater than 0" };
       return { message: "Invalid amount" };
     }
   ),
@@ -321,8 +318,6 @@ export default function Exchange() {
     resolver: zodResolver(createExchangeFormSchema(
       dynamicLimits.minSendAmount, 
       dynamicLimits.maxSendAmount,
-      dynamicLimits.minReceiveAmount,
-      dynamicLimits.maxReceiveAmount,
       sendMethod
     )),
     mode: "onChange",
@@ -476,17 +471,11 @@ export default function Exchange() {
         throw new Error(`Send amount cannot exceed $${dynamicLimits.maxSendAmount.toLocaleString()}`);
       }
       
-      if (receiveAmount > dynamicLimits.maxReceiveAmount) {
-        throw new Error(`Receive amount cannot exceed $${dynamicLimits.maxReceiveAmount.toLocaleString()}`);
-      }
-      
       if (sendAmount < dynamicLimits.minSendAmount) {
         throw new Error(`Send amount must be at least $${dynamicLimits.minSendAmount.toFixed(2)}`);
       }
       
-      if (receiveAmount < dynamicLimits.minReceiveAmount) {
-        throw new Error(`Receive amount must be at least $${dynamicLimits.minReceiveAmount.toFixed(2)}`);
-      }
+      // Receive amount validation removed - flexible input allowed
 
       const paymentWallet = walletAddresses?.[data.receiveMethod] || '';
       
@@ -872,9 +861,9 @@ export default function Exchange() {
                                 }}
                               />
                             </FormControl>
-                            {/* Show allowed min/max for receive amount */}
+                            {/* Flexible amount input - no restrictions */}
                             <div className="text-xs text-gray-500 mt-1">
-                              Allowed: ${dynamicLimits.minReceiveAmount.toLocaleString()} - ${dynamicLimits.maxReceiveAmount.toLocaleString()} {receiveMethod.toUpperCase()}
+                              Enter any amount greater than 0
                             </div>
                             <FormMessage />
                           </FormItem>
