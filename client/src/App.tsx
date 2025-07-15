@@ -13,31 +13,47 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { ErrorBoundary } from 'react-error-boundary';
 import { HelmetProvider } from "react-helmet-async";
 
-// Lazy load pages to improve initial loading
-const Home = lazy(() => import("@/pages/home"));
-const About = lazy(() => import("@/pages/about"));
-const Services = lazy(() => import("@/pages/services"));
-const HowItWorks = lazy(() => import("@/pages/how-it-works"));
-const Exchange = lazy(() => import("@/pages/exchange"));
-const Confirmation = lazy(() => import("@/pages/confirmation"));
-const OrderCompleted = lazy(() => import("@/pages/order-completed"));
-const OrderCancelled = lazy(() => import("@/pages/order-cancelled"));
-const TrackOrder = lazy(() => import("@/pages/track-order"));
-const Contact = lazy(() => import("@/pages/contact"));
-const AdminLogin = lazy(() => import("@/pages/admin-login"));
-const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
-const AdminAnalytics = lazy(() => import("@/pages/admin-analytics"));
-const AdminExchangeRates = lazy(() => import("@/pages/admin-exchange-rates"));
-const OrderHistory = lazy(() => import("@/pages/order-history"));
-const CompletedOrders = lazy(() => import("@/pages/completed-orders"));
-const CancelledOrders = lazy(() => import("@/pages/cancelled-orders"));
-const SignIn = lazy(() => import("@/pages/signin"));
-const SignUp = lazy(() => import("@/pages/signup"));
-const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
-const ResetPassword = lazy(() => import("@/pages/reset-password"));
-const Profile = lazy(() => import("@/pages/profile"));
-const MyOrders = lazy(() => import("@/pages/my-orders"));
-const NotFound = lazy(() => import("@/pages/not-found"));
+// Lazy load pages to improve initial loading with error handling
+const Home = lazy(() => import("@/pages/home").catch((error) => {
+  console.error('Failed to load Home component:', error);
+  return { default: () => (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Failed to load Home page</h1>
+        <p className="text-gray-600 mb-4">Please refresh the page or try again later.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Refresh Page
+        </button>
+      </div>
+    </div>
+  )};
+}));
+const About = lazy(() => import("@/pages/about").catch(() => ({ default: () => <div>Error loading About page</div> })));
+const Services = lazy(() => import("@/pages/services").catch(() => ({ default: () => <div>Error loading Services page</div> })));
+const HowItWorks = lazy(() => import("@/pages/how-it-works").catch(() => ({ default: () => <div>Error loading How It Works page</div> })));
+const Exchange = lazy(() => import("@/pages/exchange").catch(() => ({ default: () => <div>Error loading Exchange page</div> })));
+const Confirmation = lazy(() => import("@/pages/confirmation").catch(() => ({ default: () => <div>Error loading Confirmation page</div> })));
+const OrderCompleted = lazy(() => import("@/pages/order-completed").catch(() => ({ default: () => <div>Error loading Order Completed page</div> })));
+const OrderCancelled = lazy(() => import("@/pages/order-cancelled").catch(() => ({ default: () => <div>Error loading Order Cancelled page</div> })));
+const TrackOrder = lazy(() => import("@/pages/track-order").catch(() => ({ default: () => <div>Error loading Track Order page</div> })));
+const Contact = lazy(() => import("@/pages/contact").catch(() => ({ default: () => <div>Error loading Contact page</div> })));
+const AdminLogin = lazy(() => import("@/pages/admin-login").catch(() => ({ default: () => <div>Error loading Admin Login page</div> })));
+const AdminDashboard = lazy(() => import("@/pages/admin-dashboard").catch(() => ({ default: () => <div>Error loading Admin Dashboard page</div> })));
+const AdminAnalytics = lazy(() => import("@/pages/admin-analytics").catch(() => ({ default: () => <div>Error loading Admin Analytics page</div> })));
+const AdminExchangeRates = lazy(() => import("@/pages/admin-exchange-rates").catch(() => ({ default: () => <div>Error loading Admin Exchange Rates page</div> })));
+const OrderHistory = lazy(() => import("@/pages/order-history").catch(() => ({ default: () => <div>Error loading Order History page</div> })));
+const CompletedOrders = lazy(() => import("@/pages/completed-orders").catch(() => ({ default: () => <div>Error loading Completed Orders page</div> })));
+const CancelledOrders = lazy(() => import("@/pages/cancelled-orders").catch(() => ({ default: () => <div>Error loading Cancelled Orders page</div> })));
+const SignIn = lazy(() => import("@/pages/signin").catch(() => ({ default: () => <div>Error loading Sign In page</div> })));
+const SignUp = lazy(() => import("@/pages/signup").catch(() => ({ default: () => <div>Error loading Sign Up page</div> })));
+const ForgotPassword = lazy(() => import("@/pages/forgot-password").catch(() => ({ default: () => <div>Error loading Forgot Password page</div> })));
+const ResetPassword = lazy(() => import("@/pages/reset-password").catch(() => ({ default: () => <div>Error loading Reset Password page</div> })));
+const Profile = lazy(() => import("@/pages/profile").catch(() => ({ default: () => <div>Error loading Profile page</div> })));
+const MyOrders = lazy(() => import("@/pages/my-orders").catch(() => ({ default: () => <div>Error loading My Orders page</div> })));
+const NotFound = lazy(() => import("@/pages/not-found").catch(() => ({ default: () => <div>Error loading Not Found page</div> })));
 
 // Loading component
 function LoadingSpinner() {
