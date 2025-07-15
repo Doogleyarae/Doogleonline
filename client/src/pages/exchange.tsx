@@ -163,7 +163,7 @@ export default function Exchange() {
   const { setLanguage } = useLanguage();
 
   useEffect(() => {
-    setLanguage('so');
+    setLanguage('en');
   }, [setLanguage]);
 
   const { 
@@ -267,9 +267,9 @@ export default function Exchange() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch balances - use public endpoint so system status is respected
+  // Fetch balances - use admin endpoint to get real balances
   const { data: balances, isLoading: balancesLoading } = useQuery<Record<string, number>>({
-    queryKey: ["/api/balances"],
+    queryKey: ["/api/admin/balances"],
     staleTime: 5000, // 5 seconds for more frequent updates
     refetchOnWindowFocus: false,
     refetchInterval: 10000, // Refetch every 10 seconds
@@ -305,6 +305,19 @@ export default function Exchange() {
       agreeToTerms: false,
     },
   });
+
+  // Update form values when state changes (for persistence)
+  useEffect(() => {
+    form.setValue("sendMethod", sendMethod);
+    form.setValue("receiveMethod", receiveMethod);
+    form.setValue("sendAmount", sendAmount);
+    form.setValue("receiveAmount", receiveAmount);
+    form.setValue("fullName", fullName);
+    form.setValue("email", email);
+    form.setValue("senderAccount", senderAccount);
+    form.setValue("walletAddress", walletAddress);
+    form.setValue("doNotRemember", doNotRemember);
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, doNotRemember, form]);
 
   // Update exchange rate when data is fetched
   useEffect(() => {
@@ -803,13 +816,13 @@ export default function Exchange() {
                             </FormLabel>
                             <FormControl>
                               <Input
-                                type="text"
-                                step="0.01"
+                                type="number"
+                                step="any"
                                 placeholder="0.00"
                                 className="h-12 text-lg"
                                 autoComplete="off"
                                 spellCheck={false}
-                                inputMode="numeric"
+                                inputMode="decimal"
                                 value={field.value}
                                 onChange={(e) => {
                                   field.onChange(e.target.value);

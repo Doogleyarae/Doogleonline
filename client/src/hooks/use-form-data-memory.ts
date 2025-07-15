@@ -39,9 +39,11 @@ export function useFormDataMemory(formKey: string = 'default') {
         if (Date.now() - savedFormData.timestamp < DATA_EXPIRY_DURATION) {
           setSavedData(savedFormData.data);
           setIsReminded(savedFormData.isReminded);
+          console.log('Loaded saved form data:', savedFormData.data);
         } else {
           // Remove expired data
           localStorage.removeItem(storageKey);
+          console.log('Removed expired form data');
         }
       }
     } catch (error) {
@@ -59,6 +61,7 @@ export function useFormDataMemory(formKey: string = 'default') {
         fullName: data.fullName || savedData.fullName || '',
         email: data.email || savedData.email || '',
         phoneNumber: data.phoneNumber || savedData.phoneNumber || '',
+        senderAccount: data.senderAccount || savedData.senderAccount || '',
         walletAddress: data.walletAddress || savedData.walletAddress || '',
         sendMethod: data.sendMethod || savedData.sendMethod || '',
         receiveMethod: data.receiveMethod || savedData.receiveMethod || '',
@@ -75,7 +78,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       setSavedData(completeData);
-      console.log('Customer data preserved with remind enabled');
+      console.log('Customer data preserved with remind enabled:', completeData);
     } catch (error) {
       console.warn('Failed to save form data:', error);
     }
@@ -92,6 +95,7 @@ export function useFormDataMemory(formKey: string = 'default') {
         fullName: currentData.fullName || savedData.fullName || '',
         email: currentData.email || savedData.email || '',
         phoneNumber: currentData.phoneNumber || savedData.phoneNumber || '',
+        senderAccount: currentData.senderAccount || savedData.senderAccount || '',
         walletAddress: currentData.walletAddress || savedData.walletAddress || '',
         sendMethod: currentData.sendMethod || savedData.sendMethod || '',
         receiveMethod: currentData.receiveMethod || savedData.receiveMethod || '',
@@ -133,6 +137,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       localStorage.removeItem(storageKey);
       setSavedData({});
       setIsReminded(false);
+      console.log('Force removed all form data');
     } catch (error) {
       console.warn('Failed to force clear form data:', error);
     }
@@ -144,6 +149,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       localStorage.removeItem(storageKey);
       setSavedData({});
       setIsReminded(false);
+      console.log('Cleared all saved form data');
     } catch (error) {
       console.warn('Failed to clear form data:', error);
     }
@@ -155,6 +161,7 @@ export function useFormDataMemory(formKey: string = 'default') {
 
     const updatedData = { ...savedData, [field]: value };
     saveFormData(updatedData);
+    console.log(`Updated field ${field}:`, value);
   };
 
   return {
