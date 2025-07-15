@@ -254,9 +254,12 @@ export default function AdminExchangeRates() {
                     <TableCell>{method.label} ({code})</TableCell>
                     <TableCell>
                       <Input
-                        type="number"
+                        type="text"
                         value={editAmounts[code] ?? ""}
                         onChange={e => handleEditAmount(code, e.target.value)}
+                        autoComplete="off"
+                        spellCheck={false}
+                        inputMode="decimal"
                         className="w-32"
                       />
                     </TableCell>
@@ -321,11 +324,13 @@ export default function AdminExchangeRates() {
               <Label htmlFor="rate">Rate</Label>
               <Input
                 id="rate"
-                type="number"
-                step="0.000001"
+                type="text"
                 placeholder="1.000000"
                 value={newRate}
                 onChange={(e) => setNewRate(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                inputMode="decimal"
               />
             </div>
             <div className="flex items-end">
@@ -480,11 +485,13 @@ export default function AdminExchangeRates() {
               <Label htmlFor="newRate">New Rate</Label>
               <Input
                 id="newRate"
-                type="number"
-                step="0.000001"
+                type="text"
                 placeholder="1.000000"
                 value={newRate}
                 onChange={(e) => setNewRate(e.target.value)}
+                autoComplete="off"
+                spellCheck={false}
+                inputMode="decimal"
               />
             </div>
             <div>

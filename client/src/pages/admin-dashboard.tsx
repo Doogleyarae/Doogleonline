@@ -1926,9 +1926,11 @@ export default function AdminDashboard() {
                         <div>
                           <Label htmlFor="rate">Exchange Rate</Label>
                           <Input
-                            type="number"
-                            step="0.000001"
+                            type="text"
                             placeholder="0.000000"
+                            autoComplete="off"
+                            spellCheck={false}
+                            inputMode="decimal"
                             value={exchangeRate}
                             onChange={(e) => setExchangeRate(e.target.value)}
                           />
@@ -1991,15 +1993,16 @@ export default function AdminDashboard() {
                                     <div className="flex items-center space-x-2">
                                       <Input
                                         id={`balance-${method.value}`}
-                                        type="number"
+                                        type="text"
                                         value={displayBalance}
                                         onChange={(e) => setBalances(prev => ({
                                           ...prev,
                                           [method.value.toUpperCase()]: parseFloat(e.target.value) || 0
                                         }))}
                                         placeholder="0"
-                                        min="0"
-                                        step="0.01"
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                        inputMode="decimal"
                                         className="flex-1"
                                       />
                                       <Button
@@ -2065,12 +2068,13 @@ export default function AdminDashboard() {
                                         <Label htmlFor={`manual-amount-${method.value}`}>Manual Adjustment Amount</Label>
                                         <Input
                                           id={`manual-amount-${method.value}`}
-                                          type="number"
-                                          min="0.01"
-                                          step="0.01"
+                                          type="text"
                                           placeholder="0.00"
                                           value={manualAmounts?.[method.value] || ''}
                                           onChange={e => setManualAmounts(prev => ({ ...prev, [method.value]: e.target.value }))}
+                                          autoComplete="off"
+                                          spellCheck={false}
+                                          inputMode="decimal"
                                           className="mb-2"
                                         />
                                       </div>
@@ -2157,15 +2161,16 @@ export default function AdminDashboard() {
                                     <div className="flex items-center space-x-2">
                                       <Input
                                         id={`min-${method.value}`}
-                                        type="number"
+                                        type="text"
                                         value={currencyMinimums[method.value] || 5}
                                         onChange={(e) => setCurrencyMinimums(prev => ({
                                           ...prev,
                                           [method.value]: parseFloat(e.target.value) || 5
                                         }))}
                                         placeholder="5.00"
-                                        min="0"
-                                        step="0.01"
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                        inputMode="decimal"
                                         className="flex-1"
                                       />
                                       <Button
@@ -2227,15 +2232,16 @@ export default function AdminDashboard() {
                                     <div className="flex items-center space-x-2">
                                       <Input
                                         id={`max-${method.value}`}
-                                        type="number"
+                                        type="text"
                                         value={currencyMaximums[method.value]}
                                         onChange={(e) => setCurrencyMaximums(prev => ({
                                           ...prev,
                                           [method.value]: parseFloat(e.target.value)
                                         }))}
                                         placeholder="50000.00"
-                                        min="0"
-                                        step="0.01"
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                        inputMode="decimal"
                                         className="flex-1"
                                       />
                                       <Button
@@ -2314,15 +2320,16 @@ export default function AdminDashboard() {
                               <Label htmlFor="universal-min">Minimum Order Amount ($)</Label>
                               <Input
                                 id="universal-min"
-                                type="number"
+                                type="text"
                                 value={universalLimits.min}
                                 onChange={(e) => setUniversalLimits(prev => ({
                                   ...prev,
                                   min: parseFloat(e.target.value) || 0
                                 }))}
                                 placeholder="5"
-                                min="1"
-                                step="0.01"
+                                autoComplete="off"
+                                spellCheck={false}
+                                inputMode="decimal"
                                 className="mt-2"
                               />
                             </div>
@@ -2330,15 +2337,16 @@ export default function AdminDashboard() {
                               <Label htmlFor="universal-max">Maximum Order Amount ($)</Label>
                               <Input
                                 id="universal-max"
-                                type="number"
+                                type="text"
                                 value={universalLimits.max}
                                 onChange={(e) => setUniversalLimits(prev => ({
                                   ...prev,
                                   max: parseFloat(e.target.value) || 0
                                 }))}
                                 placeholder="10000"
-                                min="1"
-                                step="0.01"
+                                autoComplete="off"
+                                spellCheck={false}
+                                inputMode="decimal"
                                 className="mt-2"
                               />
                             </div>

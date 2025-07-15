@@ -779,10 +779,12 @@ export default function Exchange() {
                         render={({ field }) => (
                           <FormControl>
                             <Input
-                              type="number"
-                              step="0.01"
+                              type="text"
                               placeholder="0.00"
                               className="h-12 text-lg"
+                              autoComplete="off"
+                              spellCheck={false}
+                              inputMode="decimal"
                               value={field.value}
                               onChange={(e) => {
                                 field.onChange(e.target.value);
