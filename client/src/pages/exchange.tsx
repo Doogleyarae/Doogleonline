@@ -1018,53 +1018,23 @@ export default function Exchange() {
                   control={form.control}
                   name="doNotRemember"
                   render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <FormLabel className="text-sm font-medium">
-                            Remember My Information
-                          </FormLabel>
-                          <p className="text-xs text-gray-500">
-                            {field.value ? "Data will not be saved locally" : "Your form data will be saved for convenience"}
-                          </p>
-                        </div>
-                        <FormControl>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newValue = !field.value;
-                              field.onChange(newValue);
-                              handleDoNotRememberChange(newValue);
-                            }}
-                            className={`
-                              relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                              ${field.value 
-                                ? 'bg-red-500 hover:bg-red-600' 
-                                : 'bg-green-500 hover:bg-green-600'
-                              }
-                            `}
-                            aria-label={field.value ? "Disable data saving" : "Enable data saving"}
-                          >
-                            <span
-                              className={`
-                                inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out
-                                ${field.value ? 'translate-x-6' : 'translate-x-1'}
-                              `}
-                            />
-                          </button>
-                        </FormControl>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 text-xs">
-                        <div className={`flex items-center space-x-1 ${field.value ? 'text-red-600' : 'text-green-600'}`}>
-                          <div className={`w-2 h-2 rounded-full ${field.value ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                          <span className="font-medium">
-                            {field.value ? 'OFF' : 'ON'}
-                          </span>
-                        </div>
-                        <span className="text-gray-500">
-                          {field.value ? 'Data saving disabled' : 'Data saving enabled'}
-                        </span>
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            handleDoNotRememberChange(checked as boolean);
+                          }}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium">
+                          Do not remember my information *
+                        </FormLabel>
+                        <p className="text-xs text-gray-500">
+                          When enabled, your form data will not be saved locally and forms will not auto-fill on revisit
+                        </p>
                       </div>
                     </FormItem>
                   )}
