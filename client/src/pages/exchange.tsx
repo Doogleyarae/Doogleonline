@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff, Eye, EyeOff } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
+import { useAutoSave } from "@/hooks/use-auto-save";
 import { formatAmount } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useLanguage } from "@/contexts/language-context";
@@ -166,45 +167,71 @@ export default function Exchange() {
     setLanguage('en');
   }, [setLanguage]);
 
-  const { 
-    isReminded, 
-    savedData, 
-    isLoaded,
-    toggleRemind, 
-    updateSavedField,
-    forceRemoveData,
-    hasSavedData 
-  } = useFormDataMemory('exchange');
-
-  // Load complete state on page load
-  const completeState = loadCompleteExchangeState();
-
-  // Use complete state if available, otherwise fall back to individual storage
-  const [fullName, setFullName] = useState(completeState?.fullName || "");
-  const [email, setEmail] = useState(completeState?.email || "");
-  const [senderAccount, setSenderAccount] = useState(completeState?.senderAccount || "");
-  const [walletAddress, setWalletAddress] = useState(completeState?.walletAddress || "");
-
-  const [sendMethod, setSendMethod] = useState(completeState?.sendMethod || "trc20");
-  const [receiveMethod, setReceiveMethod] = useState(completeState?.receiveMethod || "moneygo");
-  const [sendAmount, setSendAmount] = useState(completeState?.sendAmount || "1");
-  const [receiveAmount, setReceiveAmount] = useState(completeState?.receiveAmount || "");
-  const [exchangeRate, setExchangeRate] = useState<number>(completeState?.exchangeRate || 0);
-  const [rateDisplay, setRateDisplay] = useState(completeState?.rateDisplay || "1 USD = 1.05 EUR");
-  const [doNotRemember, setDoNotRemember] = useState(completeState?.doNotRemember || false);
-  const [dynamicLimits, setDynamicLimits] = useState(completeState?.dynamicLimits || {
+  // Enhanced auto-save system
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [senderAccount, setSenderAccount] = useState("");
+  const [walletAddress, setWalletAddress] = useState("");
+  const [sendMethod, setSendMethod] = useState("trc20");
+  const [receiveMethod, setReceiveMethod] = useState("moneygo");
+  const [sendAmount, setSendAmount] = useState("1");
+  const [receiveAmount, setReceiveAmount] = useState("");
+  const [exchangeRate, setExchangeRate] = useState<number>(0);
+  const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
+  const [doNotRemember, setDoNotRemember] = useState(false);
+  const [dynamicLimits, setDynamicLimits] = useState({
     minSendAmount: 5,
     maxSendAmount: 10000,
     minReceiveAmount: 5,
     maxReceiveAmount: 10000,
   });
 
+  // Create form data object for auto-save
+  const formData = {
+    fullName,
+    email,
+    senderAccount,
+    walletAddress,
+    sendMethod,
+    receiveMethod,
+    sendAmount,
+    receiveAmount,
+    exchangeRate,
+    rateDisplay,
+    dynamicLimits,
+    doNotRemember,
+  };
+
+  // Use enhanced auto-save hook
+  const {
+    isReminded,
+    isLoaded,
+    hasSavedData,
+    savedData,
+    saveField,
+    saveImmediately,
+    restoreAll,
+    clearAll
+  } = useAutoSave(formData, {
+    formKey: 'exchange',
+    debounceMs: 200, // Faster auto-save
+    saveOnChange: true,
+    saveOnBlur: true,
+    restoreOnMount: true
+  });
+
+  // Legacy form data memory for backward compatibility
+  const { 
+    toggleRemind, 
+    forceRemoveData,
+  } = useFormDataMemory('exchange');
+
   // Load saved data when it becomes available (for cross-page persistence)
   useEffect(() => {
-    if (isLoaded && savedData && Object.keys(savedData).length > 0 && !completeState) {
-      console.log('Loading saved data from form memory:', savedData);
+    if (isLoaded && hasSavedData && savedData) {
+      console.log('🔄 Loading saved data from auto-save system:', savedData);
       
-      // Load all available saved data, prioritizing saved data over empty values
+      // Restore all saved data to form state
       if (savedData.fullName) setFullName(savedData.fullName);
       if (savedData.email) setEmail(savedData.email);
       if (savedData.senderAccount) setSenderAccount(savedData.senderAccount);
@@ -213,105 +240,37 @@ export default function Exchange() {
       if (savedData.receiveMethod) setReceiveMethod(savedData.receiveMethod);
       if (savedData.sendAmount) setSendAmount(savedData.sendAmount);
       if (savedData.receiveAmount) setReceiveAmount(savedData.receiveAmount);
+      if (savedData.exchangeRate) setExchangeRate(savedData.exchangeRate);
+      if (savedData.rateDisplay) setRateDisplay(savedData.rateDisplay);
+      if (savedData.dynamicLimits) setDynamicLimits(savedData.dynamicLimits);
+      if (savedData.doNotRemember !== undefined) setDoNotRemember(savedData.doNotRemember);
     }
-  }, [isLoaded, savedData, completeState]);
+  }, [isLoaded, hasSavedData, savedData]);
 
-  // Add this useEffect to auto-save form data on any change
-  useEffect(() => {
-    // Only save if doNotRemember is false
-    if (!doNotRemember) {
-      saveCompleteExchangeState({
-        sendMethod,
-        receiveMethod,
-        sendAmount,
-        receiveAmount,
-        fullName,
-        email,
-        senderAccount,
-        walletAddress,
-        exchangeRate,
-        rateDisplay,
-        dynamicLimits,
-        doNotRemember,
-        timestamp: Date.now(),
-      });
-    } else {
-      clearCompleteExchangeState();
-    }
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits, doNotRemember]);
+  // Enhanced auto-save is now handled by the useAutoSave hook
+  // The hook automatically saves data on every change with debouncing
 
-  // Add this useEffect to restore state on mount if available
-  useEffect(() => {
-    const state = loadCompleteExchangeState();
-    if (state && !doNotRemember) {
-      setSendMethod(state.sendMethod || "trc20");
-      setReceiveMethod(state.receiveMethod || "moneygo");
-      setSendAmount(state.sendAmount || "1");
-      setReceiveAmount(state.receiveAmount || "");
-      setFullName(state.fullName || "");
-      setEmail(state.email || "");
-      setSenderAccount(state.senderAccount || "");
-      setWalletAddress(state.walletAddress || "");
-      setExchangeRate(state.exchangeRate || 0);
-      setRateDisplay(state.rateDisplay || "1 USD = 1.05 EUR");
-      setDynamicLimits(state.dynamicLimits || {
-        minSendAmount: 5,
-        maxSendAmount: 10000,
-        minReceiveAmount: 5,
-        maxReceiveAmount: 10000,
-      });
+  // Enhanced save function for immediate saving using new auto-save system
+  const saveFormDataImmediately = useCallback((field: string, value: any) => {
+    if (!isReminded) {
+      console.log(`🚫 Skipping save for ${field} - remind is disabled`);
+      return;
     }
-    // eslint-disable-next-line
-  }, []);
 
-  // Enhanced save function for immediate saving
-  const saveFormDataImmediately = useCallback((field: string, value: string) => {
-    if (!doNotRemember) {
-      console.log(`Immediately saving ${field}:`, value);
-      updateSavedField(field, value);
-      
-      // Also save to complete state
-      const currentState = {
-        sendMethod,
-        receiveMethod,
-        sendAmount,
-        receiveAmount,
-        fullName,
-        email,
-        senderAccount,
-        walletAddress,
-        exchangeRate,
-        rateDisplay,
-        dynamicLimits,
-        doNotRemember,
-        timestamp: Date.now()
-      };
-      
-      // Update the specific field
-      const updatedState = { ...currentState, [field]: value };
-      saveCompleteExchangeState(updatedState);
-      
-      // Debug: Check if data is actually saved
-      setTimeout(() => {
-        const saved = localStorage.getItem('doogle_form_data_exchange');
-        console.log('Debug - Saved data in localStorage:', saved);
-      }, 100);
-    } else {
-      console.log(`Skipping save for ${field} - doNotRemember is enabled`);
-    }
-  }, [doNotRemember, updateSavedField, sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
+    console.log(`💾 Immediately saving ${field}:`, value);
+    saveField(field as keyof typeof formData, value);
+  }, [isReminded, saveField]);
 
   // Debug function to check saved data
   const debugSavedData = useCallback(() => {
     console.log('=== DEBUG SAVED DATA ===');
-    console.log('Complete state:', loadCompleteExchangeState());
-    console.log('Form memory data:', savedData);
+    console.log('Auto-save data:', savedData);
     console.log('isReminded:', isReminded);
     console.log('doNotRemember:', doNotRemember);
+    console.log('hasSavedData:', hasSavedData);
     console.log('localStorage exchange data:', localStorage.getItem('doogle_form_data_exchange'));
-    console.log('localStorage complete state:', localStorage.getItem('exchange-complete-state'));
     console.log('=== END DEBUG ===');
-  }, [savedData, isReminded, doNotRemember]);
+  }, [savedData, isReminded, doNotRemember, hasSavedData]);
 
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
