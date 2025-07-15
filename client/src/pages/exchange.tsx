@@ -435,6 +435,7 @@ export default function Exchange() {
 
   const handleReceiveAmountChange = (value: string) => {
     setReceiveAmount(value);
+    // Allow any input for receive amount - no restrictions
     if (exchangeRate > 0 && value) {
       const amount = parseFloat(value);
       if (!isNaN(amount)) {
