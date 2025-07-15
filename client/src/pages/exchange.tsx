@@ -350,12 +350,12 @@ export default function Exchange() {
   useEffect(() => {
     if (rateData?.rate && !rateLoading) {
       const rate = rateData.rate;
-      console.log('Setting exchange rate:', rate, 'from', sendMethod, 'to', receiveMethod);
       setExchangeRate(rate);
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
-      if (sendAmount && parseFloat(sendAmount) > 0) {
+      // Only auto-calculate receive amount if send amount exists and receive amount is empty
+      if (sendAmount && parseFloat(sendAmount) > 0 && (!receiveAmount || receiveAmount === "")) {
         const amount = parseFloat(sendAmount);
         const converted = amount * rate;
         const convertedAmount = formatAmount(converted);
@@ -363,7 +363,6 @@ export default function Exchange() {
         form.setValue("receiveAmount", convertedAmount);
       }
     } else if (!rateData && !rateLoading) {
-      console.log('No exchange rate data available for', sendMethod, 'to', receiveMethod);
       setExchangeRate(0);
       setRateDisplay("Rate not available");
     }
@@ -422,7 +421,8 @@ export default function Exchange() {
   // Handle amount calculations
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
-    if (exchangeRate > 0 && value) {
+    // Only auto-calculate receive amount if it's empty
+    if (exchangeRate > 0 && value && (!receiveAmount || receiveAmount === "")) {
       const amount = parseFloat(value);
       if (!isNaN(amount)) {
         const converted = amount * exchangeRate;
@@ -435,16 +435,8 @@ export default function Exchange() {
 
   const handleReceiveAmountChange = (value: string) => {
     setReceiveAmount(value);
-    // Allow any input for receive amount - no restrictions
-    if (exchangeRate > 0 && value) {
-      const amount = parseFloat(value);
-      if (!isNaN(amount)) {
-        const converted = amount / exchangeRate;
-        const convertedAmount = formatAmount(converted);
-        setSendAmount(convertedAmount);
-        form.setValue("sendAmount", convertedAmount);
-      }
-    }
+    // Allow any input for receive amount - no automatic conversion
+    // User can enter any value without it affecting the send amount
   };
 
   // Order creation mutation
