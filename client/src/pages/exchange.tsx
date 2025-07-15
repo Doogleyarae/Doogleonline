@@ -208,15 +208,9 @@ export default function Exchange() {
     restoreOnMount: true
   });
 
-  // Legacy form data memory for backward compatibility
-  const { 
-    toggleRemind, 
-    forceRemoveData,
-  } = useFormDataMemory('exchange');
-
   // Load saved data when it becomes available (for cross-page persistence)
   useEffect(() => {
-    if (isLoaded && hasSavedData && savedData) {
+    if (isLoaded && hasSavedData && savedData && !doNotRemember) {
       console.log('🔄 Loading saved data from auto-save system:', savedData);
       
       // Restore all saved data to form state
@@ -233,26 +227,54 @@ export default function Exchange() {
       if (savedData.dynamicLimits) setDynamicLimits(savedData.dynamicLimits);
       if (savedData.doNotRemember !== undefined) setDoNotRemember(savedData.doNotRemember);
     }
-  }, [isLoaded, hasSavedData, savedData]);
+  }, [isLoaded, hasSavedData, savedData, doNotRemember]);
 
-  // Enhanced auto-save is now handled by the useAutoSave hook
-  // The hook automatically saves data on every change with debouncing
+  // Handle "Do not remember" state changes
+  useEffect(() => {
+    if (doNotRemember) {
+      // Clear form when "Do not remember" is enabled
+      setFullName("");
+      setEmail("");
+      setSenderAccount("");
+      setWalletAddress("");
+      setSendAmount("1");
+      setReceiveAmount("");
+    }
+  }, [doNotRemember]);
 
   // Enhanced save function for immediate saving using new auto-save system
   const saveFormDataImmediately = useCallback((field: string, value: any) => {
-    if (!isReminded) {
-      console.log(`🚫 Skipping save for ${field} - remind is disabled`);
+    if (doNotRemember) {
+      console.log(`🚫 Skipping save for ${field} - do not remember is enabled`);
       return;
     }
 
     console.log(`💾 Immediately saving ${field}:`, value);
     saveField(field as keyof typeof formData, value);
-  }, [isReminded, saveField]);
+  }, [doNotRemember, saveField]);
 
-  // Debug function to check saved data (removed for production)
+  // Handle "Do not remember" checkbox changes
+  const handleDoNotRememberChange = useCallback((checked: boolean) => {
+    setDoNotRemember(checked);
+    
+    if (checked) {
+      // Clear all saved data when "Do not remember" is enabled
+      console.log('🗑️ Clearing all saved data - do not remember enabled');
+      clearAll();
+    } else {
+      // Save current form data when "Do not remember" is disabled
+      console.log('💾 Saving current form data - do not remember disabled');
+      saveImmediately(formData);
+    }
+  }, [clearAll, saveImmediately, formData]);
+
+  // Debug function to check saved data
   const debugSavedData = useCallback(() => {
-    // Debug logging removed for production
-  }, [savedData, isReminded, doNotRemember, hasSavedData]);
+    console.log('🔍 Debug: Current saved data:', savedData);
+    console.log('🔍 Debug: Do not remember:', doNotRemember);
+    console.log('🔍 Debug: Has saved data:', hasSavedData);
+    console.log('🔍 Debug: Current form data:', formData);
+  }, [savedData, doNotRemember, hasSavedData, formData]);
 
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
@@ -1002,7 +1024,7 @@ export default function Exchange() {
                           checked={field.value}
                           onCheckedChange={(checked) => {
                             field.onChange(checked);
-                            setDoNotRemember(checked as boolean);
+                            handleDoNotRememberChange(checked as boolean);
                           }}
                         />
                       </FormControl>
