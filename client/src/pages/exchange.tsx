@@ -216,10 +216,11 @@ export default function Exchange() {
     }
   }, [isLoaded, savedData, completeState]);
 
-  // Save complete state whenever anything changes (only if doNotRemember is false)
+  // Add this useEffect to auto-save form data on any change
   useEffect(() => {
+    // Only save if doNotRemember is false
     if (!doNotRemember) {
-      const stateToSave = {
+      saveCompleteExchangeState({
         sendMethod,
         receiveMethod,
         sendAmount,
@@ -232,34 +233,36 @@ export default function Exchange() {
         rateDisplay,
         dynamicLimits,
         doNotRemember,
-        timestamp: Date.now()
-      };
-      
-      saveCompleteExchangeState(stateToSave);
-      console.log('Saving complete exchange state:', stateToSave);
-      
-      // Also save to form data memory for cross-page persistence
-      updateSavedField('sendMethod', sendMethod);
-      updateSavedField('receiveMethod', receiveMethod);
-      updateSavedField('sendAmount', sendAmount);
-      updateSavedField('receiveAmount', receiveAmount);
-      updateSavedField('fullName', fullName);
-      updateSavedField('email', email);
-      updateSavedField('senderAccount', senderAccount);
-      updateSavedField('walletAddress', walletAddress);
+        timestamp: Date.now(),
+      });
     } else {
-      console.log('Data saving disabled - doNotRemember is enabled');
-    }
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits, doNotRemember, updateSavedField]);
-
-  // Clear saved data when doNotRemember is enabled
-  useEffect(() => {
-    if (doNotRemember) {
       clearCompleteExchangeState();
-      forceRemoveData();
-      console.log('Cleared all saved data due to doNotRemember being enabled');
     }
-  }, [doNotRemember, forceRemoveData]);
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits, doNotRemember]);
+
+  // Add this useEffect to restore state on mount if available
+  useEffect(() => {
+    const state = loadCompleteExchangeState();
+    if (state && !doNotRemember) {
+      setSendMethod(state.sendMethod || "trc20");
+      setReceiveMethod(state.receiveMethod || "moneygo");
+      setSendAmount(state.sendAmount || "1");
+      setReceiveAmount(state.receiveAmount || "");
+      setFullName(state.fullName || "");
+      setEmail(state.email || "");
+      setSenderAccount(state.senderAccount || "");
+      setWalletAddress(state.walletAddress || "");
+      setExchangeRate(state.exchangeRate || 0);
+      setRateDisplay(state.rateDisplay || "1 USD = 1.05 EUR");
+      setDynamicLimits(state.dynamicLimits || {
+        minSendAmount: 5,
+        maxSendAmount: 10000,
+        minReceiveAmount: 5,
+        maxReceiveAmount: 10000,
+      });
+    }
+    // eslint-disable-next-line
+  }, []);
 
   // Enhanced save function for immediate saving
   const saveFormDataImmediately = useCallback((field: string, value: string) => {
