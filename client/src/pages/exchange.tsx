@@ -846,8 +846,7 @@ export default function Exchange() {
                             </FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
-                                step="any"
+                                type="text"
                                 placeholder="0.00"
                                 className="h-12 text-lg"
                                 autoComplete="off"
