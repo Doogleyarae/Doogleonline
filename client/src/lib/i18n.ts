@@ -296,13 +296,11 @@ export function getCurrentLanguage(): Language {
 export function getTranslation(key: string, language: Language = getCurrentLanguage()): string {
   const langTranslations = translations[language];
   if (!langTranslations) {
-    console.warn(`Translation not found for language: ${language}`);
     return translations.el[key] || key;
   }
   
   const translation = langTranslations[key];
   if (!translation) {
-    console.warn(`Translation key not found: ${key} for language: ${language}`);
     return translations.el[key] || key;
   }
   

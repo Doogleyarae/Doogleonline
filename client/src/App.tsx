@@ -15,7 +15,7 @@ import { HelmetProvider } from "react-helmet-async";
 
 // Lazy load pages to improve initial loading with error handling
 const Home = lazy(() => import("@/pages/home").catch((error) => {
-  console.error('Failed to load Home component:', error);
+  // Failed to load Home component
   return { default: () => (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">

@@ -225,7 +225,6 @@ export default function AdminDashboard() {
       })
         .then(response => response.json())
         .then(data => {
-          console.log("Auth check response:", data);
           if (!data.authenticated) {
             sessionStorage.removeItem("adminToken");
             toast({
@@ -235,11 +234,11 @@ export default function AdminDashboard() {
             });
             setLocation("/admin/login");
           } else {
-            console.log("Admin authentication confirmed");
+            // Admin authentication confirmed
           }
         })
         .catch((error) => {
-          console.error("Auth check error:", error);
+          // Auth check error
           sessionStorage.removeItem("adminToken");
           toast({
             title: "Authentication Error",
@@ -378,7 +377,7 @@ export default function AdminDashboard() {
   // Enhanced wallet data processing
   useEffect(() => {
     if (walletError) {
-      console.error('❌ Wallet data fetch error:', walletError);
+      // Wallet data fetch error
       toast({
         title: "Wallet Data Error",
         description: "Failed to load wallet addresses. Please refresh the page.",
@@ -387,7 +386,6 @@ export default function AdminDashboard() {
     }
     
     if (walletData && typeof walletData === 'object') {
-      console.log('✅ Wallet data loaded:', walletData);
       setWalletAddresses(walletData as Record<string, string>);
     }
   }, [walletData, walletError]);
@@ -491,7 +489,7 @@ export default function AdminDashboard() {
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('Admin dashboard WebSocket connected');
+      // Admin dashboard WebSocket connected
     };
 
     ws.onmessage = (event) => {
@@ -500,7 +498,6 @@ export default function AdminDashboard() {
         
         // Handle order updates (including customer cancellations)
         if (message.type === 'order_update') {
-          console.log('Admin dashboard received order update:', message.data);
           
           // Show toast notification for customer cancellations
           if (message.data.status === 'cancelled') {
@@ -519,19 +516,18 @@ export default function AdminDashboard() {
         
         // Handle new orders
         if (message.type === 'new_order') {
-          console.log('Admin dashboard received new order:', message.data);
           
           // Refresh orders list to show new order
           queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
           queryClient.refetchQueries({ queryKey: ['/api/orders'] });
         }
       } catch (error) {
-        console.error('Error parsing admin WebSocket message:', error);
+        // Error parsing admin WebSocket message
       }
     };
 
     ws.onclose = () => {
-      console.log('Admin dashboard WebSocket disconnected');
+      // Admin dashboard WebSocket disconnected
     };
 
     return () => {
@@ -687,7 +683,6 @@ export default function AdminDashboard() {
   // Enhanced wallet update mutation
   const updateWalletMutation = useMutation({
     mutationFn: async ({ method, address }: { method: string; address: string }) => {
-      console.log('🔧 Sending wallet update request:', { method, address });
       const response = await apiRequest('POST', '/api/admin/wallet-addresses', { method, address });
       
       if (!response.ok) {
@@ -696,11 +691,9 @@ export default function AdminDashboard() {
       }
       
       const data = await response.json();
-      console.log('✅ Wallet update response:', data);
       return data;
     },
     onSuccess: (data: any, variables: { method: string; address: string }) => {
-      console.log('✅ Wallet update successful:', data, variables);
       
       // Invalidate and refetch data
       queryClient.invalidateQueries({ queryKey: ['/api/admin/wallet-addresses'] });
@@ -726,7 +719,6 @@ export default function AdminDashboard() {
       });
     },
     onError: (error: any) => {
-      console.error('❌ Wallet update failed:', error);
       toast({
         title: "❌ Update Failed",
         description: error.message || "Failed to update wallet address",
@@ -755,7 +747,6 @@ export default function AdminDashboard() {
       });
     },
     onError: (error: any) => {
-      console.error('API endpoint update error:', error);
       toast({
         title: "Update Failed",
         description: "Failed to update API endpoint",
@@ -780,7 +771,6 @@ export default function AdminDashboard() {
       });
     },
     onError: (error: any) => {
-      console.error('Balance update error:', error);
       toast({
         title: "Update Failed",
         description: "Failed to update balance",
@@ -856,7 +846,6 @@ export default function AdminDashboard() {
       });
       return;
     }
-    console.log('Updating wallet:', { method, address });
     updateWalletMutation.mutate({ method, address });
   };
 
@@ -1128,20 +1117,17 @@ export default function AdminDashboard() {
 
   // Fetch system status on mount
   useEffect(() => {
-    console.log('Fetching system status...');
     fetch('/api/admin/system-status', {
       credentials: "include"
     })
       .then(res => {
-        console.log('System status response:', res.status);
         return res.json();
       })
       .then(data => {
-        console.log('System status data:', data);
         setSystemStatus(data.status);
       })
       .catch(error => {
-        console.error('Error fetching system status:', error);
+        // Error fetching system status
         // Set default to 'on' if there's an error
         setSystemStatus('on');
       });

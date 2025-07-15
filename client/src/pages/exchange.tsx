@@ -32,27 +32,18 @@ interface CurrencyLimitsResponse {
 }
 
 // Import currency logos
-import zaadLogo from "@assets/zaad_1749853582330.png";
-import evcLogo from "@assets/evc plus_1749853582322.png";
-import edahabLogo from "@assets/edahab_1749853582320.png";
-import golisLogo from "@assets/golis_1749853582323.png";
-import premierLogo from "@assets/premier bank_1749853582326.png";
-import trc20Logo from "@assets/trc20_1749853582327.png";
-import peb20Logo from "@assets/peb20_1749853582325.png";
-import trxLogo from "@assets/trx_1749853582329.png";
-import moneygoLogo from "@assets/__moneygo_1_1749853748726.png";
 
 const paymentMethods = [
-  { value: "zaad", label: "Zaad", logo: zaadLogo },
-  { value: "sahal", label: "Sahal", logo: golisLogo },
-  { value: "evc", label: "EVC Plus", logo: evcLogo },
-  { value: "edahab", label: "eDahab", logo: edahabLogo },
-  { value: "premier", label: "Premier Bank", logo: premierLogo },
-  { value: "moneygo", label: "MoneyGo", logo: moneygoLogo },
-  { value: "trc20", label: "TRC20 (USDT)", logo: trc20Logo },
-  { value: "peb20", label: "PEB20", logo: peb20Logo },
-  { value: "trx", label: "TRX", logo: trxLogo },
-  { value: "usdc", label: "USDC", logo: trc20Logo }
+  { value: "zaad", label: "Zaad" },
+  { value: "sahal", label: "Sahal" },
+  { value: "evc", label: "EVC Plus" },
+  { value: "edahab", label: "eDahab" },
+  { value: "premier", label: "Premier Bank" },
+  { value: "moneygo", label: "MoneyGo" },
+  { value: "trc20", label: "TRC20 (USDT)" },
+  { value: "peb20", label: "PEB20" },
+  { value: "trx", label: "TRX" },
+  { value: "usdc", label: "USDC" }
 ];
 
 const specialExclusions: Record<string, string[]> = {
@@ -200,8 +191,8 @@ export default function Exchange() {
   };
 
   // Use enhanced auto-save hook
-  const {
-    isReminded,
+  const { 
+    isReminded, 
     isLoaded,
     hasSavedData,
     savedData,
@@ -258,15 +249,9 @@ export default function Exchange() {
     saveField(field as keyof typeof formData, value);
   }, [isReminded, saveField]);
 
-  // Debug function to check saved data
+  // Debug function to check saved data (removed for production)
   const debugSavedData = useCallback(() => {
-    console.log('=== DEBUG SAVED DATA ===');
-    console.log('Auto-save data:', savedData);
-    console.log('isReminded:', isReminded);
-    console.log('doNotRemember:', doNotRemember);
-    console.log('hasSavedData:', hasSavedData);
-    console.log('localStorage exchange data:', localStorage.getItem('doogle_form_data_exchange'));
-    console.log('=== END DEBUG ===');
+    // Debug logging removed for production
   }, [savedData, isReminded, doNotRemember, hasSavedData]);
 
   // Fetch exchange rate
@@ -498,9 +483,7 @@ export default function Exchange() {
       return response.json();
     },
     onSuccess: (order) => {
-      console.log('Order created successfully:', order);
       sessionStorage.setItem("currentOrder", JSON.stringify(order));
-      console.log('Navigating to confirmation page...');
       
       // Show success message and navigate
       toast({
@@ -521,8 +504,6 @@ export default function Exchange() {
   });
 
   const onSubmit = (data: ExchangeFormData) => {
-    console.log('Form submission data:', data);
-    console.log('Form errors:', form.formState.errors);
     
     // Check if system is closed
     if (systemStatus?.status === 'off') {
@@ -564,7 +545,7 @@ export default function Exchange() {
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('Exchange page WebSocket connected for real-time balance updates');
+      // WebSocket connected
     };
 
     ws.onmessage = (event) => {
@@ -573,7 +554,6 @@ export default function Exchange() {
         
         // Handle balance updates from admin dashboard
         if (message.type === 'balance_update') {
-          console.log('Exchange page received balance update:', message.data);
           
           // Show toast notification for balance update
           toast({
@@ -608,16 +588,16 @@ export default function Exchange() {
           queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
         }
       } catch (error) {
-        console.error('WebSocket message parsing error:', error);
+        // WebSocket message parsing error
       }
     };
 
     ws.onerror = (error) => {
-      console.error('Exchange page WebSocket error:', error);
+      // WebSocket error
     };
 
     ws.onclose = () => {
-      console.log('Exchange page WebSocket disconnected');
+      // WebSocket disconnected
     };
 
     return () => {

@@ -11,7 +11,7 @@ try {
   const root = createRoot(rootElement);
   root.render(<App />);
 } catch (error) {
-  console.error("Failed to render app:", error);
+  // Failed to render app
   
   // Fallback: Create a simple error display
   const rootElement = document.getElementById("root");

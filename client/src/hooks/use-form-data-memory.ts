@@ -54,19 +54,15 @@ export function useFormDataMemory(formKey: string = 'default') {
           setIsReminded(savedFormData.isReminded);
           setLastSaved(savedFormData.timestamp);
           setIsLoaded(true);
-          console.log('✅ Loaded saved form data:', savedFormData.data);
         } else {
           // Remove expired data
           localStorage.removeItem(storageKey);
           setIsLoaded(true);
-          console.log('🗑️ Removed expired form data');
         }
       } else {
         setIsLoaded(true);
-        console.log('📝 No saved form data found');
       }
     } catch (error) {
-      console.warn('⚠️ Failed to load saved form data:', error);
       setIsLoaded(true);
     }
   }, [storageKey]);
@@ -74,7 +70,6 @@ export function useFormDataMemory(formKey: string = 'default') {
   // Enhanced auto-save function with debouncing
   const autoSave = useCallback((data: Partial<FormData>) => {
     if (!isReminded) {
-      console.log('🚫 Auto-save disabled - remind is off');
       return;
     }
 
@@ -92,10 +87,8 @@ export function useFormDataMemory(formKey: string = 'default') {
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       setSavedData(updatedData);
       setLastSaved(now);
-      
-      console.log('💾 Auto-saved field:', Object.keys(data)[0], 'Value:', Object.values(data)[0]);
     } catch (error) {
-      console.warn('❌ Failed to auto-save form data:', error);
+      // Failed to auto-save form data
     }
   }, [isReminded, savedData, storageKey]);
 
@@ -138,9 +131,8 @@ export function useFormDataMemory(formKey: string = 'default') {
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       setSavedData(completeData);
       setLastSaved(now);
-      console.log('💾 Customer data preserved with remind enabled:', completeData);
     } catch (error) {
-      console.warn('❌ Failed to save form data:', error);
+      // Failed to save form data
     }
   }, [isReminded, savedData, storageKey]);
 
@@ -185,19 +177,17 @@ export function useFormDataMemory(formKey: string = 'default') {
         localStorage.setItem(storageKey, JSON.stringify(dataToSave));
         setSavedData(completeCustomerData);
         setLastSaved(now);
-        console.log('✅ REMIND ENABLED: All customer information preserved permanently');
-      } catch (error) {
-        console.warn('❌ Failed to save form data:', error);
-      }
+              } catch (error) {
+          // Failed to save form data
+        }
     } else if (!newRemindStatus) {
       // Clear data when remind is disabled
       try {
         localStorage.removeItem(storageKey);
         setSavedData({});
         setLastSaved(0);
-        console.log('🗑️ REMIND DISABLED: Customer data cleared');
       } catch (error) {
-        console.warn('❌ Failed to clear form data:', error);
+        // Failed to clear form data
       }
     }
     
@@ -211,9 +201,8 @@ export function useFormDataMemory(formKey: string = 'default') {
       setSavedData({});
       setIsReminded(false);
       setLastSaved(0);
-      console.log('🗑️ Force removed all form data');
     } catch (error) {
-      console.warn('❌ Failed to force clear form data:', error);
+      // Failed to force clear form data
     }
   }, [storageKey]);
 
@@ -224,16 +213,14 @@ export function useFormDataMemory(formKey: string = 'default') {
       setSavedData({});
       setIsReminded(false);
       setLastSaved(0);
-      console.log('🗑️ Cleared all saved form data');
     } catch (error) {
-      console.warn('❌ Failed to clear form data:', error);
+      // Failed to clear form data
     }
   }, [storageKey]);
 
   // Update specific field in saved data with instant auto-save
   const updateSavedField = useCallback((field: string, value: any) => {
     if (!isReminded) {
-      console.log(`🚫 Skipping save for ${field} - remind is disabled`);
       return;
     }
 
@@ -251,9 +238,8 @@ export function useFormDataMemory(formKey: string = 'default') {
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       setSavedData(updatedData);
       setLastSaved(now);
-      console.log(`💾 Instantly saved ${field}:`, value);
     } catch (error) {
-      console.warn('❌ Failed to update saved field:', error);
+      // Failed to update saved field
     }
   }, [isReminded, savedData, storageKey]);
 
@@ -289,9 +275,8 @@ export function useFormDataMemory(formKey: string = 'default') {
       localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       setSavedData(importedData.data || {});
       setLastSaved(Date.now());
-      console.log('📥 Imported form data successfully');
     } catch (error) {
-      console.warn('❌ Failed to import form data:', error);
+      // Failed to import form data
     }
   }, [storageKey]);
 

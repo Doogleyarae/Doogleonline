@@ -22,7 +22,6 @@ export function useWebSocket() {
 
       wsRef.current.onopen = () => {
         setIsConnected(true);
-        console.log('WebSocket connected for real-time updates');
       };
 
       wsRef.current.onmessage = (event) => {
@@ -30,23 +29,20 @@ export function useWebSocket() {
           const message: WSMessage = JSON.parse(event.data);
           handleMessage(message);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          // Error parsing WebSocket message
         }
       };
 
       wsRef.current.onclose = () => {
         setIsConnected(false);
-        console.log('WebSocket connection closed');
         // Attempt to reconnect after 3 seconds
         setTimeout(connect, 3000);
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
         setIsConnected(false);
       };
     } catch (error) {
-      console.error('Error connecting to WebSocket:', error);
       setTimeout(connect, 5000);
     }
   };
@@ -57,13 +53,10 @@ export function useWebSocket() {
         handleOrderUpdate(message.data);
         break;
       case 'new_order':
-        console.log('New order created:', message.data);
         break;
       case 'new_message':
-        console.log('New contact message:', message.data);
         break;
       case 'status_change':
-        console.log('Status update:', message.data.message);
         break;
       case 'exchange_rate_update':
       case 'currency_limit_update':
@@ -72,7 +65,7 @@ export function useWebSocket() {
         window.dispatchEvent(new CustomEvent('admin-update', { detail: message }));
         break;
       default:
-        console.log('Unknown WebSocket message type:', message.type);
+        // Unknown WebSocket message type
     }
   };
 
@@ -93,7 +86,7 @@ export function useWebSocket() {
           setLocation('/order-cancelled');
         }
         
-        console.log(`Order ${order.orderId} status updated to: ${order.status}`);
+        // Order status updated
       }
     }
   };
