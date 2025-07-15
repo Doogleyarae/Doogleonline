@@ -164,11 +164,27 @@ export function useFormDataMemory(formKey: string = 'default') {
 
   // Update specific field in saved data
   const updateSavedField = (field: string, value: any) => {
-    if (!isReminded) return;
+    if (!isReminded) {
+      console.log(`Skipping save for ${field} - remind is disabled`);
+      return;
+    }
 
-    const updatedData = { ...savedData, [field]: value };
-    saveFormData(updatedData);
-    console.log(`Updated field ${field}:`, value);
+    try {
+      const updatedData = { ...savedData, [field]: value };
+      
+      const dataToSave: SavedFormData = {
+        data: updatedData,
+        isReminded: true,
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+      setSavedData(updatedData);
+      console.log(`Updated field ${field}:`, value);
+      console.log('Current saved data:', updatedData);
+    } catch (error) {
+      console.warn('Failed to update saved field:', error);
+    }
   };
 
   return {

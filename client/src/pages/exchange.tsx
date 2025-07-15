@@ -247,6 +247,8 @@ export default function Exchange() {
       updateSavedField('email', email);
       updateSavedField('senderAccount', senderAccount);
       updateSavedField('walletAddress', walletAddress);
+    } else {
+      console.log('Data saving disabled - doNotRemember is enabled');
     }
   }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits, doNotRemember, updateSavedField]);
 
@@ -258,6 +260,55 @@ export default function Exchange() {
       console.log('Cleared all saved data due to doNotRemember being enabled');
     }
   }, [doNotRemember, forceRemoveData]);
+
+  // Enhanced save function for immediate saving
+  const saveFormDataImmediately = useCallback((field: string, value: string) => {
+    if (!doNotRemember) {
+      console.log(`Immediately saving ${field}:`, value);
+      updateSavedField(field, value);
+      
+      // Also save to complete state
+      const currentState = {
+        sendMethod,
+        receiveMethod,
+        sendAmount,
+        receiveAmount,
+        fullName,
+        email,
+        senderAccount,
+        walletAddress,
+        exchangeRate,
+        rateDisplay,
+        dynamicLimits,
+        doNotRemember,
+        timestamp: Date.now()
+      };
+      
+      // Update the specific field
+      const updatedState = { ...currentState, [field]: value };
+      saveCompleteExchangeState(updatedState);
+      
+      // Debug: Check if data is actually saved
+      setTimeout(() => {
+        const saved = localStorage.getItem('doogle_form_data_exchange');
+        console.log('Debug - Saved data in localStorage:', saved);
+      }, 100);
+    } else {
+      console.log(`Skipping save for ${field} - doNotRemember is enabled`);
+    }
+  }, [doNotRemember, updateSavedField, sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
+
+  // Debug function to check saved data
+  const debugSavedData = useCallback(() => {
+    console.log('=== DEBUG SAVED DATA ===');
+    console.log('Complete state:', loadCompleteExchangeState());
+    console.log('Form memory data:', savedData);
+    console.log('isReminded:', isReminded);
+    console.log('doNotRemember:', doNotRemember);
+    console.log('localStorage exchange data:', localStorage.getItem('doogle_form_data_exchange'));
+    console.log('localStorage complete state:', localStorage.getItem('exchange-complete-state'));
+    console.log('=== END DEBUG ===');
+  }, [savedData, isReminded, doNotRemember]);
 
   // Fetch exchange rate
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
@@ -751,9 +802,7 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 field.onChange(value);
                                 setSendMethod(value);
-                                if (!doNotRemember) {
-                                  updateSavedField('sendMethod', value);
-                                }
+                                saveFormDataImmediately('sendMethod', value);
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -787,9 +836,7 @@ export default function Exchange() {
                               onChange={(e) => {
                                 field.onChange(e.target.value);
                                 handleSendAmountChange(e.target.value);
-                                if (!doNotRemember) {
-                                  updateSavedField('sendAmount', e.target.value);
-                                }
+                                saveFormDataImmediately('sendAmount', e.target.value);
                               }}
                             />
                           </FormControl>
@@ -818,9 +865,7 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 field.onChange(value);
                                 setReceiveMethod(value);
-                                if (!doNotRemember) {
-                                  updateSavedField('receiveMethod', value);
-                                }
+                                saveFormDataImmediately('receiveMethod', value);
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -861,9 +906,7 @@ export default function Exchange() {
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
                                   handleReceiveAmountChange(e.target.value);
-                                  if (!doNotRemember) {
-                                    updateSavedField('receiveAmount', e.target.value);
-                                  }
+                                  saveFormDataImmediately('receiveAmount', e.target.value);
                                 }}
                               />
                             </FormControl>
@@ -898,9 +941,7 @@ export default function Exchange() {
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e.target.value);
-                                if (!doNotRemember) {
-                                  updateSavedField('fullName', e.target.value);
-                                }
+                                saveFormDataImmediately('fullName', e.target.value);
                               }}
                             />
                           </FormControl>
@@ -938,9 +979,7 @@ export default function Exchange() {
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e.target.value);
-                                if (!doNotRemember) {
-                                  updateSavedField('senderAccount', e.target.value);
-                                }
+                                saveFormDataImmediately('senderAccount', e.target.value);
                               }}
                             />
                           </FormControl>
@@ -970,9 +1009,7 @@ export default function Exchange() {
                             {...field}
                             onChange={(e) => {
                               field.onChange(e.target.value);
-                              if (!doNotRemember) {
-                                updateSavedField('email', e.target.value);
-                              }
+                              saveFormDataImmediately('email', e.target.value);
                             }}
                           />
                         </FormControl>
@@ -1017,9 +1054,7 @@ export default function Exchange() {
                             {...field}
                             onChange={(e) => {
                               field.onChange(e.target.value);
-                              if (!doNotRemember) {
-                                updateSavedField('walletAddress', e.target.value);
-                              }
+                              saveFormDataImmediately('walletAddress', e.target.value);
                             }}
                           />
                         </FormControl>
@@ -1057,6 +1092,19 @@ export default function Exchange() {
                     </FormItem>
                   )}
                 />
+                
+                {/* Debug button - remove this in production */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={debugSavedData}
+                    className="text-xs"
+                  >
+                    Debug: Check Saved Data
+                  </Button>
+                </div>
               </div>
 
               {/* Terms and Submit */}
