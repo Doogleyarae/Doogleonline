@@ -99,7 +99,6 @@ const createExchangeFormSchema = (
     ? z.string().min(1, "Sender account is required") 
     : z.string().optional(),
   walletAddress: z.string().min(1, "Wallet address is required"),
-  doNotRemember: z.boolean().default(false),
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
 });
 
@@ -127,7 +126,7 @@ function saveCompleteExchangeState(data: {
     minReceiveAmount: number;
     maxReceiveAmount: number;
   };
-  doNotRemember: boolean;
+
   timestamp: number;
 }) {
   localStorage.setItem(EXCHANGE_COMPLETE_STATE_KEY, JSON.stringify(data));
@@ -168,7 +167,7 @@ export default function Exchange() {
   const [receiveAmount, setReceiveAmount] = useState("");
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
-  const [doNotRemember, setDoNotRemember] = useState(false);
+
   const [dynamicLimits, setDynamicLimits] = useState({
     minSendAmount: 5,
     maxSendAmount: 10000,
@@ -189,7 +188,7 @@ export default function Exchange() {
     exchangeRate,
     rateDisplay,
     dynamicLimits,
-    doNotRemember,
+
   };
 
   // Use enhanced auto-save hook
@@ -212,7 +211,7 @@ export default function Exchange() {
 
   // Load saved data when it becomes available (for cross-page persistence)
   useEffect(() => {
-    if (isLoaded && hasSavedData && savedData && !doNotRemember) {
+    if (isLoaded && hasSavedData && savedData) {
       console.log('🔄 Loading saved data from auto-save system:', savedData);
       
       // Restore all saved data to form state
@@ -227,7 +226,6 @@ export default function Exchange() {
       if (savedData.exchangeRate) setExchangeRate(savedData.exchangeRate);
       if (savedData.rateDisplay) setRateDisplay(savedData.rateDisplay);
       if (savedData.dynamicLimits) setDynamicLimits(savedData.dynamicLimits);
-      if (savedData.doNotRemember !== undefined) setDoNotRemember(savedData.doNotRemember);
     }
   }, [isLoaded, hasSavedData, savedData]);
 
@@ -235,37 +233,11 @@ export default function Exchange() {
 
   // Enhanced save function for immediate saving using new auto-save system
   const saveFormDataImmediately = useCallback((field: string, value: any) => {
-    if (doNotRemember) {
-      console.log(`🚫 Skipping save for ${field} - do not remember is enabled`);
-      return;
-    }
-
     console.log(`💾 Immediately saving ${field}:`, value);
     saveField(field as keyof typeof formData, value);
-  }, [doNotRemember, saveField]);
+  }, [saveField]);
 
-  // Handle "Do not remember" checkbox changes
-  const handleDoNotRememberChange = useCallback((checked: boolean) => {
-    setDoNotRemember(checked);
-    
-    if (checked) {
-      // Clear all saved data when "Do not remember" is enabled
-      console.log('🗑️ Clearing all saved data - do not remember enabled');
-      clearAll();
-      
-      // Also clear form fields immediately
-      setFullName("");
-      setEmail("");
-      setSenderAccount("");
-      setWalletAddress("");
-      setSendAmount("1");
-      setReceiveAmount("");
-    } else {
-      // Save current form data when "Do not remember" is disabled
-      console.log('💾 Saving current form data - do not remember disabled');
-      saveImmediately(formData);
-    }
-  }, [clearAll, saveImmediately, formData]);
+
 
 
 
@@ -331,7 +303,7 @@ export default function Exchange() {
       email: email,
       senderAccount: senderAccount,
       walletAddress: walletAddress,
-      doNotRemember: doNotRemember,
+
       agreeToTerms: false,
     },
   });
@@ -346,8 +318,7 @@ export default function Exchange() {
       fullName,
       email,
       senderAccount,
-      walletAddress,
-      doNotRemember
+      walletAddress
     });
     
     form.setValue("sendMethod", sendMethod);
@@ -358,8 +329,7 @@ export default function Exchange() {
     form.setValue("email", email);
     form.setValue("senderAccount", senderAccount);
     form.setValue("walletAddress", walletAddress);
-    form.setValue("doNotRemember", doNotRemember);
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, doNotRemember, form]);
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, form]);
 
   // Update exchange rate when data is fetched
   useEffect(() => {
@@ -1002,47 +972,6 @@ export default function Exchange() {
                       </FormItem>
                     )}
                   />
-                </div>
-              </div>
-
-                            {/* Do Not Remember Toggle */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex flex-row items-start space-x-3 space-y-0">
-                  <Checkbox
-                    checked={doNotRemember}
-                    onCheckedChange={(checked) => {
-                      console.log('Checkbox clicked:', checked);
-                      console.log('Current doNotRemember state:', doNotRemember);
-                      const newValue = checked as boolean;
-                      setDoNotRemember(newValue);
-                      handleDoNotRememberChange(newValue);
-                    }}
-                    onClick={(e) => {
-                      console.log('Checkbox onClick event:', e);
-                      e.stopPropagation();
-                    }}
-                    className="cursor-pointer"
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <div className="space-y-1 leading-none">
-                    <label 
-                      className="text-sm font-medium cursor-pointer"
-                      onClick={() => {
-                        const newValue = !doNotRemember;
-                        console.log('Label clicked, toggling to:', newValue);
-                        setDoNotRemember(newValue);
-                        handleDoNotRememberChange(newValue);
-                      }}
-                    >
-                      Do not remember my information
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      When enabled, your form data will not be saved locally and forms will not auto-fill on revisit
-                    </p>
-                    <p className="text-xs text-blue-500 mt-1">
-                      Current state: {doNotRemember ? 'Checked (Data will NOT be saved)' : 'Unchecked (Data WILL be saved)'}
-                    </p>
-                  </div>
                 </div>
               </div>
 
