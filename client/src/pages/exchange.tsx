@@ -237,14 +237,14 @@ export default function Exchange() {
         console.log('🔄 Loading saved data from auto-save system:', savedData);
         
         // Restore all saved data to form state with safe fallbacks
+        // EXCLUDE amount fields to prevent auto-restoration
         if (savedData.fullName && typeof savedData.fullName === 'string') setFullName(savedData.fullName);
         if (savedData.email && typeof savedData.email === 'string') setEmail(savedData.email);
         if (savedData.senderAccount && typeof savedData.senderAccount === 'string') setSenderAccount(savedData.senderAccount);
         if (savedData.walletAddress && typeof savedData.walletAddress === 'string') setWalletAddress(savedData.walletAddress);
         if (savedData.sendMethod && typeof savedData.sendMethod === 'string') setSendMethod(savedData.sendMethod);
         if (savedData.receiveMethod && typeof savedData.receiveMethod === 'string') setReceiveMethod(savedData.receiveMethod);
-        if (savedData.sendAmount && typeof savedData.sendAmount === 'string') setSendAmount(savedData.sendAmount);
-        if (savedData.receiveAmount && typeof savedData.receiveAmount === 'string') setReceiveAmount(savedData.receiveAmount);
+        // DO NOT restore sendAmount and receiveAmount to prevent auto-restoration
         if (savedData.exchangeRate && typeof savedData.exchangeRate === 'number') setExchangeRate(savedData.exchangeRate);
         if (savedData.rateDisplay && typeof savedData.rateDisplay === 'string') setRateDisplay(savedData.rateDisplay);
         if (savedData.dynamicLimits && typeof savedData.dynamicLimits === 'object') setDynamicLimits(savedData.dynamicLimits);
@@ -261,6 +261,12 @@ export default function Exchange() {
   // Enhanced save function for immediate saving using new auto-save system
   const saveFormDataImmediately = useCallback((field: string, value: any) => {
     try {
+      // Don't save empty amount fields to prevent auto-restoration
+      if ((field === 'sendAmount' || field === 'receiveAmount') && (!value || value.trim() === "")) {
+        console.log(`🚫 Not saving empty ${field} to prevent auto-restoration`);
+        return;
+      }
+      
       console.log(`💾 Immediately saving ${field}:`, value);
       saveField(field as keyof typeof formData, value);
     } catch (error) {
@@ -399,8 +405,8 @@ export default function Exchange() {
     defaultValues: {
       sendMethod: sendMethod,
       receiveMethod: receiveMethod,
-      sendAmount: sendAmount,
-      receiveAmount: receiveAmount,
+      sendAmount: "", // Start with empty string to prevent auto-restoration
+      receiveAmount: "", // Start with empty string to prevent auto-restoration
       exchangeRate: exchangeRate.toString(),
       fullName: fullName,
       email: email,
@@ -412,12 +418,21 @@ export default function Exchange() {
 
   // Update form schema when limits change
   useEffect(() => {
+    // Don't reset form if we're clearing fields
+    if (isClearingFields) {
+      return;
+    }
     form.clearErrors();
     form.trigger();
-  }, [dynamicLimits.minSendAmount, dynamicLimits.maxSendAmount, sendMethod, form]);
+  }, [dynamicLimits.minSendAmount, dynamicLimits.maxSendAmount, sendMethod, form, isClearingFields]);
 
   // Update form values when state changes (for persistence)
   useEffect(() => {
+    // Don't update form values if we're currently clearing fields
+    if (isClearingFields) {
+      return;
+    }
+    
     console.log('Updating form values with current state:', {
       sendMethod,
       receiveMethod,
@@ -437,7 +452,7 @@ export default function Exchange() {
     form.setValue("email", email);
     form.setValue("senderAccount", senderAccount);
     form.setValue("walletAddress", walletAddress);
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, form]);
+  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, form, isClearingFields]);
 
   // Update exchange rate when data is fetched
   useEffect(() => {
@@ -448,7 +463,7 @@ export default function Exchange() {
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
       // Provide initial calculation if send amount exists but receive amount is empty
-      // Only if not currently clearing fields
+      // Only if not currently clearing fields and both fields are empty
       if (!isClearingFields && sendAmount && parseFloat(sendAmount) > 0 && (!receiveAmount || receiveAmount === "")) {
         const amount = parseFloat(sendAmount);
         const converted = amount * rate;
@@ -460,7 +475,7 @@ export default function Exchange() {
       setExchangeRate(0);
       setRateDisplay("Rate not available");
     }
-  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
+  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form, isClearingFields]);
 
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
@@ -532,6 +547,13 @@ export default function Exchange() {
       setIsClearingFields(true);
       setReceiveAmount("");
       form.setValue("receiveAmount", "");
+      // Clear auto-save data for amount fields to prevent restoration
+      try {
+        saveField('sendAmount', "");
+        saveField('receiveAmount', "");
+      } catch (error) {
+        console.error('Error clearing auto-save data:', error);
+      }
       setIsClearingFields(false);
       return;
     }
@@ -585,6 +607,13 @@ export default function Exchange() {
       setIsClearingFields(true);
       setSendAmount("");
       form.setValue("sendAmount", "");
+      // Clear auto-save data for amount fields to prevent restoration
+      try {
+        saveField('sendAmount', "");
+        saveField('receiveAmount', "");
+      } catch (error) {
+        console.error('Error clearing auto-save data:', error);
+      }
       setIsClearingFields(false);
       return;
     }
