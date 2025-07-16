@@ -119,8 +119,7 @@ type ExchangeFormData = z.infer<ReturnType<typeof createExchangeFormSchema>>;
 // Enhanced storage system for complete page state
 const EXCHANGE_COMPLETE_STATE_KEY = 'exchange-complete-state';
 
-
-
+// Legacy functions for backward compatibility (deprecated - use auto-save system instead)
 function saveCompleteExchangeState(data: {
   sendMethod: string;
   receiveMethod: string;
@@ -138,10 +137,13 @@ function saveCompleteExchangeState(data: {
     minReceiveAmount: number;
     maxReceiveAmount: number;
   };
-
   timestamp: number;
 }) {
-  localStorage.setItem(EXCHANGE_COMPLETE_STATE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(EXCHANGE_COMPLETE_STATE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Failed to save legacy exchange state:', error);
+  }
 }
 
 function loadCompleteExchangeState() {
@@ -149,13 +151,18 @@ function loadCompleteExchangeState() {
     const raw = localStorage.getItem(EXCHANGE_COMPLETE_STATE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
-  } catch {
+  } catch (error) {
+    console.warn('Failed to load legacy exchange state:', error);
     return null;
   }
 }
 
 function clearCompleteExchangeState() {
-  localStorage.removeItem(EXCHANGE_COMPLETE_STATE_KEY);
+  try {
+    localStorage.removeItem(EXCHANGE_COMPLETE_STATE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear legacy exchange state:', error);
+  }
 }
 
 export default function Exchange() {
@@ -200,7 +207,6 @@ export default function Exchange() {
     exchangeRate,
     rateDisplay,
     dynamicLimits,
-
   };
 
   // Use enhanced auto-save hook
@@ -224,29 +230,39 @@ export default function Exchange() {
   // Load saved data when it becomes available (for cross-page persistence)
   useEffect(() => {
     if (isLoaded && hasSavedData && savedData) {
-      console.log('🔄 Loading saved data from auto-save system:', savedData);
-      
-      // Restore all saved data to form state
-      if (savedData.fullName) setFullName(savedData.fullName);
-      if (savedData.email) setEmail(savedData.email);
-      if (savedData.senderAccount) setSenderAccount(savedData.senderAccount);
-      if (savedData.walletAddress) setWalletAddress(savedData.walletAddress);
-      if (savedData.sendMethod) setSendMethod(savedData.sendMethod);
-      if (savedData.receiveMethod) setReceiveMethod(savedData.receiveMethod);
-      if (savedData.sendAmount) setSendAmount(savedData.sendAmount);
-      if (savedData.receiveAmount) setReceiveAmount(savedData.receiveAmount);
-      if (savedData.exchangeRate) setExchangeRate(savedData.exchangeRate);
-      if (savedData.rateDisplay) setRateDisplay(savedData.rateDisplay);
-      if (savedData.dynamicLimits) setDynamicLimits(savedData.dynamicLimits);
+      try {
+        console.log('🔄 Loading saved data from auto-save system:', savedData);
+        
+        // Restore all saved data to form state with safe fallbacks
+        if (savedData.fullName && typeof savedData.fullName === 'string') setFullName(savedData.fullName);
+        if (savedData.email && typeof savedData.email === 'string') setEmail(savedData.email);
+        if (savedData.senderAccount && typeof savedData.senderAccount === 'string') setSenderAccount(savedData.senderAccount);
+        if (savedData.walletAddress && typeof savedData.walletAddress === 'string') setWalletAddress(savedData.walletAddress);
+        if (savedData.sendMethod && typeof savedData.sendMethod === 'string') setSendMethod(savedData.sendMethod);
+        if (savedData.receiveMethod && typeof savedData.receiveMethod === 'string') setReceiveMethod(savedData.receiveMethod);
+        if (savedData.sendAmount && typeof savedData.sendAmount === 'string') setSendAmount(savedData.sendAmount);
+        if (savedData.receiveAmount && typeof savedData.receiveAmount === 'string') setReceiveAmount(savedData.receiveAmount);
+        if (savedData.exchangeRate && typeof savedData.exchangeRate === 'number') setExchangeRate(savedData.exchangeRate);
+        if (savedData.rateDisplay && typeof savedData.rateDisplay === 'string') setRateDisplay(savedData.rateDisplay);
+        if (savedData.dynamicLimits && typeof savedData.dynamicLimits === 'object') setDynamicLimits(savedData.dynamicLimits);
+      } catch (error) {
+        console.error('Error loading saved data:', error);
+        // Clear corrupted data
+        clearAll();
+      }
     }
-  }, [isLoaded, hasSavedData, savedData]);
+  }, [isLoaded, hasSavedData, savedData, clearAll]);
 
 
 
   // Enhanced save function for immediate saving using new auto-save system
   const saveFormDataImmediately = useCallback((field: string, value: any) => {
-    console.log(`💾 Immediately saving ${field}:`, value);
-    saveField(field as keyof typeof formData, value);
+    try {
+      console.log(`💾 Immediately saving ${field}:`, value);
+      saveField(field as keyof typeof formData, value);
+    } catch (error) {
+      console.error(`Error saving field ${field}:`, error);
+    }
   }, [saveField]);
 
 

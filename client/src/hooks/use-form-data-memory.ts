@@ -44,6 +44,13 @@ export function useFormDataMemory(formKey: string = 'default') {
   // Load saved data on mount
   useEffect(() => {
     try {
+      // Check if localStorage is available
+      if (typeof window === 'undefined' || !window.localStorage) {
+        console.warn('localStorage is not available');
+        setIsLoaded(true);
+        return;
+      }
+
       const stored = localStorage.getItem(storageKey);
       if (stored) {
         const savedFormData: SavedFormData = JSON.parse(stored);
@@ -63,6 +70,7 @@ export function useFormDataMemory(formKey: string = 'default') {
         setIsLoaded(true);
       }
     } catch (error) {
+      console.warn('Error loading form data from localStorage:', error);
       setIsLoaded(true);
     }
   }, [storageKey]);
@@ -74,6 +82,12 @@ export function useFormDataMemory(formKey: string = 'default') {
     }
 
     try {
+      // Check if localStorage is available
+      if (typeof window === 'undefined' || !window.localStorage) {
+        console.warn('localStorage is not available for auto-save');
+        return;
+      }
+
       const now = Date.now();
       const updatedData = { ...savedData, ...data };
       
@@ -88,7 +102,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       setSavedData(updatedData);
       setLastSaved(now);
     } catch (error) {
-      // Failed to auto-save form data
+      console.warn('Failed to auto-save form data:', error);
     }
   }, [isReminded, savedData, storageKey]);
 
@@ -225,6 +239,12 @@ export function useFormDataMemory(formKey: string = 'default') {
     }
 
     try {
+      // Check if localStorage is available
+      if (typeof window === 'undefined' || !window.localStorage) {
+        console.warn('localStorage is not available for field update');
+        return;
+      }
+
       const updatedData = { ...savedData, [field]: value };
       const now = Date.now();
       
@@ -239,7 +259,7 @@ export function useFormDataMemory(formKey: string = 'default') {
       setSavedData(updatedData);
       setLastSaved(now);
     } catch (error) {
-      // Failed to update saved field
+      console.warn('Failed to update saved field:', error);
     }
   }, [isReminded, savedData, storageKey]);
 
