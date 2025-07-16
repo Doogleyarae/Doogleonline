@@ -403,10 +403,15 @@ export default function Exchange() {
       email: email,
       senderAccount: senderAccount,
       walletAddress: walletAddress,
-
       agreeToTerms: false,
     },
   });
+
+  // Update form schema when limits change
+  useEffect(() => {
+    form.clearErrors();
+    form.trigger();
+  }, [dynamicLimits.minSendAmount, dynamicLimits.maxSendAmount, sendMethod, form]);
 
   // Update form values when state changes (for persistence)
   useEffect(() => {
@@ -503,11 +508,24 @@ export default function Exchange() {
     calculateDynamicLimits();
   }, [calculateDynamicLimits]);
 
+  // Recalculate amounts when exchange rate changes
+  useEffect(() => {
+    if (exchangeRate > 0 && sendAmount) {
+      const amount = parseFloat(sendAmount);
+      if (!isNaN(amount)) {
+        const converted = amount * exchangeRate;
+        const convertedAmount = formatAmount(converted);
+        setReceiveAmount(convertedAmount);
+        form.setValue("receiveAmount", convertedAmount);
+      }
+    }
+  }, [exchangeRate, sendAmount, form]);
+
   // Handle amount calculations
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
-    // Only auto-calculate receive amount if it's empty
-    if (exchangeRate > 0 && value && (!receiveAmount || receiveAmount === "")) {
+    // Always calculate receive amount when send amount changes
+    if (exchangeRate > 0 && value) {
       const amount = parseFloat(value);
       if (!isNaN(amount)) {
         const converted = amount * exchangeRate;
@@ -516,12 +534,28 @@ export default function Exchange() {
         form.setValue("receiveAmount", convertedAmount);
       }
     }
+    // Trigger form validation
+    setTimeout(() => {
+      form.trigger(["sendAmount", "receiveAmount"]);
+    }, 100);
   };
 
   const handleReceiveAmountChange = (value: string) => {
     setReceiveAmount(value);
-    // Allow any input for receive amount - no automatic conversion
-    // User can enter any value without it affecting the send amount
+    // Calculate send amount when receive amount changes
+    if (exchangeRate > 0 && value) {
+      const amount = parseFloat(value);
+      if (!isNaN(amount)) {
+        const converted = amount / exchangeRate;
+        const convertedAmount = formatAmount(converted);
+        setSendAmount(convertedAmount);
+        form.setValue("sendAmount", convertedAmount);
+      }
+    }
+    // Trigger form validation
+    setTimeout(() => {
+      form.trigger(["sendAmount", "receiveAmount"]);
+    }, 100);
   };
 
   // Order creation mutation
