@@ -184,10 +184,11 @@ export default function Exchange() {
   const [receiveMethod, setReceiveMethod] = useState("moneygo");
   const [sendAmount, setSendAmount] = useState("1");
   const [receiveAmount, setReceiveAmount] = useState("");
-    const [exchangeRate, setExchangeRate] = useState<number>(0);
+  const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
 
-
+  // Field clearing state for bidirectional calculation
+  const [isClearingFields, setIsClearingFields] = useState(false);
 
   const [dynamicLimits, setDynamicLimits] = useState({
     minSendAmount: 5,
@@ -459,7 +460,7 @@ export default function Exchange() {
       setExchangeRate(0);
       setRateDisplay("Rate not available");
     }
-  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form, isClearingFields]);
+  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
 
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
@@ -517,7 +518,6 @@ export default function Exchange() {
   // Handle amount calculations - Bidirectional auto-calculation with debouncing
   const [sendAmountTimeout, setSendAmountTimeout] = useState<NodeJS.Timeout | null>(null);
   const [receiveAmountTimeout, setReceiveAmountTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [isClearingFields, setIsClearingFields] = useState(false);
 
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
