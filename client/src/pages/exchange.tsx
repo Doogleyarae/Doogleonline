@@ -99,7 +99,7 @@ const createExchangeFormSchema = (
     ? z.string().min(1, "Sender account is required") 
     : z.string().optional(),
   walletAddress: z.string().min(1, "Wallet address is required"),
-  doNotRemember: z.boolean().optional(),
+  doNotRemember: z.boolean().default(false),
   agreeToTerms: z.boolean().refine(val => val === true, "You must agree to the terms and privacy policy"),
 });
 
@@ -1005,7 +1005,7 @@ export default function Exchange() {
                 </div>
               </div>
 
-              {/* Do Not Remember Toggle */}
+                            {/* Do Not Remember Toggle */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <FormField
                   control={form.control}
@@ -1016,14 +1016,18 @@ export default function Exchange() {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={(checked) => {
+                            console.log('Checkbox clicked:', checked);
                             field.onChange(checked);
                             handleDoNotRememberChange(checked as boolean);
+                          }}
+                          onClick={() => {
+                            console.log('Checkbox clicked directly');
                           }}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-medium">
-                          Do not remember my information *
+                          Do not remember my information
                         </FormLabel>
                         <p className="text-xs text-gray-500">
                           When enabled, your form data will not be saved locally and forms will not auto-fill on revisit
@@ -1033,8 +1037,8 @@ export default function Exchange() {
                   )}
                 />
                 
-
-              </div>
+ 
+                </div>
 
               {/* Terms and Submit */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-4">
