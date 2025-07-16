@@ -19,6 +19,18 @@ import { formatAmount } from "@/lib/utils";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useLanguage } from "@/contexts/language-context";
 
+// Import logo files
+import zaadLogo from "../../public/assets/zaad.png";
+import sahalLogo from "../../public/assets/sahal.png";
+import evcLogo from "../../public/assets/evc.png";
+import edahabLogo from "../../public/assets/edahab.png";
+import premierLogo from "../../public/assets/premier.png";
+import moneygoLogo from "../../public/assets/moneygo.png";
+import trc20Logo from "../../public/assets/trc20.png";
+import peb20Logo from "../../public/assets/peb20.png";
+import trxLogo from "../../public/assets/trx.png";
+import usdcLogo from "../../public/assets/usdc.png";
+
 interface ExchangeRateResponse {
   rate: number;
   from: string;
@@ -34,16 +46,16 @@ interface CurrencyLimitsResponse {
 // Import currency logos
 
 const paymentMethods = [
-  { value: "zaad", label: "Zaad", logo: "/assets/zaad.png" },
-  { value: "sahal", label: "Sahal", logo: "/assets/sahal.png" },
-  { value: "evc", label: "EVC Plus", logo: "/assets/evc.png" },
-  { value: "edahab", label: "eDahab", logo: "/assets/edahab.png" },
-  { value: "premier", label: "Premier Bank", logo: "/assets/premier.png" },
-  { value: "moneygo", label: "MoneyGo", logo: "/assets/moneygo.png" },
-  { value: "trc20", label: "TRC20 (USDT)", logo: "/assets/trc20.png" },
-  { value: "peb20", label: "PEB20", logo: "/assets/peb20.png" },
-  { value: "trx", label: "TRX", logo: "/assets/trx.png" },
-  { value: "usdc", label: "USDC", logo: "/assets/usdc.png" }
+  { value: "zaad", label: "Zaad", logo: zaadLogo },
+  { value: "sahal", label: "Sahal", logo: sahalLogo },
+  { value: "evc", label: "EVC Plus", logo: evcLogo },
+  { value: "edahab", label: "eDahab", logo: edahabLogo },
+  { value: "premier", label: "Premier Bank", logo: premierLogo },
+  { value: "moneygo", label: "MoneyGo", logo: moneygoLogo },
+  { value: "trc20", label: "TRC20 (USDT)", logo: trc20Logo },
+  { value: "peb20", label: "PEB20", logo: peb20Logo },
+  { value: "trx", label: "TRX", logo: trxLogo },
+  { value: "usdc", label: "USDC", logo: usdcLogo }
 ];
 
 const specialExclusions: Record<string, string[]> = {
