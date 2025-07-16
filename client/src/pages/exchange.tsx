@@ -444,12 +444,19 @@ export default function Exchange() {
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
-      // No automatic calculation - users enter amounts manually
+      // Provide initial calculation if send amount exists but receive amount is empty
+      if (sendAmount && parseFloat(sendAmount) > 0 && (!receiveAmount || receiveAmount === "")) {
+        const amount = parseFloat(sendAmount);
+        const converted = amount * rate;
+        const convertedAmount = formatAmount(converted);
+        setReceiveAmount(convertedAmount);
+        form.setValue("receiveAmount", convertedAmount);
+      }
     } else if (!rateData && !rateLoading) {
       setExchangeRate(0);
       setRateDisplay("Rate not available");
     }
-  }, [rateData, rateLoading, sendMethod, receiveMethod, form]);
+  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
 
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
@@ -504,22 +511,89 @@ export default function Exchange() {
   // Exchange rate changes no longer trigger automatic recalculation
   // Users can manually enter any amount they want
 
-  // Handle amount calculations - Independent fields
+  // Handle amount calculations - Bidirectional auto-calculation with debouncing
+  const [sendAmountTimeout, setSendAmountTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [receiveAmountTimeout, setReceiveAmountTimeout] = useState<NodeJS.Timeout | null>(null);
+
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
-    // Only trigger form validation, no automatic recalculation
-    setTimeout(() => {
-      form.trigger(["sendAmount"]);
-    }, 100);
+    
+    // Clear existing timeout
+    if (sendAmountTimeout) {
+      clearTimeout(sendAmountTimeout);
+    }
+    
+    // Set new timeout for debounced calculation
+    const timeoutId = setTimeout(() => {
+      // Auto-calculate receive amount when send amount changes
+      if (exchangeRate > 0 && value && value.trim() !== "") {
+        const amount = parseFloat(value);
+        if (!isNaN(amount) && amount > 0) {
+          const converted = amount * exchangeRate;
+          const convertedAmount = formatAmount(converted);
+          setReceiveAmount(convertedAmount);
+          form.setValue("receiveAmount", convertedAmount);
+        } else {
+          // Clear receive amount if send amount is invalid
+          setReceiveAmount("");
+          form.setValue("receiveAmount", "");
+        }
+      } else {
+        // Clear receive amount if send amount is empty
+        setReceiveAmount("");
+        form.setValue("receiveAmount", "");
+      }
+      
+      // Trigger form validation
+      form.trigger(["sendAmount", "receiveAmount"]);
+    }, 300); // 300ms delay for smooth typing experience
+    
+    setSendAmountTimeout(timeoutId);
   };
 
   const handleReceiveAmountChange = (value: string) => {
     setReceiveAmount(value);
-    // Only trigger form validation, no automatic recalculation
-    setTimeout(() => {
-      form.trigger(["receiveAmount"]);
-    }, 100);
+    
+    // Clear existing timeout
+    if (receiveAmountTimeout) {
+      clearTimeout(receiveAmountTimeout);
+    }
+    
+    // Set new timeout for debounced calculation
+    const timeoutId = setTimeout(() => {
+      // Auto-calculate send amount when receive amount changes
+      if (exchangeRate > 0 && value && value.trim() !== "") {
+        const amount = parseFloat(value);
+        if (!isNaN(amount) && amount > 0) {
+          const converted = amount / exchangeRate;
+          const convertedAmount = formatAmount(converted);
+          setSendAmount(convertedAmount);
+          form.setValue("sendAmount", convertedAmount);
+        } else {
+          // Clear send amount if receive amount is invalid
+          setSendAmount("");
+          form.setValue("sendAmount", "");
+        }
+      } else {
+        // Clear send amount if receive amount is empty
+        setSendAmount("");
+        form.setValue("sendAmount", "");
+      }
+      
+      // Trigger form validation
+      form.trigger(["sendAmount", "receiveAmount"]);
+    }, 300); // 300ms delay for smooth typing experience
+    
+    setReceiveAmountTimeout(timeoutId);
   };
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (sendAmountTimeout) clearTimeout(sendAmountTimeout);
+      if (receiveAmountTimeout) clearTimeout(receiveAmountTimeout);
+    };
+  }, [sendAmountTimeout, receiveAmountTimeout]);
 
   // Order creation mutation
   const createOrderMutation = useMutation({
@@ -849,9 +923,9 @@ export default function Exchange() {
                                 }}
                               />
                             </FormControl>
-                            {/* Independent amount input - no automatic calculation */}
+                            {/* Bidirectional amount input - auto-calculates receive amount */}
                             <div className="text-xs text-gray-500 mt-1">
-                              Enter any amount you want to send (no automatic calculation)
+                              Enter amount to send - receive amount will be calculated automatically
                             </div>
                             <FormMessage />
                           </FormItem>
@@ -924,9 +998,9 @@ export default function Exchange() {
                                 }}
                               />
                             </FormControl>
-                            {/* Independent amount input - no automatic calculation */}
+                            {/* Bidirectional amount input - auto-calculates send amount */}
                             <div className="text-xs text-gray-500 mt-1">
-                              Enter any amount you want to receive (no automatic calculation)
+                              Enter amount to receive - send amount will be calculated automatically
                             </div>
                             <FormMessage />
                           </FormItem>
