@@ -153,6 +153,43 @@ function clearPersonalInfo() {
 // Enhanced storage system for complete page state
 const EXCHANGE_COMPLETE_STATE_KEY = 'exchange-complete-state';
 
+// Debug utility function to check all saved data
+function debugSavedData() {
+  console.log('🔍 DEBUG: Checking all saved data...');
+  
+  // Check all localStorage keys that start with 'doogle' or 'exchange'
+  const allKeys = Object.keys(localStorage);
+  const relevantKeys = allKeys.filter(key => 
+    key.startsWith('doogle') || key.startsWith('exchange')
+  );
+  
+  console.log('🔑 All relevant localStorage keys:', relevantKeys);
+  
+  // Check specific storage items
+  const storageItems = {
+    'doogle_form_data_exchange': localStorage.getItem('doogle_form_data_exchange'),
+    'exchange-persist': localStorage.getItem('exchange-persist'),
+    'exchange-personal': localStorage.getItem('exchange-personal'),
+    'exchange-complete-state': localStorage.getItem('exchange-complete-state'),
+  };
+  
+  console.log('💾 Storage Items:', storageItems);
+  
+  // Try to parse JSON data
+  Object.entries(storageItems).forEach(([key, value]) => {
+    if (value) {
+      try {
+        const parsed = JSON.parse(value);
+        console.log(`📄 Parsed ${key}:`, parsed);
+      } catch (e) {
+        console.log(`❌ Failed to parse ${key}:`, value);
+      }
+    }
+  });
+  
+  return { relevantKeys, storageItems };
+}
+
 function saveCompleteExchangeState(data: {
   sendMethod: string;
   receiveMethod: string;
@@ -1027,6 +1064,74 @@ export default function Exchange() {
                   >
                     <Send className="w-5 h-5 mr-2" />
                     {createOrderMutation.isPending ? "Processing..." : "Submit Exchange Request"}
+                  </Button>
+                  
+                  {/* Clear Saved Data Button */}
+                  {hasSavedData && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full md:w-auto border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                      onClick={() => {
+                        // Clear all saved data
+                        forceRemoveData();
+                        clearExchangePersist();
+                        clearPersonalInfo();
+                        clearCompleteExchangeState();
+                        
+                        // Reset form fields
+                        form.reset();
+                        setFullName("");
+                        setEmail("");
+                        setSenderAccount("");
+                        setWalletAddress("");
+                        setSendMethod("trc20");
+                        setReceiveMethod("moneygo");
+                        setSendAmount("1");
+                        setReceiveAmount("");
+                        
+                        toast({
+                          title: "🗑️ All Data Cleared",
+                          description: "All saved form data has been completely removed from this device.",
+                          variant: "default",
+                        });
+                      }}
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Clear Saved Data
+                    </Button>
+                  )}
+                  
+                  {/* Debug: Check Saved Data Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full md:w-auto text-gray-500 hover:text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                    onClick={() => {
+                      // Use the debug utility function
+                      debugSavedData();
+                      
+                      // Also log form data memory state
+                      console.log('📝 Form Data Memory State:', {
+                        isReminded,
+                        savedData,
+                        hasSavedData,
+                        storageKey: `doogle_form_data_exchange`
+                      });
+                      
+                      toast({
+                        title: "🔍 Debug Info Logged",
+                        description: "Check browser console for detailed saved data information.",
+                        variant: "default",
+                      });
+                    }}
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Debug: Check Saved Data
                   </Button>
                 </div>
               </div>
