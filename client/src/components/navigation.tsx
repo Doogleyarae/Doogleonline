@@ -24,6 +24,7 @@ const navigationItems = [
 
 export default function Navigation() {
   const location = useLocation();
+  const pathname = typeof location === 'string' ? location : (location as any).pathname || window.location.pathname;
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useLanguage();
   const { isAuthenticated, user, logout } = useAuth();
@@ -59,12 +60,12 @@ export default function Navigation() {
                   <span 
                     className={cn(
                       "px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer",
-                      location.pathname === item.href
+                      pathname === item.href
                         ? "text-primary bg-blue-50"
                         : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                     )}
                     role="menuitem"
-                    aria-current={location.pathname === item.href ? "page" : undefined}
+                    aria-current={pathname === item.href ? "page" : undefined}
                   >
                     {item.label}
                   </span>
@@ -124,12 +125,12 @@ export default function Navigation() {
                       <span 
                         className={cn(
                           "block px-3 py-2 rounded-md text-base font-medium transition-colors cursor-pointer",
-                          location.pathname === item.href
+                          pathname === item.href
                             ? "text-primary bg-blue-50"
                             : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         )}
                         role="menuitem"
-                        aria-current={location.pathname === item.href ? "page" : undefined}
+                        aria-current={pathname === item.href ? "page" : undefined}
                       >
                         {item.label}
                       </span>
