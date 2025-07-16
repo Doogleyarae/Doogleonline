@@ -1007,38 +1007,25 @@ export default function Exchange() {
 
                             {/* Do Not Remember Toggle */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <FormField
-                  control={form.control}
-                  name="doNotRemember"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            console.log('Checkbox clicked:', checked);
-                            field.onChange(checked);
-                            handleDoNotRememberChange(checked as boolean);
-                          }}
-                          onClick={() => {
-                            console.log('Checkbox clicked directly');
-                          }}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm font-medium">
-                          Do not remember my information
-                        </FormLabel>
-                        <p className="text-xs text-gray-500">
-                          When enabled, your form data will not be saved locally and forms will not auto-fill on revisit
-                        </p>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                
- 
+                <div className="flex flex-row items-start space-x-3 space-y-0">
+                  <Checkbox
+                    checked={doNotRemember}
+                    onCheckedChange={(checked) => {
+                      console.log('Checkbox clicked:', checked);
+                      setDoNotRemember(checked as boolean);
+                      handleDoNotRememberChange(checked as boolean);
+                    }}
+                  />
+                  <div className="space-y-1 leading-none">
+                    <label className="text-sm font-medium">
+                      Do not remember my information
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      When enabled, your form data will not be saved locally and forms will not auto-fill on revisit
+                    </p>
+                  </div>
                 </div>
+              </div>
 
               {/* Terms and Submit */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-4">
