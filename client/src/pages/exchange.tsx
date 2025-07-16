@@ -447,7 +447,8 @@ export default function Exchange() {
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
       // Provide initial calculation if send amount exists but receive amount is empty
-      if (sendAmount && parseFloat(sendAmount) > 0 && (!receiveAmount || receiveAmount === "")) {
+      // Only if not currently clearing fields
+      if (!isClearingFields && sendAmount && parseFloat(sendAmount) > 0 && (!receiveAmount || receiveAmount === "")) {
         const amount = parseFloat(sendAmount);
         const converted = amount * rate;
         const convertedAmount = formatAmount(converted);
@@ -458,7 +459,7 @@ export default function Exchange() {
       setExchangeRate(0);
       setRateDisplay("Rate not available");
     }
-  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form]);
+  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form, isClearingFields]);
 
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
@@ -516,6 +517,7 @@ export default function Exchange() {
   // Handle amount calculations - Bidirectional auto-calculation with debouncing
   const [sendAmountTimeout, setSendAmountTimeout] = useState<NodeJS.Timeout | null>(null);
   const [receiveAmountTimeout, setReceiveAmountTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isClearingFields, setIsClearingFields] = useState(false);
 
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
@@ -525,18 +527,28 @@ export default function Exchange() {
       clearTimeout(sendAmountTimeout);
     }
     
-    // If the field is being cleared, immediately clear the other field
+    // If the field is being cleared, immediately clear the other field and stop
     if (!value || value.trim() === "") {
+      setIsClearingFields(true);
       setReceiveAmount("");
       form.setValue("receiveAmount", "");
+      setIsClearingFields(false);
       return;
     }
     
     // Set new timeout for debounced calculation
     const timeoutId = setTimeout(() => {
-      // Auto-calculate receive amount when send amount changes
-      if (exchangeRate > 0 && value && value.trim() !== "") {
-        const amount = parseFloat(value);
+      // Don't calculate if we're currently clearing fields
+      if (isClearingFields) {
+        return;
+      }
+      
+      // Get the current send amount value (not the captured one)
+      const currentSendAmount = form.getValues("sendAmount");
+      
+      // Only calculate if the field still has a value and is not empty
+      if (exchangeRate > 0 && currentSendAmount && currentSendAmount.trim() !== "") {
+        const amount = parseFloat(currentSendAmount);
         if (!isNaN(amount) && amount > 0) {
           const converted = amount * exchangeRate;
           const convertedAmount = formatAmount(converted);
@@ -568,18 +580,28 @@ export default function Exchange() {
       clearTimeout(receiveAmountTimeout);
     }
     
-    // If the field is being cleared, immediately clear the other field
+    // If the field is being cleared, immediately clear the other field and stop
     if (!value || value.trim() === "") {
+      setIsClearingFields(true);
       setSendAmount("");
       form.setValue("sendAmount", "");
+      setIsClearingFields(false);
       return;
     }
     
     // Set new timeout for debounced calculation
     const timeoutId = setTimeout(() => {
-      // Auto-calculate send amount when receive amount changes
-      if (exchangeRate > 0 && value && value.trim() !== "") {
-        const amount = parseFloat(value);
+      // Don't calculate if we're currently clearing fields
+      if (isClearingFields) {
+        return;
+      }
+      
+      // Get the current receive amount value (not the captured one)
+      const currentReceiveAmount = form.getValues("receiveAmount");
+      
+      // Only calculate if the field still has a value and is not empty
+      if (exchangeRate > 0 && currentReceiveAmount && currentReceiveAmount.trim() !== "") {
+        const amount = parseFloat(currentReceiveAmount);
         if (!isNaN(amount) && amount > 0) {
           const converted = amount / exchangeRate;
           const convertedAmount = formatAmount(converted);
