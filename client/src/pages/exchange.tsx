@@ -723,7 +723,9 @@ export default function Exchange() {
                                   .map((method) => (
                                     <SelectItem key={method.value} value={method.value}>
                                       <div className="flex items-center">
-                                        <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2" />
+                                        <span className="w-6 h-6 mr-2 flex items-center justify-center text-sm font-medium bg-gray-100 rounded">
+                                          {method.label.charAt(0)}
+                                        </span>
                                         {method.label}
                                       </div>
                                     </SelectItem>
@@ -788,7 +790,9 @@ export default function Exchange() {
                                   .map((method) => (
                                     <SelectItem key={method.value} value={method.value}>
                                       <div className="flex items-center">
-                                        <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2" />
+                                        <span className="w-6 h-6 mr-2 flex items-center justify-center text-sm font-medium bg-gray-100 rounded">
+                                          {method.label.charAt(0)}
+                                        </span>
                                         {method.label}
                                       </div>
                                     </SelectItem>

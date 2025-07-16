@@ -158,12 +158,12 @@ export default function MyOrders() {
                           <div>
                             <span className="font-medium">{t("sendAmount")}:</span>
                             <br />
-                            {formatCurrency(order.sendAmount)} {order.sendMethod.toUpperCase()}
+                            {formatCurrency(order.sendAmount, order.sendMethod.toUpperCase())}
                           </div>
                           <div>
                             <span className="font-medium">{t("receiveAmount")}:</span>
                             <br />
-                            {formatCurrency(order.receiveAmount)} {order.receiveMethod.toUpperCase()}
+                            {formatCurrency(order.receiveAmount, order.receiveMethod.toUpperCase())}
                           </div>
                           <div>
                             <span className="font-medium">{t("created")}:</span>
