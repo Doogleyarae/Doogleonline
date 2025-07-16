@@ -184,8 +184,10 @@ export default function Exchange() {
   const [receiveMethod, setReceiveMethod] = useState("moneygo");
   const [sendAmount, setSendAmount] = useState("1");
   const [receiveAmount, setReceiveAmount] = useState("");
-  const [exchangeRate, setExchangeRate] = useState<number>(0);
+    const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
+
+
 
   const [dynamicLimits, setDynamicLimits] = useState({
     minSendAmount: 5,
@@ -523,6 +525,13 @@ export default function Exchange() {
       clearTimeout(sendAmountTimeout);
     }
     
+    // If the field is being cleared, immediately clear the other field
+    if (!value || value.trim() === "") {
+      setReceiveAmount("");
+      form.setValue("receiveAmount", "");
+      return;
+    }
+    
     // Set new timeout for debounced calculation
     const timeoutId = setTimeout(() => {
       // Auto-calculate receive amount when send amount changes
@@ -557,6 +566,13 @@ export default function Exchange() {
     // Clear existing timeout
     if (receiveAmountTimeout) {
       clearTimeout(receiveAmountTimeout);
+    }
+    
+    // If the field is being cleared, immediately clear the other field
+    if (!value || value.trim() === "") {
+      setSendAmount("");
+      form.setValue("sendAmount", "");
+      return;
     }
     
     // Set new timeout for debounced calculation
