@@ -260,20 +260,12 @@ export default function Exchange() {
       setWalletAddress("");
       setSendAmount("1");
       setReceiveAmount("");
-      
-      // Reset form values
-      form.setValue("fullName", "");
-      form.setValue("email", "");
-      form.setValue("senderAccount", "");
-      form.setValue("walletAddress", "");
-      form.setValue("sendAmount", "1");
-      form.setValue("receiveAmount", "");
     } else {
       // Save current form data when "Do not remember" is disabled
       console.log('💾 Saving current form data - do not remember disabled');
       saveImmediately(formData);
     }
-  }, [clearAll, saveImmediately, formData, form]);
+  }, [clearAll, saveImmediately, formData]);
 
 
 
