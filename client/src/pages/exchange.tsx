@@ -1013,16 +1013,27 @@ export default function Exchange() {
                     onCheckedChange={(checked) => {
                       console.log('Checkbox clicked:', checked);
                       console.log('Current doNotRemember state:', doNotRemember);
-                      setDoNotRemember(checked as boolean);
-                      handleDoNotRememberChange(checked as boolean);
+                      const newValue = checked as boolean;
+                      setDoNotRemember(newValue);
+                      handleDoNotRememberChange(newValue);
                     }}
                     onClick={(e) => {
                       console.log('Checkbox onClick event:', e);
                       e.stopPropagation();
                     }}
+                    className="cursor-pointer"
+                    style={{ cursor: 'pointer' }}
                   />
                   <div className="space-y-1 leading-none">
-                    <label className="text-sm font-medium">
+                    <label 
+                      className="text-sm font-medium cursor-pointer"
+                      onClick={() => {
+                        const newValue = !doNotRemember;
+                        console.log('Label clicked, toggling to:', newValue);
+                        setDoNotRemember(newValue);
+                        handleDoNotRememberChange(newValue);
+                      }}
+                    >
                       Do not remember my information
                     </label>
                     <p className="text-xs text-gray-500">
