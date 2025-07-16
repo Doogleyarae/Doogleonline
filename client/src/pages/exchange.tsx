@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff, Eye, EyeOff } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Send, Bell, BellOff, Eye, EyeOff, DollarSign } from "lucide-react";
 import { useFormDataMemory } from "@/hooks/use-form-data-memory";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { formatAmount } from "@/lib/utils";
@@ -271,13 +271,85 @@ export default function Exchange() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch balances - use admin endpoint to get real balances
-  const { data: balances, isLoading: balancesLoading } = useQuery<Record<string, number>>({
+  // State for balance management
+  const [balances, setBalances] = useState<Record<string, number>>({});
+  const [editAmounts, setEditAmounts] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    const adminToken = sessionStorage.getItem("adminToken");
+    setIsAdmin(!!adminToken);
+  }, []);
+
+  // Fetch balances
+  const { data: balanceData, refetch: refetchBalances } = useQuery<Record<string, number>>({
     queryKey: ["/api/admin/balances"],
-    staleTime: 5000, // 5 seconds for more frequent updates
-    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/admin/balances", {
+          credentials: "include"
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const safeData: Record<string, number> = {};
+          Object.entries(data).forEach(([k, v]) => {
+            const num = typeof v === 'number' ? v : Number(v);
+            safeData[k] = isNaN(num) ? 0 : num;
+          });
+          setBalances(safeData);
+          setEditAmounts(Object.fromEntries(Object.entries(safeData).map(([k, v]) => [k, v.toString()])));
+          return safeData;
+        }
+        return {};
+      } catch (error) {
+        console.error("Failed to fetch balances:", error);
+        return {};
+      }
+    },
     refetchInterval: 10000, // Refetch every 10 seconds
+    enabled: isAdmin, // Only fetch if admin
   });
+
+  // Handle balance edit
+  const handleEditAmount = (currency: string, value: string) => {
+    setEditAmounts((prev) => ({ ...prev, [currency]: value }));
+  };
+
+  // Handle balance save
+  const handleSaveBalance = async (currency: string) => {
+    setSaving((prev) => ({ ...prev, [currency]: true }));
+    try {
+      const response = await fetch("/api/admin/balances", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ currency, amount: editAmounts[currency] })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setBalances((prev) => ({ ...prev, [currency]: data.amount }));
+        setEditAmounts((prev) => ({ ...prev, [currency]: data.amount.toString() }));
+        toast({
+          title: "Balance Updated",
+          description: `${currency.toUpperCase()} balance updated to $${data.amount}`,
+        });
+        refetchBalances();
+      } else {
+        throw new Error("Failed to update balance");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || `Failed to update ${currency} balance`,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving((prev) => ({ ...prev, [currency]: false }));
+    }
+  };
 
   // Fetch system status
   const { data: systemStatus } = useQuery<{ status: 'on' | 'off' }>({
@@ -664,9 +736,7 @@ export default function Exchange() {
                       <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
                     )}
                   </div>
-                  {balancesLoading ? (
-                    <div className="text-xs text-center mt-1 text-blue-600">Loading balances...</div>
-                  ) : balances && (
+                  {isAdmin && balanceData && (
                     <div className="text-xs text-center mt-1 text-green-600 flex items-center justify-center gap-2">
                       <span>
                         Available: ${getDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
@@ -680,8 +750,7 @@ export default function Exchange() {
                         size="sm"
                         className="h-4 w-4 p-0 text-green-600 hover:text-green-800"
                         onClick={() => {
-                          queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
-                          queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+                          refetchBalances();
                         }}
                         title="Refresh balance"
                       >
@@ -833,6 +902,72 @@ export default function Exchange() {
                   </FormItem>
                 )}
               />
+
+              {/* Balance Management Section (Admin Only) */}
+              {isAdmin && (
+                <div className="space-y-6">
+                  <div className="border-b border-gray-200 pb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <DollarSign className="w-5 h-5 mr-2 text-green-600" />
+                      Available Balances (Admin Management)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {paymentMethods.map((method) => {
+                        const currency = method.value.toUpperCase();
+                        const balance = balances[currency] || 0;
+                        const isEditing = editAmounts[currency] !== undefined;
+                        const hasChanged = editAmounts[currency] !== balance.toString();
+                        
+                        return (
+                          <div key={currency} className="bg-gray-50 rounded-lg p-4 border">
+                            <div className="flex items-center mb-2">
+                              <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2 object-contain" />
+                              <span className="font-semibold text-gray-900">{method.label}</span>
+                            </div>
+                            <div className="space-y-2">
+                              {isEditing ? (
+                                <div className="flex items-center space-x-2">
+                                  <Input
+                                    type="text"
+                                    value={editAmounts[currency] || "0"}
+                                    onChange={(e) => handleEditAmount(currency, e.target.value)}
+                                    className="flex-1"
+                                    placeholder="0.00"
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    inputMode="decimal"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleSaveBalance(currency)}
+                                    disabled={saving[currency] || !hasChanged}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    {saving[currency] ? "Saving..." : "Save"}
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-bold text-gray-900">
+                                    ${balance.toLocaleString()}
+                                  </span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditAmount(currency, balance.toString())}
+                                  >
+                                    Edit
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Section 1: Full Name (when required) */}
               {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
