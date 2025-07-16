@@ -1036,18 +1036,7 @@ export default function Exchange() {
                   )}
                 />
                 
-                {/* Debug button - remove this in production */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={debugSavedData}
-                    className="text-xs"
-                  >
-                    Debug: Check Saved Data
-                  </Button>
-                </div>
+
               </div>
 
               {/* Terms and Submit */}
