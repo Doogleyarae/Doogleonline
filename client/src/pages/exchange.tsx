@@ -20,16 +20,16 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { useLanguage } from "@/contexts/language-context";
 
 // Import logo files
-import zaadLogo from "../../public/assets/zaad.png";
-import sahalLogo from "../../public/assets/sahal.png";
-import evcLogo from "../../public/assets/evc.png";
-import edahabLogo from "../../public/assets/edahab.png";
-import premierLogo from "../../public/assets/premier.png";
-import moneygoLogo from "../../public/assets/moneygo.png";
-import trc20Logo from "../../public/assets/trc20.png";
-import peb20Logo from "../../public/assets/peb20.png";
-import trxLogo from "../../public/assets/trx.png";
-import usdcLogo from "../../public/assets/usdc.png";
+import zaadLogo from "../assets/zaad.png";
+import sahalLogo from "../assets/sahal.png";
+import evcLogo from "../assets/evc.png";
+import edahabLogo from "../assets/edahab.png";
+import premierLogo from "../assets/premier.png";
+import moneygoLogo from "../assets/moneygo.png";
+import trc20Logo from "../assets/trc20.png";
+import peb20Logo from "../assets/peb20.png";
+import trxLogo from "../assets/trx.png";
+import usdcLogo from "../assets/usdc.png";
 
 interface ExchangeRateResponse {
   rate: number;
