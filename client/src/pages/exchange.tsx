@@ -444,19 +444,12 @@ export default function Exchange() {
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
-      // Only auto-calculate receive amount if send amount exists and receive amount is empty
-      if (sendAmount && parseFloat(sendAmount) > 0 && (!receiveAmount || receiveAmount === "")) {
-        const amount = parseFloat(sendAmount);
-        const converted = amount * rate;
-        const convertedAmount = formatAmount(converted);
-        setReceiveAmount(convertedAmount);
-        form.setValue("receiveAmount", convertedAmount);
-      }
+      // No automatic calculation - users enter amounts manually
     } else if (!rateData && !rateLoading) {
       setExchangeRate(0);
       setRateDisplay("Rate not available");
     }
-  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, form]);
+  }, [rateData, rateLoading, sendMethod, receiveMethod, form]);
 
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
@@ -508,53 +501,23 @@ export default function Exchange() {
     calculateDynamicLimits();
   }, [calculateDynamicLimits]);
 
-  // Recalculate amounts when exchange rate changes
-  useEffect(() => {
-    if (exchangeRate > 0 && sendAmount) {
-      const amount = parseFloat(sendAmount);
-      if (!isNaN(amount)) {
-        const converted = amount * exchangeRate;
-        const convertedAmount = formatAmount(converted);
-        setReceiveAmount(convertedAmount);
-        form.setValue("receiveAmount", convertedAmount);
-      }
-    }
-  }, [exchangeRate, sendAmount, form]);
+  // Exchange rate changes no longer trigger automatic recalculation
+  // Users can manually enter any amount they want
 
-  // Handle amount calculations
+  // Handle amount calculations - Independent fields
   const handleSendAmountChange = (value: string) => {
     setSendAmount(value);
-    // Always calculate receive amount when send amount changes
-    if (exchangeRate > 0 && value) {
-      const amount = parseFloat(value);
-      if (!isNaN(amount)) {
-        const converted = amount * exchangeRate;
-        const convertedAmount = formatAmount(converted);
-        setReceiveAmount(convertedAmount);
-        form.setValue("receiveAmount", convertedAmount);
-      }
-    }
-    // Trigger form validation
+    // Only trigger form validation, no automatic recalculation
     setTimeout(() => {
-      form.trigger(["sendAmount", "receiveAmount"]);
+      form.trigger(["sendAmount"]);
     }, 100);
   };
 
   const handleReceiveAmountChange = (value: string) => {
     setReceiveAmount(value);
-    // Calculate send amount when receive amount changes
-    if (exchangeRate > 0 && value) {
-      const amount = parseFloat(value);
-      if (!isNaN(amount)) {
-        const converted = amount / exchangeRate;
-        const convertedAmount = formatAmount(converted);
-        setSendAmount(convertedAmount);
-        form.setValue("sendAmount", convertedAmount);
-      }
-    }
-    // Trigger form validation
+    // Only trigger form validation, no automatic recalculation
     setTimeout(() => {
-      form.trigger(["sendAmount", "receiveAmount"]);
+      form.trigger(["receiveAmount"]);
     }, 100);
   };
 
@@ -866,22 +829,32 @@ export default function Exchange() {
                         control={form.control}
                         name="sendAmount"
                         render={({ field }) => (
-                          <FormControl>
-                            <Input
-                              type="text"
-                              placeholder="0.00"
-                              className="h-12 text-lg"
-                              autoComplete="off"
-                              spellCheck={false}
-                              inputMode="decimal"
-                              value={field.value}
-                              onChange={(e) => {
-                                field.onChange(e.target.value);
-                                handleSendAmountChange(e.target.value);
-                                saveFormDataImmediately('sendAmount', e.target.value);
-                              }}
-                            />
-                          </FormControl>
+                          <FormItem>
+                            <FormLabel className="text-lg font-semibold text-gray-700 flex items-center">
+                              Amount to Send
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="text"
+                                placeholder="0.00"
+                                className="h-12 text-lg"
+                                autoComplete="off"
+                                spellCheck={false}
+                                inputMode="decimal"
+                                value={field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.value);
+                                  handleSendAmountChange(e.target.value);
+                                  saveFormDataImmediately('sendAmount', e.target.value);
+                                }}
+                              />
+                            </FormControl>
+                            {/* Independent amount input - no automatic calculation */}
+                            <div className="text-xs text-gray-500 mt-1">
+                              Enter any amount you want to send (no automatic calculation)
+                            </div>
+                            <FormMessage />
+                          </FormItem>
                         )}
                       />
                     </div>
@@ -951,9 +924,9 @@ export default function Exchange() {
                                 }}
                               />
                             </FormControl>
-                            {/* Flexible amount input - no restrictions */}
+                            {/* Independent amount input - no automatic calculation */}
                             <div className="text-xs text-gray-500 mt-1">
-                              Enter any amount greater than 0
+                              Enter any amount you want to receive (no automatic calculation)
                             </div>
                             <FormMessage />
                           </FormItem>
