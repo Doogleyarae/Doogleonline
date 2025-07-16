@@ -1012,8 +1012,13 @@ export default function Exchange() {
                     checked={doNotRemember}
                     onCheckedChange={(checked) => {
                       console.log('Checkbox clicked:', checked);
+                      console.log('Current doNotRemember state:', doNotRemember);
                       setDoNotRemember(checked as boolean);
                       handleDoNotRememberChange(checked as boolean);
+                    }}
+                    onClick={(e) => {
+                      console.log('Checkbox onClick event:', e);
+                      e.stopPropagation();
                     }}
                   />
                   <div className="space-y-1 leading-none">
@@ -1022,6 +1027,9 @@ export default function Exchange() {
                     </label>
                     <p className="text-xs text-gray-500">
                       When enabled, your form data will not be saved locally and forms will not auto-fill on revisit
+                    </p>
+                    <p className="text-xs text-blue-500 mt-1">
+                      Current state: {doNotRemember ? 'Checked (Data will NOT be saved)' : 'Unchecked (Data WILL be saved)'}
                     </p>
                   </div>
                 </div>
