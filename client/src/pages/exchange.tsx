@@ -941,6 +941,36 @@ export default function Exchange() {
     return balance;
   };
 
+  // Calculate dynamic transaction limits based on available balance and exchange rate
+  const getDynamicTransactionLimits = () => {
+    const minAmount = 5; // Minimum transaction amount
+    let maxAmount = 10000; // Default maximum
+    
+    // If we have balance data and exchange rate, calculate dynamic limits
+    if (publicBalanceData?.balances && exchangeRate > 0 && publicBalanceData.systemStatus === 'on') {
+      const availableBalance = getPublicDisplayBalance(receiveMethod);
+      
+      if (availableBalance > 0) {
+        // Calculate maximum send amount based on available receive balance
+        // Formula: maxSendAmount = availableReceiveBalance / exchangeRate
+        const calculatedMaxSend = availableBalance / exchangeRate;
+        
+        // Use the smaller of calculated max or default max
+        maxAmount = Math.min(calculatedMaxSend, 10000);
+        
+        // Ensure minimum is respected
+        if (maxAmount < minAmount) {
+          maxAmount = minAmount;
+        }
+      }
+    }
+    
+    return {
+      min: minAmount,
+      max: Math.floor(maxAmount) // Round down to whole number
+    };
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="text-center mb-8">
@@ -981,10 +1011,17 @@ export default function Exchange() {
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="text-xs text-center mb-2">
                     <span className="text-blue-700 font-medium">Transaction Limits: </span>
-                    {sendLimitsLoading || receiveLimitsLoading ? (
+                    {sendLimitsLoading || receiveLimitsLoading || publicBalanceLoading ? (
                       <span className="text-blue-600">Loading limits...</span>
                     ) : (
-                      <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
+                      (() => {
+                        const limits = getDynamicTransactionLimits();
+                        return (
+                          <span className="text-blue-600">
+                            ${limits.min.toFixed(0)} - ${limits.max.toLocaleString()} {sendMethod.toUpperCase()}
+                          </span>
+                        );
+                      })()
                     )}
                   </div>
                   
