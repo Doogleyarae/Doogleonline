@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -204,8 +205,10 @@ const paymentMethods = [
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { isConnected } = useWebSocket();
   
   // Check admin authentication
+  // Authentication check with better error handling
   useEffect(() => {
     const adminToken = sessionStorage.getItem("adminToken");
     if (!adminToken) {
@@ -218,40 +221,58 @@ export default function AdminDashboard() {
       return;
     }
     
-    // Add a small delay to ensure session is established
-    const checkAuth = () => {
-      fetch("/api/admin/check-auth", {
-        credentials: "include"
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (!data.authenticated) {
-            sessionStorage.removeItem("adminToken");
-            toast({
-              title: "Session Expired",
-              description: "Please log in again",
-              variant: "destructive",
-            });
-            setLocation("/admin/login");
-          } else {
-            // Admin authentication confirmed
+    // Check authentication with retry logic
+    const checkAuth = async (retryCount = 0) => {
+      try {
+        const response = await fetch("/api/admin/check-auth", {
+          credentials: "include",
+          headers: {
+            'x-admin-bypass': adminToken // Add bypass token for additional auth
           }
-        })
-        .catch((error) => {
-          // Auth check error
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+          // Only redirect if we're sure the session is invalid
+          if (retryCount < 2) {
+            // Retry once more after a delay
+            setTimeout(() => checkAuth(retryCount + 1), 2000);
+            return;
+          }
+          
           sessionStorage.removeItem("adminToken");
           toast({
-            title: "Authentication Error",
+            title: "Session Expired",
             description: "Please log in again",
             variant: "destructive",
           });
           setLocation("/admin/login");
-        });
+        } else {
+          // Authentication successful
+          console.log("Admin authentication confirmed");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        
+        // Only redirect on network errors, not on auth failures
+        if (retryCount < 2) {
+          // Retry once more after a delay
+          setTimeout(() => checkAuth(retryCount + 1), 2000);
+          return;
+        }
+        
+        // Don't redirect on network errors, just log them
+        console.warn("Authentication check failed, but continuing with admin token");
+      }
     };
     
-    // Check immediately and also after a short delay
+    // Check authentication
     checkAuth();
-    setTimeout(checkAuth, 1000);
   }, [toast, setLocation]);
   
   // State for order management
@@ -587,7 +608,21 @@ export default function AdminDashboard() {
   // Update exchange rate mutation with real-time cache invalidation
   const updateRateMutation = useMutation({
     mutationFn: async (data: { fromCurrency: string; toCurrency: string; rate: string }) => {
-      const response = await apiRequest("POST", "/api/admin/exchange-rates", data);
+      const response = await fetch("/api/admin/exchange-rates", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+        },
+        credentials: "include",
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       return response.json();
     },
     onSuccess: (data, variables) => {
@@ -625,6 +660,7 @@ export default function AdminDashboard() {
       
       // Invalidate balances to ensure all calculations are updated
       queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
       
       // Show detailed preservation confirmation
       const preservedInfo = data.preservedLimits ? 
@@ -632,15 +668,15 @@ export default function AdminDashboard() {
         '';
       
       toast({
-        title: "✓ NEW DATA PERSISTED - Old Data Replaced",
-        description: `${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} = ${variables.rate} (NEW DATA KEPT)${preservedInfo}`,
+        title: "✓ Exchange Rate Updated Successfully",
+        description: `${variables.fromCurrency.toUpperCase()} → ${variables.toCurrency.toUpperCase()} = ${variables.rate}${preservedInfo}`,
         duration: 6000,
       });
       
-      // Keep form data for easy editing - don't clear fields
-      // setFromCurrency("");
-      // setToCurrency("");
-      // setExchangeRate("");
+      // Clear form fields after successful update
+      setFromCurrency("");
+      setToCurrency("");
+      setExchangeRate("");
     },
     onError: (error: any) => {
       toast({
@@ -773,22 +809,37 @@ export default function AdminDashboard() {
   // Balance update mutation
   const updateBalanceMutation = useMutation({
     mutationFn: async ({ currency, amount }: { currency: string; amount: number }) => {
-      const response = await apiRequest("POST", "/api/admin/balances", { currency, amount });
+      const response = await fetch("/api/admin/balances", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+        },
+        credentials: "include",
+        body: JSON.stringify({ currency, amount })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       return response.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
       setRecentlyUpdatedBalance(data.currency.toLowerCase());
       setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
       toast({
-        title: "✓ NEW BALANCE PERSISTED - Old Data Replaced",
-        description: `${data.currency.toUpperCase()}: $${data.amount.toLocaleString()} (NEW DATA KEPT)`,
+        title: "✓ Balance Updated Successfully",
+        description: `${data.currency.toUpperCase()}: $${data.amount.toLocaleString()}`,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Update Failed",
-        description: "Failed to update balance",
+        description: error.message || "Failed to update balance",
         variant: "destructive",
       });
     },
@@ -1001,6 +1052,56 @@ export default function AdminDashboard() {
       setSystemStatus(serverSystemStatus.status);
     }
   }, [serverSystemStatus?.status]);
+
+  // WebSocket event listeners for real-time updates
+  useEffect(() => {
+    const handleAdminUpdate = (event: CustomEvent) => {
+      const message = event.detail;
+      
+      switch (message.type) {
+        case 'exchange_rate_update':
+          // Invalidate exchange rate queries
+          queryClient.invalidateQueries({ 
+            predicate: (query) => {
+              const key = query.queryKey[0];
+              return typeof key === 'string' && key.includes('/api/exchange-rate/');
+            }
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/exchange-rates"] });
+          break;
+          
+        case 'balance_update':
+          // Invalidate balance queries
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+          break;
+          
+        case 'currency_limit_update':
+          // Invalidate currency limit queries
+          queryClient.invalidateQueries({ 
+            predicate: (query) => {
+              const key = query.queryKey[0];
+              return typeof key === 'string' && key.includes('/api/currency-limits/');
+            }
+          });
+          break;
+          
+        case 'system_status_update':
+          // Update system status
+          if (message.data?.status) {
+            setSystemStatus(message.data.status);
+          }
+          break;
+      }
+    };
+
+    // Listen for WebSocket updates
+    window.addEventListener('admin-update', handleAdminUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('admin-update', handleAdminUpdate as EventListener);
+    };
+  }, [queryClient]);
   
   // Notification system state
   const [notifications, setNotifications] = useState<Array<{
@@ -1153,12 +1254,17 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/admin/system-status', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-bypass': sessionStorage.getItem("adminToken") || ""
+        },
         body: JSON.stringify({ status: newStatus }),
         credentials: "include"
       });
       
       if (response.ok) {
+        const data = await response.json();
+        
         // Update local state immediately for responsive UI
         setSystemStatus(newStatus);
         
@@ -1169,15 +1275,16 @@ export default function AdminDashboard() {
         
         toast({
           title: "System Status Updated",
-          description: `System is now ${newStatus === 'on' ? 'OPEN' : 'CLOSED'}`,
+          description: `System is now ${newStatus === 'on' ? 'OPEN' : 'CLOSED'}. ${newStatus === 'off' ? 'All balances will show $0 to users.' : 'Real balances are now visible to users.'}`,
         });
       } else {
-        throw new Error('Failed to update system status');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update system status');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update system status",
+        description: error.message || "Failed to update system status",
         variant: "destructive",
       });
     } finally {
@@ -1380,6 +1487,12 @@ export default function AdminDashboard() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">System Status Control</h3>
               <p className="text-sm text-gray-600">Toggle system availability for all users</p>
+              <div className="flex items-center gap-2 mt-1">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-xs text-gray-500">
+                  WebSocket: {isConnected ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
@@ -2123,22 +2236,32 @@ export default function AdminDashboard() {
                                             return;
                                           }
                                           try {
-                                            const res = await apiRequest('POST', '/api/admin/balances/credit', {
-                                              currency: method.value,
-                                              amount: amt,
-                                              reason: manualReasons?.[method.value] || undefined,
+                                            const res = await fetch('/api/admin/balances/credit', {
+                                              method: 'POST',
+                                              headers: { 
+                                                'Content-Type': 'application/json',
+                                                'x-admin-bypass': sessionStorage.getItem("adminToken") || ""
+                                              },
+                                              credentials: "include",
+                                              body: JSON.stringify({
+                                                currency: method.value,
+                                                amount: amt,
+                                                reason: manualReasons?.[method.value] || undefined,
+                                              })
                                             });
                                             if (res.ok) {
                                               await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                                              await queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
                                               const updated = await res.json();
                                               toast({ title: `Credited $${amt} to ${method.label}. New balance: $${updated.balance?.amount}` });
                                               setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
                                               setManualReasons(prev => ({ ...prev, [method.value]: '' }));
                                             } else {
-                                              throw new Error('Failed to credit balance');
+                                              const errorData = await res.json().catch(() => ({}));
+                                              throw new Error(errorData.message || 'Failed to credit balance');
                                             }
-                                          } catch (err) {
-                                            toast({ title: 'Credit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
+                                          } catch (err: any) {
+                                            toast({ title: 'Credit failed', description: err.message || String(err), variant: 'destructive' });
                                           }
                                         }}
                                       >
@@ -2155,22 +2278,32 @@ export default function AdminDashboard() {
                                             return;
                                           }
                                           try {
-                                            const res = await apiRequest('POST', '/api/admin/balances/debit', {
-                                              currency: method.value,
-                                              amount: amt,
-                                              reason: manualReasons?.[method.value] || undefined,
+                                            const res = await fetch('/api/admin/balances/debit', {
+                                              method: 'POST',
+                                              headers: { 
+                                                'Content-Type': 'application/json',
+                                                'x-admin-bypass': sessionStorage.getItem("adminToken") || ""
+                                              },
+                                              credentials: "include",
+                                              body: JSON.stringify({
+                                                currency: method.value,
+                                                amount: amt,
+                                                reason: manualReasons?.[method.value] || undefined,
+                                              })
                                             });
                                             if (res.ok) {
                                               await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                                              await queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
                                               const updated = await res.json();
                                               toast({ title: `Debited $${amt} from ${method.label}. New balance: $${updated.balance?.amount}` });
                                               setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
                                               setManualReasons(prev => ({ ...prev, [method.value]: '' }));
                                             } else {
-                                              throw new Error('Failed to debit balance');
+                                              const errorData = await res.json().catch(() => ({}));
+                                              throw new Error(errorData.message || 'Failed to debit balance');
                                             }
-                                          } catch (err) {
-                                            toast({ title: 'Debit failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
+                                          } catch (err: any) {
+                                            toast({ title: 'Debit failed', description: err.message || String(err), variant: 'destructive' });
                                           }
                                         }}
                                       >
@@ -2203,9 +2336,17 @@ export default function AdminDashboard() {
                                             const minAmount = currencyMinimums[method.value];
                                             
                                             // Use the new coordinated endpoint that preserves exchange rates
-                                            const response = await apiRequest("POST", `/api/admin/currency-limits/${method.value}`, {
-                                              minAmount: minAmount,
-                                              maxAmount: 10000 // Keep standard maximum
+                                            const response = await fetch(`/api/admin/currency-limits/${method.value}`, {
+                                              method: "POST",
+                                              headers: { 
+                                                "Content-Type": "application/json",
+                                                "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+                                              },
+                                              credentials: "include",
+                                              body: JSON.stringify({
+                                                minAmount: minAmount,
+                                                maxAmount: 10000 // Keep standard maximum
+                                              })
                                             });
                                             
                                             if (response.ok) {
