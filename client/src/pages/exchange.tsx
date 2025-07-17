@@ -931,12 +931,28 @@ export default function Exchange() {
   // Get public display balance for users
   const getPublicDisplayBalance = (currency: string) => {
     if (!publicBalanceData?.balances) {
+      console.log('No public balance data available');
       return 0;
     }
     
-    // Use lowercase currency keys to match database storage
-    const balanceKey = currency.toLowerCase();
-    return publicBalanceData.balances[balanceKey] || 0;
+    // Try both lowercase and uppercase keys to match database storage
+    const balanceKeyLower = currency.toLowerCase();
+    const balanceKeyUpper = currency.toUpperCase();
+    
+    const balance = publicBalanceData.balances[balanceKeyLower] || 
+                   publicBalanceData.balances[balanceKeyUpper] || 
+                   publicBalanceData.balances[currency] || 0;
+    
+    console.log(`Balance lookup for ${currency}:`, {
+      currency,
+      balanceKeyLower,
+      balanceKeyUpper,
+      availableKeys: Object.keys(publicBalanceData.balances),
+      foundBalance: balance,
+      systemStatus: publicBalanceData.systemStatus
+    });
+    
+    return balance;
   };
 
   return (
@@ -1003,6 +1019,12 @@ export default function Exchange() {
                       )
                     ) : (
                       <span className="text-red-600">Balance not available</span>
+                    )}
+                    {/* Debug info - remove after fixing */}
+                    {publicBalanceData?.balances && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Debug: System {publicBalanceData.systemStatus}, Balance keys: {Object.keys(publicBalanceData.balances).join(', ')}
+                      </div>
                     )}
                   </div>
                 </div>
