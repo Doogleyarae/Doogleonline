@@ -282,23 +282,26 @@ export default function Exchange() {
   const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    staleTime: 30000, // 30 seconds
+    staleTime: 0, // Always fetch fresh data when currency changes
     refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
   // Fetch currency limits
   const { data: sendCurrencyLimits, isLoading: sendLimitsLoading } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    staleTime: 30000,
+    staleTime: 0, // Always fetch fresh data when currency changes
     refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
   const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    staleTime: 30000,
+    staleTime: 0, // Always fetch fresh data when currency changes
     refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
   // Fetch wallet addresses
@@ -398,10 +401,37 @@ export default function Exchange() {
   });
 
   // Fetch public balances for user display
-  const { data: publicBalanceData } = useQuery<{ balances: Record<string, number>; status: string }>({
+  const { data: publicBalanceData, isLoading: publicBalanceLoading, refetch: refetchPublicBalances } = useQuery<{ balances: Record<string, number>; status: string }>({
     queryKey: ["/api/balances"],
     refetchInterval: 10000, // Refresh every 10 seconds
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true,
   });
+
+  // Invalidate and refetch data when currency selections change
+  useEffect(() => {
+    if (sendMethod && receiveMethod) {
+      // Invalidate queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+      
+      // Refetch public balances immediately
+      refetchPublicBalances();
+    }
+  }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances]);
+
+  // Trigger initial data fetch on mount
+  useEffect(() => {
+    // Force initial fetch of all data when component mounts
+    if (sendMethod && receiveMethod) {
+      queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+    }
+  }, []); // Empty dependency array - only run on mount
 
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(createExchangeFormSchema(
@@ -601,7 +631,7 @@ export default function Exchange() {
           // Clear receive amount if send amount is invalid
           setReceiveAmount("");
           form.setValue("receiveAmount", "");
-        }
+      }
       } else {
         // Clear receive amount if send amount is empty
         setReceiveAmount("");
@@ -661,7 +691,7 @@ export default function Exchange() {
           // Clear send amount if receive amount is invalid
           setSendAmount("");
           form.setValue("sendAmount", "");
-        }
+    }
       } else {
         // Clear send amount if receive amount is empty
         setSendAmount("");
@@ -916,16 +946,20 @@ export default function Exchange() {
                 </div>
                 
                 {/* Available Balance Display for Users */}
-                {publicBalanceData?.balances && (
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    <div className="text-xs text-center mb-2">
-                      <span className="text-blue-700 font-medium">Available Balance: </span>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <div className="text-xs text-center mb-2">
+                    <span className="text-blue-700 font-medium">Available Balance: </span>
+                    {publicBalanceLoading ? (
+                      <span className="text-blue-600">Loading balance...</span>
+                    ) : publicBalanceData?.balances ? (
                       <span className="text-blue-600">
                         ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
                       </span>
-                    </div>
+                    ) : (
+                      <span className="text-red-600">Balance not available</span>
+                    )}
                   </div>
-                )}
+                </div>
                 
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="text-xs text-center">
@@ -1035,19 +1069,23 @@ export default function Exchange() {
                     </div>
                     
                     {/* Available Balance Display for Selected Send Method */}
-                    {publicBalanceData?.balances && (
-                      <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-blue-800">Available Balance:</span>
+                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-blue-800">Available Balance:</span>
+                        {publicBalanceLoading ? (
+                          <span className="text-lg font-bold text-blue-900">Loading...</span>
+                        ) : publicBalanceData?.balances ? (
                           <span className="text-lg font-bold text-blue-900">
                             ${getPublicDisplayBalance(sendMethod).toLocaleString()} {sendMethod.toUpperCase()}
                           </span>
-                        </div>
-                        <div className="text-xs text-blue-600 mt-1">
-                          This is the maximum amount you can send in {sendMethod.toUpperCase()}
-                        </div>
+                        ) : (
+                          <span className="text-lg font-bold text-red-600">Not available</span>
+                        )}
                       </div>
-                    )}
+                      <div className="text-xs text-blue-600 mt-1">
+                        This is the maximum amount you can send in {sendMethod.toUpperCase()}
+                      </div>
+                    </div>
                     
                     <FormMessage />
                   </FormItem>
