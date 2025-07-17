@@ -411,18 +411,38 @@ export default function Exchange() {
     )),
     mode: "onChange",
     defaultValues: {
-      sendMethod: sendMethod,
-      receiveMethod: receiveMethod,
-      sendAmount: "", // Start with empty string to prevent auto-restoration
-      receiveAmount: "", // Start with empty string to prevent auto-restoration
-      exchangeRate: exchangeRate.toString(),
-      fullName: fullName,
-      email: email,
-      senderAccount: senderAccount,
-      walletAddress: walletAddress,
+      sendMethod: "trc20",
+      receiveMethod: "moneygo",
+      sendAmount: "",
+      receiveAmount: "",
+      exchangeRate: "0",
+      fullName: "",
+      email: "",
+      senderAccount: "",
+      walletAddress: "",
       agreeToTerms: false,
     },
   });
+
+  // Only restore saved data on first mount
+  useEffect(() => {
+    if (isLoaded && hasSavedData && savedData) {
+      try {
+        // Only set form values if the fields are empty (user hasn't typed yet)
+        if (savedData.fullName && !form.getValues("fullName")) form.setValue("fullName", savedData.fullName);
+        if (savedData.email && !form.getValues("email")) form.setValue("email", savedData.email);
+        if (savedData.senderAccount && !form.getValues("senderAccount")) form.setValue("senderAccount", savedData.senderAccount);
+        if (savedData.walletAddress && !form.getValues("walletAddress")) form.setValue("walletAddress", savedData.walletAddress);
+        if (savedData.sendMethod && !form.getValues("sendMethod")) form.setValue("sendMethod", savedData.sendMethod);
+        if (savedData.receiveMethod && !form.getValues("receiveMethod")) form.setValue("receiveMethod", savedData.receiveMethod);
+        // Do not restore sendAmount/receiveAmount automatically
+      } catch (error) {
+        clearAll();
+      }
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, hasSavedData]);
 
   // Update form schema when limits change
   useEffect(() => {
