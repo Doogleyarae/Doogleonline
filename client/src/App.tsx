@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -80,6 +80,13 @@ function ErrorFallback({ error }: { error: Error }) {
 function Router() {
   // Initialize scroll memory for the entire app
   useScrollMemory();
+  const [location] = useLocation();
+  // Auto-set admin token to bypass login (temporary bypass)
+  useEffect(() => {
+    if (location.startsWith("/admin")) {
+      sessionStorage.setItem("adminToken", "bypass-token");
+    }
+  }, [location]);
   
   return (
     <Switch>
@@ -102,8 +109,9 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/profile" component={Profile} />
       <Route path="/my-orders" component={MyOrders} />
-      <Route path="/admin" component={AdminLogin} />
-      <Route path="/admin/login" component={AdminLogin} />
+      {/* Admin routes - bypass login and go directly to dashboard */}
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/login" component={AdminDashboard} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/admin-exchange-rates" component={AdminExchangeRates} />
