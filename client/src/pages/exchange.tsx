@@ -974,27 +974,7 @@ export default function Exchange() {
                   )}
                 </div>
                 
-                {/* Available Balance Display for Users */}
-                <div className="mt-3 pt-3 border-t border-blue-200">
-                  <div className="text-xs text-center mb-2">
-                    <span className="text-blue-700 font-medium">Available Balance: </span>
-                    {publicBalanceLoading ? (
-                      <span className="text-blue-600">Loading balance...</span>
-                    ) : publicBalanceData?.balances ? (
-                      publicBalanceData.systemStatus === 'off' ? (
-                        <span className="text-red-600">
-                          $0 {receiveMethod.toUpperCase()} (System Offline)
-                        </span>
-                      ) : (
-                        <span className="text-blue-600">
-                          ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
-                        </span>
-                      )
-                    ) : (
-                      <span className="text-red-600">Balance not available</span>
-                    )}
-                  </div>
-                </div>
+
                 
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="text-xs text-center">
@@ -1005,30 +985,7 @@ export default function Exchange() {
                       <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
                     )}
                   </div>
-                  {isAdmin && balanceData && (
-                    <div className="text-xs text-center mt-1 text-green-600 flex items-center justify-center gap-2">
-                      <span>
-                        Available: ${getDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
-                        {systemStatus?.status === 'off' && (
-                          <span className="text-red-600 ml-1">(System Closed)</span>
-                        )}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 text-green-600 hover:text-green-800"
-                        onClick={() => {
-                          refetchBalances();
-                        }}
-                        title="Refresh balance"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                      </Button>
-                    </div>
-                  )}
+
                 </div>
               </div>
 
@@ -1103,33 +1060,7 @@ export default function Exchange() {
                       />
                     </div>
                     
-                    {/* Available Balance Display for Selected Send Method */}
-                    <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-blue-800">Available Balance:</span>
-                        {publicBalanceLoading ? (
-                          <span className="text-lg font-bold text-blue-900">Loading...</span>
-                        ) : publicBalanceData?.balances ? (
-                          publicBalanceData.systemStatus === 'off' ? (
-                            <span className="text-lg font-bold text-red-600">
-                              $0 {sendMethod.toUpperCase()} (System Offline)
-                            </span>
-                          ) : (
-                            <span className="text-lg font-bold text-blue-900">
-                              ${getPublicDisplayBalance(sendMethod).toLocaleString()} {sendMethod.toUpperCase()}
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-lg font-bold text-red-600">Not available</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-blue-600 mt-1">
-                        {publicBalanceData?.systemStatus === 'off' 
-                          ? "System is currently offline. No transactions can be processed."
-                          : `This is the maximum amount you can send in ${sendMethod.toUpperCase()}`
-                        }
-                      </div>
-                    </div>
+
                     
                     <FormMessage />
                   </FormItem>
@@ -1207,91 +1138,14 @@ export default function Exchange() {
                       />
                     </div>
                     
-                    {/* Available Balance Display for Selected Receive Method */}
-                    {publicBalanceData?.balances && (
-                      <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-green-800">Available Balance:</span>
-                          <span className="text-lg font-bold text-green-900">
-                            ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
-                          </span>
-                    </div>
-                        <div className="text-xs text-green-600 mt-1">
-                          This is the maximum amount you can receive in {receiveMethod.toUpperCase()}
-                        </div>
-                      </div>
-                    )}
+
                     
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Balance Management Section (Admin Only) */}
-              {isAdmin && (
-                <div className="space-y-6">
-                  <div className="border-b border-gray-200 pb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <DollarSign className="w-5 h-5 mr-2 text-green-600" />
-                      Available Balances (Admin Management)
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {paymentMethods.map((method) => {
-                        const currency = method.value.toUpperCase();
-                        const balance = balances[currency] || 0;
-                        const isEditing = editAmounts[currency] !== undefined;
-                        const hasChanged = editAmounts[currency] !== balance.toString();
-                        
-                        return (
-                          <div key={currency} className="bg-gray-50 rounded-lg p-4 border">
-                            <div className="flex items-center mb-2">
-                              <img src={method.logo} alt={method.label} className="w-6 h-6 mr-2 object-contain" />
-                              <span className="font-semibold text-gray-900">{method.label}</span>
-                            </div>
-                            <div className="space-y-2">
-                              {isEditing ? (
-                                <div className="flex items-center space-x-2">
-                                  <Input
-                                    type="text"
-                                    value={editAmounts[currency] || "0"}
-                                    onChange={(e) => handleEditAmount(currency, e.target.value)}
-                                    className="flex-1"
-                                    placeholder="0.00"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    inputMode="decimal"
-                                  />
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleSaveBalance(currency)}
-                                    disabled={saving[currency] || !hasChanged}
-                                    className="bg-green-600 hover:bg-green-700"
-                                  >
-                                    {saving[currency] ? "Saving..." : "Save"}
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-lg font-bold text-gray-900">
-                                    ${balance.toLocaleString()}
-                                  </span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleEditAmount(currency, balance.toString())}
-                                  >
-                                    Edit
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
+
 
               {/* Section 1: Full Name (when required) */}
               {['zaad', 'sahal', 'evc', 'edahab', 'premier'].includes(sendMethod) && (
