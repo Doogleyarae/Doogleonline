@@ -2146,47 +2146,42 @@ export default function AdminDashboard() {
                                         onClick={async () => {
                                           try {
                                             const balance = displayBalance;
-                                            const response = await apiRequest("POST", "/api/admin/balances", {
-                                              currency: method.value,
-                                              amount: balance,
+                                            const response = await fetch("/api/admin/balances", {
+                                              method: "POST",
+                                              headers: { 
+                                                "Content-Type": "application/json",
+                                                "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+                                              },
+                                              credentials: "include",
+                                              body: JSON.stringify({ 
+                                                currency: method.value,
+                                                amount: balance 
+                                              })
                                             });
                                             
                                             if (response.ok) {
-                                              // Force complete cache invalidation for instant synchronization
-                                              queryClient.removeQueries({ 
-                                                predicate: (query) => {
-                                                  const key = query.queryKey[0];
-                                                  return typeof key === 'string' && (
-                                                    key.includes('/api/admin/balances') ||
-                                                    key.includes('/api/currency-limits/') ||
-                                                    key.includes('/api/exchange-rate/')
-                                                  );
-                                                }
-                                              });
+                                              const data = await response.json();
                                               
-                                              // Force complete cache reset for exchange form updates
-                                              queryClient.clear();
-                                              
-                                              // Force immediate refetch of all balance-related data
-                                              setTimeout(() => {
-                                                queryClient.invalidateQueries();
-                                              }, 100);
+                                              // Invalidate balance queries
+                                              queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+                                              queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
                                               
                                               setRecentlyUpdatedBalance(method.value);
                                               setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
                                               
                                               toast({
-                                                title: "✓ NEW BALANCE PERSISTED - Old Data Replaced",
-                                                description: `${method.label}: $${balance.toLocaleString()} (NEW DATA KEPT, affects limits immediately)`,
+                                                title: "✓ Balance Updated Successfully",
+                                                description: `${method.label}: $${balance.toLocaleString()}`,
                                                 duration: 4000,
                                               });
                                             } else {
-                                              throw new Error("Failed to update balance");
+                                              const errorData = await response.json().catch(() => ({}));
+                                              throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
                                             }
-                                          } catch (error) {
+                                          } catch (error: any) {
                                             toast({
                                               title: "❌ Update Failed",
-                                              description: "Failed to update balance",
+                                              description: error.message || "Failed to update balance",
                                               variant: "destructive",
                                             });
                                           }

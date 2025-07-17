@@ -78,7 +78,18 @@ export default function AdminExchangeRates() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await apiRequest("GET", "/api/admin/balances");
+        const res = await fetch("/api/admin/balances", {
+          method: "GET",
+          headers: { 
+            "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+          },
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
         const data = await res.json();
         // Ensure all values are numbers
         const safeData: Record<string, number> = {};
@@ -135,7 +146,24 @@ export default function AdminExchangeRates() {
   const handleSave = async (currency: string) => {
     setSaving((prev) => ({ ...prev, [currency]: true }));
     try {
-      const res = await apiRequest("POST", "/api/admin/balances", { currency, amount: editAmounts[currency] });
+      const res = await fetch("/api/admin/balances", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+        },
+        credentials: "include",
+        body: JSON.stringify({ 
+          currency, 
+          amount: editAmounts[currency] 
+        })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`);
+      }
+      
       const data = await res.json();
       setBalances((prev) => ({ ...prev, [currency]: data.amount }));
       setEditAmounts((prev) => ({ ...prev, [currency]: data.amount.toString() }));
