@@ -302,11 +302,13 @@ export default function Exchange() {
   });
 
   // Fetch wallet addresses
-  const { data: walletAddresses } = useQuery<Record<string, string>>({
-    queryKey: ["/api/admin/wallet-addresses"],
+  const { data: walletAddressesData } = useQuery<{ wallets: Record<string, string> }>({
+    queryKey: ["/api/wallet-addresses"],
     staleTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
   });
+
+  const walletAddresses = walletAddressesData?.wallets || {};
 
   // State for balance management
   const [balances, setBalances] = useState<Record<string, number>>({});

@@ -1518,6 +1518,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get wallet addresses (public/user-facing) - SHOWS PAYMENT WALLETS TO USERS
+  app.get("/api/wallet-addresses", async (req, res) => {
+    try {
+      // Check system status - if system is off, return service unavailable
+      const systemStatus = await storage.getSystemStatus();
+      if (systemStatus === 'off') {
+        return res.status(503).json({ 
+          message: "Service temporarily unavailable",
+          status: "offline"
+        });
+      }
+      
+      // Get wallet addresses from database
+      const walletData = await storage.getAllWalletAddresses();
+      
+      // Create a map of method -> address
+      const walletMap: Record<string, string> = {};
+      
+      // Default addresses (fallback)
+      const defaults = {
+        zaad: "*880*637834431*amount#",
+        sahal: "*883*905865292*amount#",
+        evc: "*799*34996012*amount#",
+        edahab: "0626451011",
+        premier: "0616451011",
+        moneygo: "U2778451",
+        trx: "THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv",
+        trc20: "THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv",
+        peb20: "0x5f3c72277de38d91e12f6f594ac8353c21d73c83",
+        usdc: "THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv"
+      };
+      
+      // Start with defaults
+      Object.assign(walletMap, defaults);
+      
+      // Override with database values
+      if (walletData && Array.isArray(walletData)) {
+        walletData.forEach(wallet => {
+          if (wallet && wallet.method && wallet.address) {
+            walletMap[wallet.method] = wallet.address;
+          }
+        });
+      }
+      
+      res.json({ 
+        status: "online",
+        available: true,
+        wallets: walletMap,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Wallet addresses fetch error (public):", error);
+      res.status(500).json({ message: "Service error" });
+    }
+  });
+
   // Manual balance credit
   app.post('/api/admin/balances/credit', requireAdminAuth, async (req, res) => {
     try {
