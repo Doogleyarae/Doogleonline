@@ -395,6 +395,12 @@ export default function Exchange() {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch public balances for user display
+  const { data: publicBalanceData } = useQuery<{ balances: Record<string, number>; status: string }>({
+    queryKey: ["/api/balances"],
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(createExchangeFormSchema(
       dynamicLimits.minSendAmount, 
@@ -848,7 +854,7 @@ export default function Exchange() {
     return specialExclusions[selected] || [selected];
   }
 
-  // Get display balance based on system status
+  // Get display balance based on system status (admin)
   const getDisplayBalance = (currency: string) => {
     if (systemStatus?.status === 'off') {
       return 0;
@@ -868,6 +874,28 @@ export default function Exchange() {
     
     const balanceKey = currencyMapping[currency.toLowerCase()] || currency.toUpperCase();
     return balances?.[balanceKey] || 0;
+  };
+
+  // Get public display balance for users
+  const getPublicDisplayBalance = (currency: string) => {
+    if (!publicBalanceData?.balances || publicBalanceData.status !== 'online') {
+      return 0;
+    }
+    
+    const currencyMapping: Record<string, string> = {
+      'evc': 'EVCPLUS',
+      'trc20': 'TRC20',
+      'zaad': 'ZAAD',
+      'sahal': 'SAHAL',
+      'moneygo': 'MONEYGO',
+      'premier': 'PREMIER',
+      'edahab': 'EDAHAB',
+      'trx': 'TRX',
+      'peb20': 'PEB20'
+    };
+    
+    const balanceKey = currencyMapping[currency.toLowerCase()] || currency.toUpperCase();
+    return publicBalanceData.balances[balanceKey] || 0;
   };
 
   return (
@@ -893,6 +921,19 @@ export default function Exchange() {
                     <span className="text-sm text-red-600">Rate not available</span>
                   )}
                 </div>
+                
+                {/* Available Balance Display for Users */}
+                {publicBalanceData?.balances && (
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="text-xs text-center mb-2">
+                      <span className="text-blue-700 font-medium">Available Balance: </span>
+                      <span className="text-blue-600">
+                        ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()} | ${getPublicDisplayBalance(sendMethod).toLocaleString()} {sendMethod.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <div className="text-xs text-center">
                     <span className="text-blue-700 font-medium">Transaction Limits: </span>

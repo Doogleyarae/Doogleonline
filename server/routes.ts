@@ -1485,7 +1485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all balances (public/user-facing) - HIDDEN FROM PUBLIC
+  // Get all balances (public/user-facing) - SHOWS AVAILABLE BALANCES TO USERS
   app.get("/api/balances", async (req, res) => {
     try {
       // Check system status - if system is off, return service unavailable
@@ -1496,11 +1496,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: "offline"
         });
       }
-      // Return generic response - balance information is private
+      
+      // Get all balances and format them for public display
+      const balances = await storage.getAllBalances();
+      
+      // Convert to a simple object format for easy consumption
+      const balanceMap: Record<string, number> = {};
+      balances.forEach(balance => {
+        balanceMap[balance.currency] = parseFloat(balance.amount);
+      });
+      
       res.json({ 
-        message: "Service is operational",
         status: "online",
-        available: true
+        available: true,
+        balances: balanceMap,
+        lastUpdated: new Date().toISOString()
       });
     } catch (error) {
       console.error("Balance fetch error (public):", error);
