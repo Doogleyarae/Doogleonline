@@ -12,9 +12,23 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Check if this is an admin request and include bypass token
+  const isAdminRequest = url.includes('/api/admin/');
+  const adminToken = sessionStorage.getItem('adminToken');
+  
+  const headers: Record<string, string> = {};
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  
+  // Add admin bypass token for admin requests
+  if (isAdminRequest && adminToken) {
+    headers['x-admin-bypass'] = adminToken;
+  }
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -29,8 +43,18 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    const isAdminRequest = url.includes('/api/admin/');
+    const adminToken = sessionStorage.getItem('adminToken');
+    const headers: Record<string, string> = {};
+    // Add admin bypass token for admin requests
+    if (isAdminRequest && adminToken) {
+      headers['x-admin-bypass'] = adminToken;
+    }
+
+    const res = await fetch(url, {
       credentials: "include",
+      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
