@@ -121,9 +121,10 @@ export class WebSocketManager {
     this.broadcast({
       type: 'balance_update',
       data: { 
-        currency, 
-        newBalance,
-        message: `Balance updated for ${currency}: $${newBalance.toLocaleString()}`
+        currency: currency.toUpperCase(), 
+        amount: newBalance,
+        forceRefresh: true, // Force immediate cache invalidation
+        message: `Balance updated for ${currency.toUpperCase()}: $${newBalance.toLocaleString()}`
       },
       timestamp: new Date().toISOString()
     });
@@ -134,7 +135,8 @@ export class WebSocketManager {
       type: 'system_status_update',
       data: { 
         status,
-        message: `System status changed to: ${status === 'on' ? 'ONLINE' : 'OFFLINE'}`
+        forceRefresh: true, // Force immediate cache invalidation
+        message: `System status changed to: ${status.toUpperCase()}`
       },
       timestamp: new Date().toISOString()
     });

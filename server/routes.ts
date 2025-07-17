@@ -1162,12 +1162,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all balances (admin only)
   app.get("/api/admin/balances", requireAdminAuth, async (req, res) => {
     try {
+      // Add aggressive no-cache headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
       const status = await storage.getSystemStatus();
-      const balances = await storage.getAllBalances(status === 'off');
+      // Always get real balances for admin, don't force zero
+      const balances = await storage.getAllBalances(false);
       const result: Record<string, number> = {};
       for (const b of balances) {
         result[b.currency] = parseFloat(b.amount);
       }
+      
+      console.log(`[ADMIN BALANCES] System status: ${status}, Balances:`, result);
       res.json(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -1488,6 +1499,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all balances (public/user-facing) - SHOWS AVAILABLE BALANCES TO USERS
   app.get("/api/balances", async (req, res) => {
     try {
+      // Add aggressive no-cache headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
       // Check system status
       const systemStatus = await storage.getSystemStatus();
       
@@ -1502,6 +1521,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const realBalance = parseFloat(balance.amount);
         balanceMap[balance.currency] = systemStatus === 'off' ? 0 : realBalance;
       });
+      
+      console.log(`[PUBLIC BALANCES] System status: ${systemStatus}, Balances:`, balanceMap);
       
       res.json({ 
         status: systemStatus === 'off' ? "offline" : "online",
