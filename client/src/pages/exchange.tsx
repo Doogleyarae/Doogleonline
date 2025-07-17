@@ -403,9 +403,10 @@ export default function Exchange() {
   // Fetch public balances for user display
   const { data: publicBalanceData, isLoading: publicBalanceLoading, refetch: refetchPublicBalances } = useQuery<{ balances: Record<string, number>; status: string; systemStatus: string }>({
     queryKey: ["/api/balances"],
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 3000, // Refresh every 3 seconds for immediate updates
     staleTime: 0, // Always fetch fresh data
     refetchOnMount: true,
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 
   // Invalidate and refetch data when currency selections change
@@ -875,14 +876,16 @@ export default function Exchange() {
   // Listen for admin updates and refetch exchange rate instantly
   useEffect(() => {
     const handleAdminUpdate = (event: CustomEvent) => {
+      const message = event.detail;
+      
       // Only refetch if the update is for exchange rates, currency limits, balances, or system status
       if (
-        event.detail?.type === 'exchange_rate_update' ||
-        event.detail?.type === 'currency_limit_update' ||
-        event.detail?.type === 'balance_update' ||
-        event.detail?.type === 'system_status_update'
+        message?.type === 'exchange_rate_update' ||
+        message?.type === 'currency_limit_update' ||
+        message?.type === 'balance_update' ||
+        message?.type === 'system_status_update'
       ) {
-        // Refetch all data to ensure latest rates, balances, and system status
+        // Force immediate cache invalidation and refetch
         queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
@@ -890,8 +893,17 @@ export default function Exchange() {
         queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
         queryClient.invalidateQueries({ queryKey: ["/api/admin/system-status"] });
         
+        // Force immediate refetch for instant updates
+        queryClient.refetchQueries({ queryKey: ["/api/balances"] });
+        queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+        
         // Immediately refetch public balances to get latest system status
         refetchPublicBalances();
+        
+        // For balance updates, show a subtle notification
+        if (message?.type === 'balance_update' && message.data?.currency) {
+          console.log(`🔄 Balance updated: ${message.data.currency} = $${message.data.amount}`);
+        }
       }
     };
     window.addEventListener('admin-update', handleAdminUpdate as EventListener);

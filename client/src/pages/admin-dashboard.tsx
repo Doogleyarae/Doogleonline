@@ -827,13 +827,26 @@ export default function AdminDashboard() {
       return response.json();
     },
     onSuccess: (data: any) => {
+      // Force immediate cache invalidation for all balance-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
       queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+      
+      // Force immediate refetch to ensure exchange page gets updated data
+      queryClient.refetchQueries({ queryKey: ["/api/balances"] });
+      queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+      
+      // Update local state immediately
+      setBalances(prev => ({
+        ...prev,
+        [data.currency.toUpperCase()]: data.amount
+      }));
+      
       setRecentlyUpdatedBalance(data.currency.toLowerCase());
       setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
+      
       toast({
         title: "✓ Balance Updated Successfully",
-        description: `${data.currency.toUpperCase()}: $${data.amount.toLocaleString()}`,
+        description: `${data.currency.toUpperCase()}: $${data.amount.toLocaleString()} - Exchange page updated immediately`,
       });
     },
     onError: (error: any) => {
@@ -1071,9 +1084,19 @@ export default function AdminDashboard() {
           break;
           
         case 'balance_update':
-          // Invalidate balance queries
+          // Force immediate balance updates for exchange page
           queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
           queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+          queryClient.refetchQueries({ queryKey: ["/api/balances"] });
+          queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+          
+          // Update local state if we have the balance data
+          if (message.data?.currency && message.data?.amount !== undefined) {
+            setBalances(prev => ({
+              ...prev,
+              [message.data.currency.toUpperCase()]: message.data.amount
+            }));
+          }
           break;
           
         case 'currency_limit_update':
@@ -1562,27 +1585,7 @@ export default function AdminDashboard() {
           </div>
         )}
         
-        {systemStatus === 'on' && (
-          <div className="bg-green-100 border border-green-300 text-green-800 p-4 rounded-lg mb-6">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">
-                  ✅ SYSTEM IS OPEN - Users See Real Balances
-                </h3>
-                <div className="mt-2 text-sm text-green-700">
-                  <p><strong>Status:</strong> Users can now see real balances on the exchange page</p>
-                  <p><strong>Available:</strong> Premier Bank: $8334, MoneyGo: $49444, TRC20: Real balance</p>
-                  <p><strong>Action:</strong> Users can perform exchanges with real available amounts</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
         {systemStatus === 'off' && (
           <div className="bg-red-100 text-red-800 p-3 rounded mb-6 text-center font-semibold">
             System is currently <b>CLOSED</b> for business. All balances are hidden.
@@ -2220,22 +2223,32 @@ export default function AdminDashboard() {
                                               })
                                             });
                                             
-                                            if (response.ok) {
-                                              const data = await response.json();
-                                              
-                                              // Invalidate balance queries
-                                              queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
-                                              queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
-                                              
-                                              setRecentlyUpdatedBalance(method.value);
-                                              setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
-                                              
-                                              toast({
-                                                title: "✓ Balance Updated Successfully",
-                                                description: `${method.label}: $${balance.toLocaleString()}`,
-                                                duration: 4000,
-                                              });
-                                            } else {
+                                                        if (response.ok) {
+              const data = await response.json();
+              
+              // Force immediate cache invalidation for all balance-related queries
+              queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+              
+              // Force immediate refetch to ensure exchange page gets updated data
+              queryClient.refetchQueries({ queryKey: ["/api/balances"] });
+              queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+              
+              // Update local state immediately
+              setBalances(prev => ({
+                ...prev,
+                [method.value.toUpperCase()]: balance
+              }));
+              
+              setRecentlyUpdatedBalance(method.value);
+              setTimeout(() => setRecentlyUpdatedBalance(''), 3000);
+              
+              toast({
+                title: "✓ Balance Updated Successfully",
+                description: `${method.label}: $${balance.toLocaleString()} - Exchange page updated immediately`,
+                duration: 4000,
+              });
+            } else {
                                               const errorData = await response.json().catch(() => ({}));
                                               throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
                                             }
@@ -2306,10 +2319,21 @@ export default function AdminDashboard() {
                                               })
                                             });
                                             if (res.ok) {
+                                              // Force immediate cache invalidation and refetch
                                               await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
                                               await queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+                                              await queryClient.refetchQueries({ queryKey: ["/api/balances"] });
+                                              await queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+                                              
                                               const updated = await res.json();
-                                              toast({ title: `Credited $${amt} to ${method.label}. New balance: $${updated.balance?.amount}` });
+                                              
+                                              // Update local state immediately
+                                              setBalances(prev => ({
+                                                ...prev,
+                                                [method.value.toUpperCase()]: parseFloat(updated.balance?.amount || '0')
+                                              }));
+                                              
+                                              toast({ title: `Credited $${amt} to ${method.label}. New balance: $${updated.balance?.amount} - Exchange page updated immediately` });
                                               setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
                                               setManualReasons(prev => ({ ...prev, [method.value]: '' }));
                                             } else {
@@ -2348,10 +2372,21 @@ export default function AdminDashboard() {
                                               })
                                             });
                                             if (res.ok) {
+                                              // Force immediate cache invalidation and refetch
                                               await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
                                               await queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+                                              await queryClient.refetchQueries({ queryKey: ["/api/balances"] });
+                                              await queryClient.refetchQueries({ queryKey: ["/api/admin/balances"] });
+                                              
                                               const updated = await res.json();
-                                              toast({ title: `Debited $${amt} from ${method.label}. New balance: $${updated.balance?.amount}` });
+                                              
+                                              // Update local state immediately
+                                              setBalances(prev => ({
+                                                ...prev,
+                                                [method.value.toUpperCase()]: parseFloat(updated.balance?.amount || '0')
+                                              }));
+                                              
+                                              toast({ title: `Debited $${amt} from ${method.label}. New balance: $${updated.balance?.amount} - Exchange page updated immediately` });
                                               setManualAmounts(prev => ({ ...prev, [method.value]: '' }));
                                               setManualReasons(prev => ({ ...prev, [method.value]: '' }));
                                             } else {
