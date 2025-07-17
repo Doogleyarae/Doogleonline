@@ -424,29 +424,43 @@ export default function Exchange() {
     },
   });
 
-  // Only restore saved data on first mount
+  // Only restore saved data on first mount - ONCE ONLY
   useEffect(() => {
     if (isLoaded && hasSavedData && savedData) {
       try {
-        // Only set form values if the fields are empty (user hasn't typed yet)
-        if (savedData.fullName && !form.getValues("fullName")) form.setValue("fullName", savedData.fullName);
-        if (savedData.email && !form.getValues("email")) form.setValue("email", savedData.email);
-        if (savedData.senderAccount && !form.getValues("senderAccount")) form.setValue("senderAccount", savedData.senderAccount);
-        if (savedData.walletAddress && !form.getValues("walletAddress")) form.setValue("walletAddress", savedData.walletAddress);
-        if (savedData.sendMethod && !form.getValues("sendMethod")) form.setValue("sendMethod", savedData.sendMethod);
-        if (savedData.receiveMethod && !form.getValues("receiveMethod")) form.setValue("receiveMethod", savedData.receiveMethod);
-        // Do not restore sendAmount/receiveAmount automatically
+        // Only restore if fields are completely empty (user hasn't typed yet)
+        const currentValues = form.getValues();
+        
+        if (savedData.fullName && !currentValues.fullName) {
+          form.setValue("fullName", savedData.fullName);
+        }
+        if (savedData.email && !currentValues.email) {
+          form.setValue("email", savedData.email);
+        }
+        if (savedData.senderAccount && !currentValues.senderAccount) {
+          form.setValue("senderAccount", savedData.senderAccount);
+        }
+        if (savedData.walletAddress && !currentValues.walletAddress) {
+          form.setValue("walletAddress", savedData.walletAddress);
+        }
+        if (savedData.sendMethod && !currentValues.sendMethod) {
+          form.setValue("sendMethod", savedData.sendMethod);
+        }
+        if (savedData.receiveMethod && !currentValues.receiveMethod) {
+          form.setValue("receiveMethod", savedData.receiveMethod);
+        }
+        // NEVER restore amount fields automatically
       } catch (error) {
+        console.error('Error restoring saved data:', error);
         clearAll();
       }
     }
-    // Only run on mount
+    // Only run on mount - no dependencies that could cause re-runs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, hasSavedData]);
+  }, []);
 
-  // Update form schema when limits change
+  // Update form schema when limits change - but don't reset form values
   useEffect(() => {
-    // Don't reset form if we're clearing fields
     if (isClearingFields) {
       return;
     }
@@ -454,35 +468,10 @@ export default function Exchange() {
     form.trigger();
   }, [dynamicLimits.minSendAmount, dynamicLimits.maxSendAmount, sendMethod, form, isClearingFields]);
 
-  // Update form values when state changes (for persistence)
-  useEffect(() => {
-    // Don't update form values if we're currently clearing fields
-    if (isClearingFields) {
-      return;
-    }
-    
-    console.log('Updating form values with current state:', {
-      sendMethod,
-      receiveMethod,
-      sendAmount,
-      receiveAmount,
-      fullName,
-      email,
-      senderAccount,
-      walletAddress
-    });
-    
-    form.setValue("sendMethod", sendMethod);
-    form.setValue("receiveMethod", receiveMethod);
-    form.setValue("sendAmount", sendAmount);
-    form.setValue("receiveAmount", receiveAmount);
-    form.setValue("fullName", fullName);
-    form.setValue("email", email);
-    form.setValue("senderAccount", senderAccount);
-    form.setValue("walletAddress", walletAddress);
-  }, [sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, form, isClearingFields]);
+  // REMOVED: The problematic useEffect that was updating form values from state
+  // This was causing the jumping/bouncing behavior
 
-  // Update exchange rate when data is fetched
+  // Update exchange rate when data is fetched - but don't interfere with user input
   useEffect(() => {
     if (rateData?.rate && !rateLoading) {
       const rate = rateData.rate;
@@ -490,20 +479,24 @@ export default function Exchange() {
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
-      // Provide initial calculation if send amount exists but receive amount is empty
-      // Only if not currently clearing fields and both fields are empty
-      if (!isClearingFields && sendAmount && parseFloat(sendAmount) > 0 && (!receiveAmount || receiveAmount === "")) {
-        const amount = parseFloat(sendAmount);
-        const converted = amount * rate;
-        const convertedAmount = formatAmount(converted);
-        setReceiveAmount(convertedAmount);
-        form.setValue("receiveAmount", convertedAmount);
+      // Only provide initial calculation if both fields are empty and not clearing
+      if (!isClearingFields) {
+        const currentSendAmount = form.getValues("sendAmount");
+        const currentReceiveAmount = form.getValues("receiveAmount");
+        
+        if (currentSendAmount && parseFloat(currentSendAmount) > 0 && (!currentReceiveAmount || currentReceiveAmount === "")) {
+          const amount = parseFloat(currentSendAmount);
+          const converted = amount * rate;
+          const convertedAmount = formatAmount(converted);
+          setReceiveAmount(convertedAmount);
+          form.setValue("receiveAmount", convertedAmount);
+        }
       }
     } else if (!rateData && !rateLoading) {
       setExchangeRate(0);
       setRateDisplay("Rate not available");
     }
-  }, [rateData, rateLoading, sendMethod, receiveMethod, sendAmount, receiveAmount, form, isClearingFields]);
+  }, [rateData, rateLoading, sendMethod, receiveMethod, form, isClearingFields]);
 
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
