@@ -977,7 +977,7 @@ export default function Exchange() {
 
                 
                 <div className="mt-3 pt-3 border-t border-blue-200">
-                  <div className="text-xs text-center">
+                  <div className="text-xs text-center mb-2">
                     <span className="text-blue-700 font-medium">Transaction Limits: </span>
                     {sendLimitsLoading || receiveLimitsLoading ? (
                       <span className="text-blue-600">Loading limits...</span>
@@ -985,7 +985,26 @@ export default function Exchange() {
                       <span className="text-blue-600">${dynamicLimits.minSendAmount.toFixed(0)} - ${dynamicLimits.maxSendAmount.toLocaleString()} for all payment methods</span>
                     )}
                   </div>
-
+                  
+                  {/* Available Balance for Receive Currency */}
+                  <div className="text-xs text-center">
+                    <span className="text-blue-700 font-medium">Available Balance: </span>
+                    {publicBalanceLoading ? (
+                      <span className="text-blue-600">Loading balance...</span>
+                    ) : publicBalanceData?.balances ? (
+                      publicBalanceData.systemStatus === 'off' ? (
+                        <span className="text-red-600">
+                          $0 {receiveMethod.toUpperCase()} (System Offline)
+                        </span>
+                      ) : (
+                        <span className="text-blue-600">
+                          ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-red-600">Balance not available</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
