@@ -21,7 +21,7 @@ import { useLanguage } from "@/contexts/language-context";
 
 // Import logo files
 import zaadLogo from "../assets/zaad.png";
-import sahalLogo from "../assets/sahal.png";
+import golisLogo from "../assets/golis.png";
 import evcLogo from "../assets/evc.png";
 import edahabLogo from "../assets/edahab.png";
 import premierLogo from "../assets/premier.png";
@@ -47,7 +47,7 @@ interface CurrencyLimitsResponse {
 
 const paymentMethods = [
   { value: "zaad", label: "Zaad", logo: zaadLogo },
-  { value: "sahal", label: "Sahal", logo: sahalLogo },
+  { value: "sahal", label: "Golis", logo: golisLogo },
   { value: "evc", label: "EVC Plus", logo: evcLogo },
   { value: "edahab", label: "eDahab", logo: edahabLogo },
   { value: "premier", label: "Premier Bank", logo: premierLogo },
@@ -140,7 +140,7 @@ function saveCompleteExchangeState(data: {
   timestamp: number;
 }) {
   try {
-    localStorage.setItem(EXCHANGE_COMPLETE_STATE_KEY, JSON.stringify(data));
+  localStorage.setItem(EXCHANGE_COMPLETE_STATE_KEY, JSON.stringify(data));
   } catch (error) {
     console.warn('Failed to save legacy exchange state:', error);
   }
@@ -159,7 +159,7 @@ function loadCompleteExchangeState() {
 
 function clearCompleteExchangeState() {
   try {
-    localStorage.removeItem(EXCHANGE_COMPLETE_STATE_KEY);
+  localStorage.removeItem(EXCHANGE_COMPLETE_STATE_KEY);
   } catch (error) {
     console.warn('Failed to clear legacy exchange state:', error);
   }
@@ -199,17 +199,17 @@ export default function Exchange() {
 
   // Create form data object for auto-save
   const formData = {
-    fullName,
-    email,
-    senderAccount,
-    walletAddress,
+      fullName,
+      email,
+      senderAccount,
+      walletAddress,
     sendMethod,
     receiveMethod,
     sendAmount,
     receiveAmount,
-    exchangeRate,
-    rateDisplay,
-    dynamicLimits,
+      exchangeRate,
+      rateDisplay,
+      dynamicLimits,
   };
 
   // Use enhanced auto-save hook
@@ -486,10 +486,10 @@ export default function Exchange() {
         
         if (currentSendAmount && parseFloat(currentSendAmount) > 0 && (!currentReceiveAmount || currentReceiveAmount === "")) {
           const amount = parseFloat(currentSendAmount);
-          const converted = amount * rate;
-          const convertedAmount = formatAmount(converted);
-          setReceiveAmount(convertedAmount);
-          form.setValue("receiveAmount", convertedAmount);
+        const converted = amount * rate;
+        const convertedAmount = formatAmount(converted);
+        setReceiveAmount(convertedAmount);
+        form.setValue("receiveAmount", convertedAmount);
         }
       }
     } else if (!rateData && !rateLoading) {
@@ -593,10 +593,10 @@ export default function Exchange() {
       if (exchangeRate > 0 && currentSendAmount && currentSendAmount.trim() !== "") {
         const amount = parseFloat(currentSendAmount);
         if (!isNaN(amount) && amount > 0) {
-          const converted = amount * exchangeRate;
-          const convertedAmount = formatAmount(converted);
-          setReceiveAmount(convertedAmount);
-          form.setValue("receiveAmount", convertedAmount);
+        const converted = amount * exchangeRate;
+        const convertedAmount = formatAmount(converted);
+        setReceiveAmount(convertedAmount);
+        form.setValue("receiveAmount", convertedAmount);
         } else {
           // Clear receive amount if send amount is invalid
           setReceiveAmount("");
@@ -653,10 +653,10 @@ export default function Exchange() {
       if (exchangeRate > 0 && currentReceiveAmount && currentReceiveAmount.trim() !== "") {
         const amount = parseFloat(currentReceiveAmount);
         if (!isNaN(amount) && amount > 0) {
-          const converted = amount / exchangeRate;
-          const convertedAmount = formatAmount(converted);
-          setSendAmount(convertedAmount);
-          form.setValue("sendAmount", convertedAmount);
+        const converted = amount / exchangeRate;
+        const convertedAmount = formatAmount(converted);
+        setSendAmount(convertedAmount);
+        form.setValue("sendAmount", convertedAmount);
         } else {
           // Clear send amount if receive amount is invalid
           setSendAmount("");
@@ -1030,22 +1030,22 @@ export default function Exchange() {
                             <FormLabel className="text-lg font-semibold text-gray-700 flex items-center">
                               Amount to Send
                             </FormLabel>
-                            <FormControl>
-                              <Input
+                          <FormControl>
+                            <Input
                                 type="text"
-                                placeholder="0.00"
-                                className="h-12 text-lg"
+                              placeholder="0.00"
+                              className="h-12 text-lg"
                                 autoComplete="off"
                                 spellCheck={false}
                                 inputMode="decimal"
-                                value={field.value}
-                                onChange={(e) => {
-                                  field.onChange(e.target.value);
-                                  handleSendAmountChange(e.target.value);
+                              value={field.value}
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                                handleSendAmountChange(e.target.value);
                                   saveFormDataImmediately('sendAmount', e.target.value);
-                                }}
-                              />
-                            </FormControl>
+                              }}
+                            />
+                          </FormControl>
                             {/* Bidirectional amount input - auto-calculates receive amount */}
                             <div className="text-xs text-gray-500 mt-1">
                               Enter amount to send - receive amount will be calculated automatically
@@ -1155,7 +1155,7 @@ export default function Exchange() {
                           <span className="text-lg font-bold text-green-900">
                             ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
                           </span>
-                        </div>
+                    </div>
                         <div className="text-xs text-green-600 mt-1">
                           This is the maximum amount you can receive in {receiveMethod.toUpperCase()}
                         </div>

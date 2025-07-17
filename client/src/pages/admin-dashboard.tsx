@@ -190,7 +190,7 @@ function MessageResponseCard({ message, onResponseSent }: { message: ContactMess
 
 const paymentMethods = [
   { value: "zaad", label: "Zaad" },
-  { value: "sahal", label: "Sahal" },
+  { value: "sahal", label: "Golis" },
   { value: "evcplus", label: "EVC Plus" },
   { value: "edahab", label: "eDahab" },
   { value: "premier", label: "Premier Bank" },
