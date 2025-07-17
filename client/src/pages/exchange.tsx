@@ -875,19 +875,8 @@ export default function Exchange() {
       return 0;
     }
     
-    const currencyMapping: Record<string, string> = {
-      'evc': 'EVCPLUS',
-      'trc20': 'TRC20',
-      'zaad': 'ZAAD',
-      'sahal': 'SAHAL',
-      'moneygo': 'MONEYGO',
-      'premier': 'PREMIER',
-      'edahab': 'EDAHAB',
-      'trx': 'TRX',
-      'peb20': 'PEB20'
-    };
-    
-    const balanceKey = currencyMapping[currency.toLowerCase()] || currency.toUpperCase();
+    // Use lowercase currency keys to match database storage
+    const balanceKey = currency.toLowerCase();
     return balances?.[balanceKey] || 0;
   };
 
@@ -897,19 +886,8 @@ export default function Exchange() {
       return 0;
     }
     
-    const currencyMapping: Record<string, string> = {
-      'evc': 'EVCPLUS',
-      'trc20': 'TRC20',
-      'zaad': 'ZAAD',
-      'sahal': 'SAHAL',
-      'moneygo': 'MONEYGO',
-      'premier': 'PREMIER',
-      'edahab': 'EDAHAB',
-      'trx': 'TRX',
-      'peb20': 'PEB20'
-    };
-    
-    const balanceKey = currencyMapping[currency.toLowerCase()] || currency.toUpperCase();
+    // Use lowercase currency keys to match database storage
+    const balanceKey = currency.toLowerCase();
     return publicBalanceData.balances[balanceKey] || 0;
   };
 
