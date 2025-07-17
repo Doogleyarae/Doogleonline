@@ -401,7 +401,7 @@ export default function Exchange() {
   });
 
   // Fetch public balances for user display
-  const { data: publicBalanceData, isLoading: publicBalanceLoading, refetch: refetchPublicBalances } = useQuery<{ balances: Record<string, number>; status: string }>({
+  const { data: publicBalanceData, isLoading: publicBalanceLoading, refetch: refetchPublicBalances } = useQuery<{ balances: Record<string, number>; status: string; systemStatus: string }>({
     queryKey: ["/api/balances"],
     refetchInterval: 10000, // Refresh every 10 seconds
     staleTime: 0, // Always fetch fresh data
@@ -875,24 +875,30 @@ export default function Exchange() {
   // Listen for admin updates and refetch exchange rate instantly
   useEffect(() => {
     const handleAdminUpdate = (event: CustomEvent) => {
-      // Only refetch if the update is for exchange rates, currency limits, or balances
+      // Only refetch if the update is for exchange rates, currency limits, balances, or system status
       if (
         event.detail?.type === 'exchange_rate_update' ||
         event.detail?.type === 'currency_limit_update' ||
-        event.detail?.type === 'balance_update'
+        event.detail?.type === 'balance_update' ||
+        event.detail?.type === 'system_status_update'
       ) {
-        // Refetch exchange rate and limits
+        // Refetch all data to ensure latest rates, balances, and system status
         queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
         queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/system-status"] });
+        
+        // Immediately refetch public balances to get latest system status
+        refetchPublicBalances();
       }
     };
     window.addEventListener('admin-update', handleAdminUpdate as EventListener);
     return () => {
       window.removeEventListener('admin-update', handleAdminUpdate as EventListener);
     };
-  }, [queryClient, sendMethod, receiveMethod]);
+  }, [queryClient, sendMethod, receiveMethod, refetchPublicBalances]);
 
   // Helper to get exclusions for a selected value
   function getExclusions(selected: string) {
@@ -912,7 +918,7 @@ export default function Exchange() {
 
   // Get public display balance for users
   const getPublicDisplayBalance = (currency: string) => {
-    if (!publicBalanceData?.balances || publicBalanceData.status !== 'online') {
+    if (!publicBalanceData?.balances) {
       return 0;
     }
     
@@ -934,6 +940,17 @@ export default function Exchange() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Exchange Rate Display */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                {/* System Status Indicator */}
+                {publicBalanceData?.systemStatus === 'off' && (
+                  <div className="mb-3 p-2 bg-red-100 border border-red-300 rounded-md">
+                    <div className="flex items-center justify-center">
+                      <span className="text-sm font-medium text-red-800">
+                        ⚠️ System is currently offline. All balances show $0.
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-blue-800">Current Rate:</span>
                   {rateLoading ? (
@@ -952,9 +969,15 @@ export default function Exchange() {
                     {publicBalanceLoading ? (
                       <span className="text-blue-600">Loading balance...</span>
                     ) : publicBalanceData?.balances ? (
-                      <span className="text-blue-600">
-                        ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
-                      </span>
+                      publicBalanceData.systemStatus === 'off' ? (
+                        <span className="text-red-600">
+                          $0 {receiveMethod.toUpperCase()} (System Offline)
+                        </span>
+                      ) : (
+                        <span className="text-blue-600">
+                          ${getPublicDisplayBalance(receiveMethod).toLocaleString()} {receiveMethod.toUpperCase()}
+                        </span>
+                      )
                     ) : (
                       <span className="text-red-600">Balance not available</span>
                     )}
@@ -1075,15 +1098,24 @@ export default function Exchange() {
                         {publicBalanceLoading ? (
                           <span className="text-lg font-bold text-blue-900">Loading...</span>
                         ) : publicBalanceData?.balances ? (
-                          <span className="text-lg font-bold text-blue-900">
-                            ${getPublicDisplayBalance(sendMethod).toLocaleString()} {sendMethod.toUpperCase()}
-                          </span>
+                          publicBalanceData.systemStatus === 'off' ? (
+                            <span className="text-lg font-bold text-red-600">
+                              $0 {sendMethod.toUpperCase()} (System Offline)
+                            </span>
+                          ) : (
+                            <span className="text-lg font-bold text-blue-900">
+                              ${getPublicDisplayBalance(sendMethod).toLocaleString()} {sendMethod.toUpperCase()}
+                            </span>
+                          )
                         ) : (
                           <span className="text-lg font-bold text-red-600">Not available</span>
                         )}
                       </div>
                       <div className="text-xs text-blue-600 mt-1">
-                        This is the maximum amount you can send in {sendMethod.toUpperCase()}
+                        {publicBalanceData?.systemStatus === 'off' 
+                          ? "System is currently offline. No transactions can be processed."
+                          : `This is the maximum amount you can send in ${sendMethod.toUpperCase()}`
+                        }
                       </div>
                     </div>
                     

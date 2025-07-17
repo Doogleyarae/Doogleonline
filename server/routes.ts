@@ -1488,14 +1488,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all balances (public/user-facing) - SHOWS AVAILABLE BALANCES TO USERS
   app.get("/api/balances", async (req, res) => {
     try {
-      // Check system status - if system is off, return service unavailable
+      // Check system status
       const systemStatus = await storage.getSystemStatus();
-      if (systemStatus === 'off') {
-        return res.status(503).json({ 
-          message: "Service temporarily unavailable",
-          status: "offline"
-        });
-      }
       
       // Get all balances and format them for public display
       const balances = await storage.getAllBalances();
@@ -1503,14 +1497,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert to a simple object format for easy consumption
       const balanceMap: Record<string, number> = {};
       balances.forEach(balance => {
-        balanceMap[balance.currency] = parseFloat(balance.amount);
+        // When system is OFF, show $0 for all balances
+        // When system is ON, show real balances
+        const realBalance = parseFloat(balance.amount);
+        balanceMap[balance.currency] = systemStatus === 'off' ? 0 : realBalance;
       });
       
       res.json({ 
-        status: "online",
-        available: true,
+        status: systemStatus === 'off' ? "offline" : "online",
+        available: systemStatus === 'on',
         balances: balanceMap,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        systemStatus: systemStatus // Include system status in response
       });
     } catch (error) {
       console.error("Balance fetch error (public):", error);
@@ -1521,14 +1519,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get wallet addresses (public/user-facing) - SHOWS PAYMENT WALLETS TO USERS
   app.get("/api/wallet-addresses", async (req, res) => {
     try {
-      // Check system status - if system is off, return service unavailable
+      // Check system status
       const systemStatus = await storage.getSystemStatus();
-      if (systemStatus === 'off') {
-        return res.status(503).json({ 
-          message: "Service temporarily unavailable",
-          status: "offline"
-        });
-      }
       
       // Get wallet addresses from database
       const walletData = await storage.getAllWalletAddresses();
@@ -1563,10 +1555,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({ 
-        status: "online",
-        available: true,
+        status: systemStatus === 'off' ? "offline" : "online",
+        available: systemStatus === 'on',
         wallets: walletMap,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        systemStatus: systemStatus // Include system status in response
       });
     } catch (error) {
       console.error("Wallet addresses fetch error (public):", error);
@@ -1580,6 +1573,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { currency, amount, reason } = req.body;
       if (!currency || !amount) return res.status(400).json({ message: 'Missing currency or amount' });
       const result = await storage.manualCredit({ currency, amount, reason });
+      
+      // Notify all connected clients about the balance update
+      if (result) {
+        wsManager.notifyBalanceUpdate(currency, parseFloat(result.amount));
+      }
+      
       res.json({ success: true, balance: result });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -1594,6 +1593,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { currency, amount, reason } = req.body;
       if (!currency || !amount) return res.status(400).json({ message: 'Missing currency or amount' });
       const result = await storage.manualDebit({ currency, amount, reason });
+      
+      // Notify all connected clients about the balance update
+      if (result) {
+        wsManager.notifyBalanceUpdate(currency, parseFloat(result.amount));
+      }
+      
       res.json({ success: true, balance: result });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -1624,6 +1629,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid status' });
       }
       await storage.setSystemStatus(status);
+      
+      // Notify all connected clients about the system status change
+      wsManager.notifySystemStatusUpdate(status);
+      
       res.json({ status });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

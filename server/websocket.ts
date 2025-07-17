@@ -3,7 +3,7 @@ import type { Server } from 'http';
 import type { Order, ContactMessage } from '@shared/schema';
 
 interface WSMessage {
-  type: 'order_update' | 'new_order' | 'new_message' | 'status_change' | 'exchange_rate_update' | 'currency_limit_update' | 'balance_update';
+  type: 'order_update' | 'new_order' | 'new_message' | 'status_change' | 'exchange_rate_update' | 'currency_limit_update' | 'balance_update' | 'system_status_update';
   data: any;
   timestamp: string;
 }
@@ -124,6 +124,17 @@ export class WebSocketManager {
         currency, 
         newBalance,
         message: `Balance updated for ${currency}: $${newBalance.toLocaleString()}`
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  notifySystemStatusUpdate(status: 'on' | 'off') {
+    this.broadcast({
+      type: 'system_status_update',
+      data: { 
+        status,
+        message: `System status changed to: ${status === 'on' ? 'ONLINE' : 'OFFLINE'}`
       },
       timestamp: new Date().toISOString()
     });
