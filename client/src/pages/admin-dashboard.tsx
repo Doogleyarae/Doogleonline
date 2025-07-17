@@ -521,6 +521,21 @@ export default function AdminDashboard() {
           queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
           queryClient.refetchQueries({ queryKey: ['/api/orders'] });
         }
+        
+        // Handle system status updates
+        if (message.type === 'system_status_update') {
+          // Update local system status state
+          setSystemStatus(message.data.status);
+          
+          // Invalidate system status query to ensure consistency
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/system-status"] });
+          
+          // Show toast notification
+          toast({
+            title: "System Status Updated",
+            description: `System is now ${message.data.status === 'on' ? 'OPEN' : 'CLOSED'}`,
+          });
+        }
       } catch (error) {
         // Error parsing admin WebSocket message
       }
@@ -533,7 +548,7 @@ export default function AdminDashboard() {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [queryClient, toast]);
 
 
 
@@ -973,6 +988,20 @@ export default function AdminDashboard() {
   const [systemStatus, setSystemStatus] = useState<'on' | 'off'>('on');
   const [loadingStatus, setLoadingStatus] = useState(false);
   
+  // Fetch system status to keep in sync with server
+  const { data: serverSystemStatus } = useQuery<{ status: 'on' | 'off' }>({
+    queryKey: ["/api/admin/system-status"],
+    refetchInterval: 30000, // Refresh every 30 seconds to stay in sync
+    staleTime: 0, // Always fetch fresh data
+  });
+
+  // Sync local state with server state
+  useEffect(() => {
+    if (serverSystemStatus?.status) {
+      setSystemStatus(serverSystemStatus.status);
+    }
+  }, [serverSystemStatus?.status]);
+  
   // Notification system state
   const [notifications, setNotifications] = useState<Array<{
     id: string;
@@ -1115,36 +1144,45 @@ export default function AdminDashboard() {
     setNotifications(newNotifications);
   }, [orders, messages, systemStatus, balances]);
 
-  // Fetch system status on mount
-  useEffect(() => {
-    fetch('/api/admin/system-status', {
-      credentials: "include"
-    })
-      .then(res => {
-        return res.json();
-      })
-      .then(data => {
-        setSystemStatus(data.status);
-      })
-      .catch(error => {
-        // Error fetching system status
-        // Set default to 'on' if there's an error
-        setSystemStatus('on');
-      });
-  }, []);
+  // System status is now handled by React Query above
 
   const handleToggleSystem = async () => {
     setLoadingStatus(true);
     const newStatus = systemStatus === 'on' ? 'off' : 'on';
-    await fetch('/api/admin/system-status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-      credentials: "include"
-    });
-    setSystemStatus(newStatus);
-    await queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
-    setLoadingStatus(false);
+    
+    try {
+      const response = await fetch('/api/admin/system-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+        credentials: "include"
+      });
+      
+      if (response.ok) {
+        // Update local state immediately for responsive UI
+        setSystemStatus(newStatus);
+        
+        // Invalidate queries to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/system-status"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/balances"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+        
+        toast({
+          title: "System Status Updated",
+          description: `System is now ${newStatus === 'on' ? 'OPEN' : 'CLOSED'}`,
+        });
+      } else {
+        throw new Error('Failed to update system status');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update system status",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingStatus(false);
+    }
   };
 
   // Notification helper functions
