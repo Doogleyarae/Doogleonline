@@ -1891,14 +1891,33 @@ export default function AdminDashboard() {
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                           <AlertDialogHeader>
-                                            <AlertDialogTitle>Accept Order</AlertDialogTitle>
+                                            <AlertDialogTitle>Accept Order - {order.orderId}</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                              Are you sure you want to accept order {order.orderId}? This will mark the order as completed and cannot be undone.
-                                              <div className="mt-3 p-3 bg-gray-50 rounded">
-                                                <p><strong>Customer:</strong> {order.fullName}</p>
-                                                <p><strong>Phone:</strong> {order.phoneNumber}</p>
-                                                <p><strong>Sender Account:</strong> {order.senderAccount || 'Not provided'}</p>
-                                                <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                              Are you sure you want to accept this order? This will mark the order as completed and cannot be undone.
+                                              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                  <div>
+                                                    <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Customer Information</h4>
+                                                    <p><strong>Order ID:</strong> <span className="text-blue-600 font-mono">{order.orderId}</span></p>
+                                                    <p><strong>Full Name:</strong> {order.fullName}</p>
+                                                    <p><strong>Email:</strong> {order.email || 'Not provided'}</p>
+                                                    <p><strong>Phone:</strong> {order.phoneNumber}</p>
+                                                    <p><strong>Sender Account:</strong> <span className="text-green-600 font-mono">{order.senderAccount || 'Not provided'}</span></p>
+                                                  </div>
+                                                  <div>
+                                                    <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Exchange Details</h4>
+                                                    <p><strong>From:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} ({order.sendMethod.toUpperCase()})</p>
+                                                    <p><strong>To:</strong> {formatCurrency(order.receiveAmount, order.receiveMethod)} ({order.receiveMethod.toUpperCase()})</p>
+                                                    <p><strong>Exchange Rate:</strong> {parseFloat(order.exchangeRate).toFixed(6)}</p>
+                                                    <p><strong>Receive Account:</strong> <span className="text-purple-600 font-mono">{order.walletAddress || 'Not provided'}</span></p>
+                                                  </div>
+                                                </div>
+                                                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                                                  <p className="text-sm text-blue-800">
+                                                    <strong>Summary:</strong> Customer sent {formatCurrency(order.sendAmount, order.sendMethod)} from account {order.senderAccount || 'N/A'} 
+                                                    and wants to receive {formatCurrency(order.receiveAmount, order.receiveMethod)} to {order.walletAddress || 'N/A'}
+                                                  </p>
+                                                </div>
                                               </div>
                                             </AlertDialogDescription>
                                           </AlertDialogHeader>
@@ -1929,19 +1948,37 @@ export default function AdminDashboard() {
                                           </AlertDialogTrigger>
                                           <AlertDialogContent>
                                             <AlertDialogHeader>
-                                              <AlertDialogTitle>Accept Deposit Confirmation</AlertDialogTitle>
+                                              <AlertDialogTitle>Accept Deposit - {order.orderId}</AlertDialogTitle>
                                               <AlertDialogDescription>
-                                                Customer has made a deposit for order {order.orderId}. Confirm to complete the order.
-                                                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                                                  <div className="flex items-center mb-2">
-                                                    <CheckCircle className="w-4 h-4 text-blue-600 mr-2" />
-                                                    <span className="font-medium text-blue-800">Deposit Received</span>
+                                                Customer has made a deposit. Confirm to complete the order.
+                                                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                                  <div className="flex items-center mb-3">
+                                                    <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
+                                                    <span className="font-semibold text-blue-800 text-lg">Deposit Received ✓</span>
                                                   </div>
-                                                  <p><strong>Customer:</strong> {order.fullName}</p>
-                                                  <p><strong>Phone:</strong> {order.phoneNumber}</p>
-                                                  <p><strong>Sender Account:</strong> {order.senderAccount || 'Not provided'}</p>
-                                                  <p><strong>Deposit Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)}</p>
-                                                  <p><strong>To Send:</strong> {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                      <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Customer Information</h4>
+                                                      <p><strong>Order ID:</strong> <span className="text-blue-600 font-mono">{order.orderId}</span></p>
+                                                      <p><strong>Full Name:</strong> {order.fullName}</p>
+                                                      <p><strong>Email:</strong> {order.email || 'Not provided'}</p>
+                                                      <p><strong>Phone:</strong> {order.phoneNumber}</p>
+                                                      <p><strong>Sender Account:</strong> <span className="text-green-600 font-mono">{order.senderAccount || 'Not provided'}</span></p>
+                                                    </div>
+                                                    <div>
+                                                      <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Exchange Details</h4>
+                                                      <p><strong>Deposit Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} ({order.sendMethod.toUpperCase()})</p>
+                                                      <p><strong>To Send:</strong> {formatCurrency(order.receiveAmount, order.receiveMethod)} ({order.receiveMethod.toUpperCase()})</p>
+                                                      <p><strong>Exchange Rate:</strong> {parseFloat(order.exchangeRate).toFixed(6)}</p>
+                                                      <p><strong>Receive Account:</strong> <span className="text-purple-600 font-mono">{order.walletAddress || 'Not provided'}</span></p>
+                                                    </div>
+                                                  </div>
+                                                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                                                    <p className="text-sm text-green-800">
+                                                      <strong>Payment Confirmed:</strong> Customer has sent {formatCurrency(order.sendAmount, order.sendMethod)} from account {order.senderAccount || 'N/A'}. 
+                                                      Ready to send {formatCurrency(order.receiveAmount, order.receiveMethod)} to {order.walletAddress || 'N/A'}
+                                                    </p>
+                                                  </div>
                                                 </div>
                                               </AlertDialogDescription>
                                             </AlertDialogHeader>
@@ -1972,14 +2009,37 @@ export default function AdminDashboard() {
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                           <AlertDialogHeader>
-                                            <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                            <AlertDialogTitle>Cancel Order - {order.orderId}</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                              Are you sure you want to cancel order {order.orderId}? This action cannot be undone and the customer will be notified.
-                                              <div className="mt-3 p-3 bg-gray-50 rounded">
-                                                <p><strong>Customer:</strong> {order.fullName}</p>
-                                                <p><strong>Phone:</strong> {order.phoneNumber}</p>
-                                                <p><strong>Sender Account:</strong> {order.senderAccount || 'Not provided'}</p>
-                                                <p><strong>Amount:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}</p>
+                                              Are you sure you want to cancel this order? This action cannot be undone and the customer will be notified.
+                                              <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                                                <div className="flex items-center mb-3">
+                                                  <XCircle className="w-5 h-5 text-red-600 mr-2" />
+                                                  <span className="font-semibold text-red-800 text-lg">Cancel Order Warning</span>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                  <div>
+                                                    <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Customer Information</h4>
+                                                    <p><strong>Order ID:</strong> <span className="text-blue-600 font-mono">{order.orderId}</span></p>
+                                                    <p><strong>Full Name:</strong> {order.fullName}</p>
+                                                    <p><strong>Email:</strong> {order.email || 'Not provided'}</p>
+                                                    <p><strong>Phone:</strong> {order.phoneNumber}</p>
+                                                    <p><strong>Sender Account:</strong> <span className="text-green-600 font-mono">{order.senderAccount || 'Not provided'}</span></p>
+                                                  </div>
+                                                  <div>
+                                                    <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Exchange Details</h4>
+                                                    <p><strong>From:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} ({order.sendMethod.toUpperCase()})</p>
+                                                    <p><strong>To:</strong> {formatCurrency(order.receiveAmount, order.receiveMethod)} ({order.receiveMethod.toUpperCase()})</p>
+                                                    <p><strong>Exchange Rate:</strong> {parseFloat(order.exchangeRate).toFixed(6)}</p>
+                                                    <p><strong>Receive Account:</strong> <span className="text-purple-600 font-mono">{order.walletAddress || 'Not provided'}</span></p>
+                                                  </div>
+                                                </div>
+                                                <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded">
+                                                  <p className="text-sm text-red-800">
+                                                    <strong>⚠️ Warning:</strong> Cancelling this order will notify the customer and restore the balance. 
+                                                    This action cannot be undone.
+                                                  </p>
+                                                </div>
                                               </div>
                                             </AlertDialogDescription>
                                           </AlertDialogHeader>
