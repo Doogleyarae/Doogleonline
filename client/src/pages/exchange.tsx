@@ -543,27 +543,14 @@ export default function Exchange() {
     const rateBasedMinSend = receiveCurrencyLimits.minAmount / exchangeRate;
     effectiveMinSend = Math.max(sendCurrencyLimits.minAmount, rateBasedMinSend);
 
-    // Apply balance limits if available and system is ON
-    if (balances && typeof balances === 'object' && systemStatus?.status === 'on') {
-      const currencyMapping: Record<string, string> = {
-        'evc': 'EVCPLUS',
-        'trc20': 'TRC20',
-        'zaad': 'ZAAD',
-        'sahal': 'SAHAL',
-        'moneygo': 'MONEYGO',
-        'premier': 'PREMIER',
-        'edahab': 'EDAHAB',
-        'trx': 'TRX',
-        'peb20': 'PEB20'
-      };
+    // Apply balance limits if available and system is ON - use public balance data
+    if (publicBalanceData?.balances && publicBalanceData.systemStatus === 'on') {
+      const availableBalance = getPublicDisplayBalance(receiveMethod);
       
-      const balanceKey = currencyMapping[receiveMethod.toLowerCase()] || receiveMethod.toUpperCase();
-      const receiveBalance = balances[balanceKey] || 0;
-      
-      if (receiveBalance > 0) {
-        const balanceBasedMaxSend = receiveBalance / exchangeRate;
+      if (availableBalance > 0) {
+        const balanceBasedMaxSend = availableBalance / exchangeRate;
         effectiveMaxSend = Math.min(sendCurrencyLimits.maxAmount, balanceBasedMaxSend);
-        effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, receiveBalance);
+        effectiveMaxReceive = Math.min(receiveCurrencyLimits.maxAmount, availableBalance);
       }
     }
 
@@ -573,7 +560,7 @@ export default function Exchange() {
       minReceiveAmount: receiveCurrencyLimits.minAmount,
       maxReceiveAmount: effectiveMaxReceive,
     });
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, balances, receiveMethod, systemStatus]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, publicBalanceData, receiveMethod, getPublicDisplayBalance]);
 
   useEffect(() => {
     calculateDynamicLimits();
@@ -1066,6 +1053,14 @@ export default function Exchange() {
                                 field.onChange(value);
                                 setSendMethod(value);
                                 saveFormDataImmediately('sendMethod', value);
+                                
+                                // Invalidate and refetch data when send method changes
+                                console.log('Send method changed to:', value);
+                                queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+                                queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${value}/${receiveMethod}`] });
+                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${value}`] });
+                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+                                refetchPublicBalances();
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -1144,6 +1139,14 @@ export default function Exchange() {
                                 field.onChange(value);
                                 setReceiveMethod(value);
                                 saveFormDataImmediately('receiveMethod', value);
+                                
+                                // Invalidate and refetch data when receive method changes
+                                console.log('Receive method changed to:', value);
+                                queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
+                                queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${value}`] });
+                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${value}`] });
+                                refetchPublicBalances();
                               }}
                             >
                               <SelectTrigger className="h-12">
