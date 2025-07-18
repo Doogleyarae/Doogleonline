@@ -529,6 +529,19 @@ export default function Exchange() {
     }
   }, [rateData, rateLoading, sendMethod, receiveMethod, form, isClearingFields]);
 
+  // Get public display balance for users
+  const getPublicDisplayBalance = (currency: string) => {
+    if (!publicBalanceData?.balances) {
+      return 0;
+    }
+    
+    // Since balance keys are stored in UPPERCASE, prioritize that
+    const balanceKeyUpper = currency.toUpperCase();
+    const balance = publicBalanceData.balances[balanceKeyUpper] || 0;
+    
+    return balance;
+  };
+
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
     if (!sendCurrencyLimits?.minAmount || !receiveCurrencyLimits?.minAmount || exchangeRate <= 0) {
@@ -913,19 +926,6 @@ export default function Exchange() {
     // Use lowercase currency keys to match database storage
     const balanceKey = currency.toLowerCase();
     return balances?.[balanceKey] || 0;
-  };
-
-  // Get public display balance for users
-  const getPublicDisplayBalance = (currency: string) => {
-    if (!publicBalanceData?.balances) {
-      return 0;
-    }
-    
-    // Since balance keys are stored in UPPERCASE, prioritize that
-    const balanceKeyUpper = currency.toUpperCase();
-    const balance = publicBalanceData.balances[balanceKeyUpper] || 0;
-    
-    return balance;
   };
 
   // Calculate dynamic transaction limits based on available balance and exchange rate
