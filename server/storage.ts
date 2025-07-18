@@ -155,20 +155,15 @@ export class DatabaseStorage implements IStorage {
       // FIXED: Use sendMethod wallet address - customer sends TO the send currency wallet
       const paymentWallet = paymentWallets[sendMethod] || 'Unknown';
 
-      // Check if sufficient balance is available
+      // Balance check is already done in routes.ts, proceed with deduction
       const receiveAmountNum = parseFloat(insertOrder.receiveAmount || '0');
       const receiveCurrency = receiveMethod.toUpperCase();
       
       const currentBalance = await this.getBalance(receiveCurrency);
       console.log(`[createOrder] Current balance for ${receiveCurrency}:`, currentBalance?.amount);
-      if (!currentBalance || parseFloat(currentBalance.amount) < receiveAmountNum) {
-        throw new Error(`Insufficient balance. Available: ${currentBalance?.amount || 0} ${receiveCurrency}, Required: ${receiveAmountNum} ${receiveCurrency}`);
-      }
-
-      console.log(`ORDER ${orderId}: Balance check passed - $${receiveAmountNum} ${receiveCurrency} available. Current balance: $${currentBalance.amount}`);
 
       // IMMEDIATELY DEDUCT BALANCE WHEN ORDER IS CREATED
-      const newBalance = parseFloat(currentBalance.amount) - receiveAmountNum;
+      const newBalance = parseFloat(currentBalance!.amount) - receiveAmountNum;
       await this.updateBalance({
         currency: receiveCurrency,
         amount: newBalance.toString()

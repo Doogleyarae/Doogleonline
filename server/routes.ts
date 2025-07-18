@@ -250,12 +250,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check available balance for receive currency (cannot exceed what we have)
-      const currentBalance = await storage.getBalance(validatedData.receiveMethod);
+      const receiveCurrency = validatedData.receiveMethod.toUpperCase();
+      const currentBalance = await storage.getBalance(receiveCurrency);
       const availableBalance = currentBalance ? parseFloat(currentBalance.amount) : 0;
+      
+      console.log(`[ROUTES] Balance check for ${receiveCurrency}: Available: $${availableBalance}, Required: $${receiveAmount}`);
       
       if (receiveAmount > availableBalance) {
         return res.status(400).json({ 
-          message: `Insufficient balance for ${validatedData.receiveMethod.toUpperCase()}. Available: $${availableBalance}, Required: $${receiveAmount}` 
+          message: `Insufficient balance for ${receiveCurrency}. Available: $${availableBalance}, Required: $${receiveAmount}` 
         });
       }
       
