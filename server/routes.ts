@@ -85,6 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('[ADMIN LOGIN] Session object exists:', !!req.session);
       console.log('[ADMIN LOGIN] Current session isAdmin:', req.session.isAdmin);
+      console.log('[ADMIN LOGIN] Session ID before login:', req.sessionID);
       
       if (adminLogin(username, password)) {
         console.log('[ADMIN LOGIN] Credentials valid, setting session');
@@ -93,6 +94,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.isAdmin = true;
         req.session.userId = 'admin';
         req.session.username = username;
+        req.session.loginTime = Date.now();
+        
+        console.log('[ADMIN LOGIN] Session properties set:', {
+          isAdmin: req.session.isAdmin,
+          userId: req.session.userId,
+          username: req.session.username,
+          loginTime: req.session.loginTime
+        });
         
         // Force session save and wait for it to complete
         req.session.save((err: any) => {
@@ -102,8 +111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           
           console.log('[ADMIN LOGIN] Session saved successfully');
+          console.log('[ADMIN LOGIN] Session ID after save:', req.sessionID);
           console.log('[ADMIN LOGIN] Session isAdmin after save:', req.session.isAdmin);
-          console.log('[ADMIN LOGIN] Full session data:', req.session);
+          console.log('[ADMIN LOGIN] Full session data after save:', req.session);
           
           // Verify session was saved correctly
           if (req.session.isAdmin) {
@@ -112,7 +122,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               message: "Admin login successful", 
               authenticated: true,
               token: "admin-session-" + Date.now(),
-              sessionId: req.sessionID
+              sessionId: req.sessionID,
+              sessionData: {
+                isAdmin: req.session.isAdmin,
+                userId: req.session.userId,
+                username: req.session.username
+              }
             });
           } else {
             console.error('[ADMIN LOGIN] Session isAdmin not set after save');
@@ -149,7 +164,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('[CHECK AUTH] Session isAdmin:', req.session?.isAdmin);
     console.log('[CHECK AUTH] Session userId:', req.session?.userId);
     console.log('[CHECK AUTH] Session username:', req.session?.username);
+    console.log('[CHECK AUTH] Session loginTime:', req.session?.loginTime);
     console.log('[CHECK AUTH] Full session data:', req.session);
+    console.log('[CHECK AUTH] Session keys:', req.session ? Object.keys(req.session) : 'no session');
     
     const isAuthenticated = req.session?.isAdmin || false;
     console.log('[CHECK AUTH] Returning authenticated:', isAuthenticated);
@@ -161,8 +178,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       sessionData: {
         isAdmin: req.session?.isAdmin,
         userId: req.session?.userId,
-        username: req.session?.username
-      }
+        username: req.session?.username,
+        loginTime: req.session?.loginTime
+      },
+      sessionKeys: req.session ? Object.keys(req.session) : []
     });
   });
   

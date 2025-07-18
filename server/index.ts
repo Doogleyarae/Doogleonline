@@ -28,14 +28,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use(session({
   store: sessionStore,
   secret: process.env.SESSION_SECRET || 'doogle-admin-secret-key-2024',
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Changed to true to ensure session is saved
+  saveUninitialized: true, // Changed to true to save new sessions
   cookie: {
     secure: false, // Set to false for development to work with HTTP
     httpOnly: true,
     sameSite: 'lax', // Set to lax for development
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+  },
+  name: 'doogle-admin-session' // Custom session name
 }));
 
 app.use((req, res, next) => {
@@ -65,6 +66,18 @@ app.use((req, res, next) => {
     }
   });
 
+  next();
+});
+
+// Session debugging middleware
+app.use((req: any, res, next) => {
+  if (req.path.startsWith('/api/admin')) {
+    console.log(`🔍 [SESSION DEBUG] ${req.method} ${req.path}`);
+    console.log(`🔍 [SESSION DEBUG] Session exists:`, !!req.session);
+    console.log(`🔍 [SESSION DEBUG] Session ID:`, req.sessionID);
+    console.log(`🔍 [SESSION DEBUG] Session isAdmin:`, req.session?.isAdmin);
+    console.log(`🔍 [SESSION DEBUG] Session data:`, req.session);
+  }
   next();
 });
 
