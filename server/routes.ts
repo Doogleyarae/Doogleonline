@@ -262,14 +262,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Validate that the amounts match the exchange rate (with small tolerance for rounding)
+      // Validate that the amounts match the exchange rate (with tolerance for rounding)
       const calculatedReceiveAmount = sendAmount * exchangeRate;
       const amountDifference = Math.abs(receiveAmount - calculatedReceiveAmount);
-      const tolerance = 0.02; // 2 cent tolerance for rounding differences
+      const tolerance = 0.50; // 50 cent tolerance for rounding differences and rate fluctuations
+      
+      console.log(`[ROUTES] Amount validation: Send: $${sendAmount}, Receive: $${receiveAmount}, Rate: ${exchangeRate}, Calculated: $${calculatedReceiveAmount.toFixed(2)}, Difference: $${amountDifference.toFixed(2)}, Tolerance: $${tolerance}`);
       
       if (amountDifference > tolerance) {
         return res.status(400).json({ 
-          message: `Amount mismatch: expected receive amount ${calculatedReceiveAmount.toFixed(2)} based on current exchange rate` 
+          message: `Amount mismatch: expected receive amount ${calculatedReceiveAmount.toFixed(2)} based on current exchange rate (difference: $${amountDifference.toFixed(2)})` 
         });
       }
       

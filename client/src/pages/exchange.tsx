@@ -816,15 +816,16 @@ export default function Exchange() {
       if (exchangeRate > 0 && currentSendAmount && currentSendAmount.trim() !== "") {
         const amount = parseFloat(currentSendAmount);
         if (!isNaN(amount) && amount > 0) {
-        const converted = amount * exchangeRate;
-        const convertedAmount = formatAmount(converted);
-        setReceiveAmount(convertedAmount);
-        form.setValue("receiveAmount", convertedAmount);
+          const converted = amount * exchangeRate;
+          // Use toFixed(2) to ensure consistent decimal places for server validation
+          const convertedAmount = converted.toFixed(2);
+          setReceiveAmount(convertedAmount);
+          form.setValue("receiveAmount", convertedAmount);
         } else {
           // Clear receive amount if send amount is invalid
           setReceiveAmount("");
           form.setValue("receiveAmount", "");
-      }
+        }
       } else {
         // Clear receive amount if send amount is empty
         setReceiveAmount("");
@@ -876,15 +877,16 @@ export default function Exchange() {
       if (exchangeRate > 0 && currentReceiveAmount && currentReceiveAmount.trim() !== "") {
         const amount = parseFloat(currentReceiveAmount);
         if (!isNaN(amount) && amount > 0) {
-        const converted = amount / exchangeRate;
-        const convertedAmount = formatAmount(converted);
-        setSendAmount(convertedAmount);
-        form.setValue("sendAmount", convertedAmount);
+          const converted = amount / exchangeRate;
+          // Use toFixed(2) to ensure consistent decimal places for server validation
+          const convertedAmount = converted.toFixed(2);
+          setSendAmount(convertedAmount);
+          form.setValue("sendAmount", convertedAmount);
         } else {
           // Clear send amount if receive amount is invalid
           setSendAmount("");
           form.setValue("sendAmount", "");
-    }
+        }
       } else {
         // Clear send amount if receive amount is empty
         setSendAmount("");
