@@ -247,7 +247,8 @@ export default function Exchange() {
         if (savedData.receiveMethod && typeof savedData.receiveMethod === 'string') setReceiveMethod(savedData.receiveMethod);
         // DO NOT restore sendAmount and receiveAmount to prevent auto-restoration
         if (savedData.exchangeRate && typeof savedData.exchangeRate === 'number') setExchangeRate(savedData.exchangeRate);
-        if (savedData.rateDisplay && typeof savedData.rateDisplay === 'string') setRateDisplay(savedData.rateDisplay);
+        // DO NOT restore rateDisplay from saved data - it might contain wrong currency info
+        // Rate display will be set correctly by the rate update effect
         if (savedData.dynamicLimits && typeof savedData.dynamicLimits === 'object') setDynamicLimits(savedData.dynamicLimits);
       } catch (error) {
         console.error('Error loading saved data:', error);
@@ -523,6 +524,23 @@ export default function Exchange() {
   useEffect(() => {
     console.log('🔄 Rate data updated:', { rateData, rateLoading, sendMethod, receiveMethod });
     
+    // Validate that the rate data matches the current currency selection
+    if (rateData?.from && rateData?.to) {
+      const expectedFrom = sendMethod.toUpperCase();
+      const expectedTo = receiveMethod.toUpperCase();
+      const actualFrom = rateData.from;
+      const actualTo = rateData.to;
+      
+      if (actualFrom !== expectedFrom || actualTo !== expectedTo) {
+        console.log('⚠️ Rate data currency mismatch:', {
+          expected: `${expectedFrom} to ${expectedTo}`,
+          actual: `${actualFrom} to ${actualTo}`
+        });
+        // Don't use this rate data - it's for a different currency pair
+        return;
+      }
+    }
+    
     if (rateData?.rate && !rateLoading) {
       const rate = rateData.rate;
       setExchangeRate(rate);
@@ -538,10 +556,10 @@ export default function Exchange() {
         
         if (currentSendAmount && parseFloat(currentSendAmount) > 0 && (!currentReceiveAmount || currentReceiveAmount === "")) {
           const amount = parseFloat(currentSendAmount);
-        const converted = amount * rate;
-        const convertedAmount = formatAmount(converted);
-        setReceiveAmount(convertedAmount);
-        form.setValue("receiveAmount", convertedAmount);
+          const converted = amount * rate;
+          const convertedAmount = formatAmount(converted);
+          setReceiveAmount(convertedAmount);
+          form.setValue("receiveAmount", convertedAmount);
         }
       }
     } else if (!rateData && !rateLoading) {
@@ -1125,6 +1143,9 @@ export default function Exchange() {
                                 setSendMethod(value);
                                 saveFormDataImmediately('sendMethod', value);
                                 
+                                // Clear any existing exchange rate data to prevent stale data
+                                setExchangeRate(0);
+                                
                                 // Immediately update rate display to show loading state
                                 setRateDisplay(`Loading rate for ${value.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
                                 
@@ -1223,6 +1244,9 @@ export default function Exchange() {
                                 field.onChange(value);
                                 setReceiveMethod(value);
                                 saveFormDataImmediately('receiveMethod', value);
+                                
+                                // Clear any existing exchange rate data to prevent stale data
+                                setExchangeRate(0);
                                 
                                 // Immediately update rate display to show loading state
                                 setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${value.toUpperCase()}...`);
