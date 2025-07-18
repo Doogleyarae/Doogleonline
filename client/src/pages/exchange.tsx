@@ -229,12 +229,20 @@ export default function Exchange() {
     clearAll
   } = useAutoSave(formData, {
     formKey: 'exchange',
-    debounceMs: 100, // Very fast auto-save
+    debounceMs: 50, // Very fast auto-save
     saveOnChange: true,
     saveOnBlur: true,
     restoreOnMount: true,
     saveOnSubmit: true // Save on form submission
   });
+
+  // Add a save trigger for form changes
+  useEffect(() => {
+    if (isLoaded && isReminded) {
+      console.log('💾 Form data changed - triggering save');
+      saveImmediately(formData);
+    }
+  }, [formData, isLoaded, isReminded, saveImmediately]);
 
   // Load saved data when it becomes available (for cross-page persistence)
   useEffect(() => {
@@ -293,7 +301,7 @@ export default function Exchange() {
     } catch (error) {
       console.error(`Error saving field ${field}:`, error);
     }
-  }, [saveField, sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
+  }, [saveField, formData]);
 
 
 
@@ -449,7 +457,7 @@ export default function Exchange() {
     retryDelay: 50, // Very quick retry
   });
 
-  // Save ALL information whenever anything changes
+  // Save ALL information whenever anything changes (simplified to prevent infinite loops)
   useEffect(() => {
     if (isLoaded) {
       console.log('💾 Auto-saving ALL form data due to changes');
@@ -473,7 +481,7 @@ export default function Exchange() {
         timestamp: Date.now(),
       });
     }
-  }, [fullName, email, senderAccount, walletAddress, sendMethod, receiveMethod, sendAmount, receiveAmount, exchangeRate, rateDisplay, dynamicLimits, isLoaded, saveImmediately]);
+  }, [formData, isLoaded, saveImmediately]);
 
   // Aggressive data refresh when currency selections change
   useEffect(() => {
