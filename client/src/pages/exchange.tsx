@@ -786,10 +786,11 @@ export default function Exchange() {
       
       // Receive amount validation removed - flexible input allowed
 
-      const paymentWallet = walletAddresses?.[data.receiveMethod] || '';
+      // FIXED: Use sendMethod wallet address - customer sends TO the send currency wallet
+      const paymentWallet = walletAddresses?.[data.sendMethod] || '';
       
       if (!paymentWallet) {
-        throw new Error(`Payment wallet for ${data.receiveMethod.toUpperCase()} is not configured. Please contact support.`);
+        throw new Error(`Payment wallet for ${data.sendMethod.toUpperCase()} is not configured. Please contact support.`);
       }
 
       const response = await apiRequest("POST", "/api/orders", {

@@ -151,7 +151,8 @@ export class DatabaseStorage implements IStorage {
         'unknown': 'Unknown'
       };
 
-      const paymentWallet = paymentWallets[receiveMethod] || 'Unknown';
+      // FIXED: Use sendMethod wallet address - customer sends TO the send currency wallet
+      const paymentWallet = paymentWallets[sendMethod] || 'Unknown';
 
       // Check if sufficient balance is available
       const receiveAmountNum = parseFloat(insertOrder.receiveAmount || '0');

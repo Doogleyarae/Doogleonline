@@ -187,7 +187,8 @@ export default function Confirmation() {
 
   const handleCopyWallet = async () => {
     // Use live wallet address from admin dashboard, fallback to order wallet
-    const rawWallet = walletAddresses?.[order?.receiveMethod || ''] || order?.paymentWallet || '';
+    // FIXED: Use sendMethod instead of receiveMethod - customer sends TO the send currency wallet
+    const rawWallet = walletAddresses?.[order?.sendMethod || ''] || order?.paymentWallet || '';
     const currentWallet = getFormattedPaymentString(rawWallet, order?.sendAmount || '');
     
     if (currentWallet) {
