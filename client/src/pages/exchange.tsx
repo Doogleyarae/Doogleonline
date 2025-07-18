@@ -215,27 +215,7 @@ export default function Exchange() {
     timestamp: Date.now(), // Add timestamp for data freshness
   };
 
-  // Comprehensive save function that saves everything
-  const saveAllData = useCallback(() => {
-    console.log('💾 Saving all form data:', formData);
-    saveImmediately();
-    
-    // Also save to legacy system for backup
-    saveCompleteExchangeState({
-      sendMethod,
-      receiveMethod,
-      sendAmount,
-      receiveAmount,
-      fullName,
-      email,
-      senderAccount,
-      walletAddress,
-      exchangeRate,
-      rateDisplay,
-      dynamicLimits,
-      timestamp: Date.now(),
-    });
-  }, [formData, saveImmediately, sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
+
 
   // Use enhanced auto-save hook with comprehensive saving
   const { 
@@ -252,7 +232,6 @@ export default function Exchange() {
     debounceMs: 100, // Very fast auto-save
     saveOnChange: true,
     saveOnBlur: true,
-    saveOnFocus: true, // Save when user focuses on fields
     restoreOnMount: true,
     saveOnSubmit: true, // Save on form submission
     saveOnUnload: true // Save when user leaves page
@@ -506,13 +485,7 @@ export default function Exchange() {
     }
   }, [sendMethod, receiveMethod, rateData, rateLoading]);
 
-  // Save data whenever form fields change
-  useEffect(() => {
-    if (isLoaded) {
-      console.log('💾 Auto-saving form data due to field changes');
-      saveAllData();
-    }
-  }, [fullName, email, senderAccount, walletAddress, sendMethod, receiveMethod, sendAmount, receiveAmount, exchangeRate, rateDisplay, dynamicLimits, isLoaded, saveAllData]);
+
 
   // Ensure fresh data when page becomes visible
   useEffect(() => {
@@ -539,16 +512,7 @@ export default function Exchange() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
 
-  // Save data on page unload
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      console.log('🚪 Page unloading - saving all data');
-      saveAllData();
-    };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [saveAllData]);
 
   // Aggressive initial data fetch on mount
   useEffect(() => {
