@@ -14,6 +14,7 @@ import type { Order } from "@shared/schema";
 export default function Confirmation() {
   const [order, setOrder] = useState<Order | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -21,17 +22,24 @@ export default function Confirmation() {
   const { isConnected } = useOrderStatusSync(order?.orderId);
 
   useEffect(() => {
-    const storedOrder = sessionStorage.getItem("currentOrder");
-    if (storedOrder) {
-      const orderData = JSON.parse(storedOrder);
-      setOrder(orderData);
-      
-      // Auto-redirect if order is already completed or cancelled
-      if (orderData.status === 'completed') {
-        setLocation('/order-completed');
-      } else if (orderData.status === 'cancelled') {
-        setLocation('/order-cancelled');
+    try {
+      const storedOrder = sessionStorage.getItem("currentOrder");
+      if (storedOrder) {
+        const orderData = JSON.parse(storedOrder);
+        setOrder(orderData);
+        
+        // Auto-redirect if order is already completed or cancelled
+        if (orderData.status === 'completed') {
+          setLocation('/order-completed');
+        } else if (orderData.status === 'cancelled') {
+          setLocation('/order-cancelled');
+        }
+      } else {
+        setError("No order information found in session storage");
       }
+    } catch (err) {
+      console.error("Error loading order from session storage:", err);
+      setError("Failed to load order information");
     }
   }, [setLocation]);
 
@@ -284,12 +292,39 @@ export default function Confirmation() {
     }
   };
 
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Card className="text-center p-8">
+          <CardContent>
+            <div className="text-red-600 mb-4">
+              <X className="w-12 h-12 mx-auto mb-2" />
+              <h2 className="text-xl font-bold mb-2">Error Loading Page</h2>
+              <p className="text-sm">{error}</p>
+            </div>
+            <div className="space-y-3">
+              <Button onClick={() => window.location.reload()} className="w-full">
+                Refresh Page
+              </Button>
+              <Link href="/exchange">
+                <Button variant="outline" className="w-full">
+                  Create New Exchange
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!order) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Card className="text-center p-8">
           <CardContent>
-            <p className="text-lg text-gray-600 mb-4">No order information found.</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-600 mb-4">Loading order information...</p>
             <Link href="/exchange">
               <Button>Create New Exchange</Button>
             </Link>

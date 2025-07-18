@@ -35,7 +35,25 @@ const About = lazy(() => import("@/pages/about").catch(() => ({ default: () => <
 const Services = lazy(() => import("@/pages/services").catch(() => ({ default: () => <div>Error loading Services page</div> })));
 const HowItWorks = lazy(() => import("@/pages/how-it-works").catch(() => ({ default: () => <div>Error loading How It Works page</div> })));
 const Exchange = lazy(() => import("@/pages/exchange").catch(() => ({ default: () => <div>Error loading Exchange page</div> })));
-const Confirmation = lazy(() => import("@/pages/confirmation").catch(() => ({ default: () => <div>Error loading Confirmation page</div> })));
+const Confirmation = lazy(() => import("@/pages/confirmation").catch((error) => {
+  console.error("Failed to load Confirmation page:", error);
+  return { 
+    default: () => (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Failed to load Confirmation page</h1>
+          <p className="text-gray-600 mb-4">Please refresh the page or try again later.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    )
+  };
+}));
 const OrderCompleted = lazy(() => import("@/pages/order-completed").catch(() => ({ default: () => <div>Error loading Order Completed page</div> })));
 const OrderCancelled = lazy(() => import("@/pages/order-cancelled").catch(() => ({ default: () => <div>Error loading Order Cancelled page</div> })));
 const TrackOrder = lazy(() => import("@/pages/track-order").catch(() => ({ default: () => <div>Error loading Track Order page</div> })));
