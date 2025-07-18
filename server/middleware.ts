@@ -13,29 +13,14 @@ export function requireAdminAuth(req: RequestWithSession, res: Response, next: N
   console.log('🔐 [ADMIN AUTH] Checking authentication...');
   console.log('🔐 [ADMIN AUTH] Session exists:', !!req.session);
   console.log('🔐 [ADMIN AUTH] Session isAdmin:', req.session?.isAdmin);
-  console.log('🔐 [ADMIN AUTH] Admin bypass token:', req.headers['x-admin-bypass'] ? '***' : 'none');
   
-  // Check if user is authenticated as admin via session
-  if (req.session?.isAdmin) {
+  // ONLY allow session-based authentication - NO bypass tokens
+  if (req.session?.isAdmin === true) {
     console.log('✅ [ADMIN AUTH] Session authentication successful');
     return next();
   }
   
-  // Accept any non-empty x-admin-bypass token (for frontend admin dashboard requests)
-  const adminToken = req.headers['x-admin-bypass'];
-  if (adminToken && typeof adminToken === 'string' && adminToken.trim() !== '') {
-    console.log('✅ [ADMIN AUTH] Admin bypass token authentication successful');
-    return next();
-  }
-
-  // Check for bypass token in headers (for temporary bypass)
-  const bypassToken = req.headers['authorization'];
-  if (bypassToken === 'bypass-token' || bypassToken === 'Bearer bypass-token') {
-    console.log('✅ [ADMIN AUTH] Bypass token authentication successful');
-    return next();
-  }
-  
-  console.log('❌ [ADMIN AUTH] Authentication failed - no valid credentials found');
+  console.log('❌ [ADMIN AUTH] Authentication failed - no valid session found');
   
   // If not authenticated, return unauthorized
   res.status(401).json({ 

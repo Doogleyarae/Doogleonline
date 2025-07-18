@@ -227,7 +227,7 @@ export default function AdminDashboard() {
         const response = await fetch("/api/admin/check-auth", {
           credentials: "include",
           headers: {
-            'x-admin-bypass': adminToken // Add bypass token for additional auth
+            // Session-based authentication only
           }
         });
         
@@ -581,8 +581,21 @@ export default function AdminDashboard() {
 
   // Update order status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const response = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
+    mutationFn: async (data: { orderId: string; status: string }) => {
+      const response = await fetch("/api/orders/" + data.orderId + "/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Use session-based authentication
+        body: JSON.stringify({ status: data.status }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
       return response.json();
     },
     onSuccess: () => {
@@ -611,10 +624,9 @@ export default function AdminDashboard() {
       const response = await fetch("/api/admin/exchange-rates", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+          "Content-Type": "application/json"
         },
-        credentials: "include",
+        credentials: "include", // Use session-based authentication
         body: JSON.stringify(data)
       });
       
@@ -812,10 +824,9 @@ export default function AdminDashboard() {
       const response = await fetch("/api/admin/balances", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+          "Content-Type": "application/json"
         },
-        credentials: "include",
+        credentials: "include", // Use session-based authentication
         body: JSON.stringify({ currency, amount })
       });
       
@@ -1278,11 +1289,10 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/system-status', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'x-admin-bypass': sessionStorage.getItem("adminToken") || ""
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: newStatus }),
-        credentials: "include"
+        credentials: "include", // Use session-based authentication
+        body: JSON.stringify({ status: newStatus })
       });
       
       if (response.ok) {
@@ -2385,18 +2395,17 @@ export default function AdminDashboard() {
                                         onClick={async () => {
                                           try {
                                             const balance = displayBalance;
-                                            const response = await fetch("/api/admin/balances", {
-                                              method: "POST",
-                                              headers: { 
-                                                "Content-Type": "application/json",
-                                                "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
-                                              },
-                                              credentials: "include",
-                                              body: JSON.stringify({ 
-                                                currency: method.value,
-                                                amount: balance 
-                                              })
-                                            });
+                                                                                          const response = await fetch("/api/admin/balances", {
+                                                method: "POST",
+                                                headers: { 
+                                                  "Content-Type": "application/json"
+                                                },
+                                                credentials: "include", // Use session-based authentication
+                                                body: JSON.stringify({ 
+                                                  currency: method.value,
+                                                  amount: balance 
+                                                })
+                                              });
                                             
                                                         if (response.ok) {
               const data = await response.json();
@@ -2483,10 +2492,9 @@ export default function AdminDashboard() {
                                             const res = await fetch('/api/admin/balances/credit', {
                                               method: 'POST',
                                               headers: { 
-                                                'Content-Type': 'application/json',
-                                                'x-admin-bypass': sessionStorage.getItem("adminToken") || ""
+                                                'Content-Type': 'application/json'
                                               },
-                                              credentials: "include",
+                                              credentials: "include", // Use session-based authentication
                                               body: JSON.stringify({
                                                 currency: method.value,
                                                 amount: amt,
@@ -2536,10 +2544,9 @@ export default function AdminDashboard() {
                                             const res = await fetch('/api/admin/balances/debit', {
                                               method: 'POST',
                                               headers: { 
-                                                'Content-Type': 'application/json',
-                                                'x-admin-bypass': sessionStorage.getItem("adminToken") || ""
+                                                'Content-Type': 'application/json'
                                               },
-                                              credentials: "include",
+                                              credentials: "include", // Use session-based authentication
                                               body: JSON.stringify({
                                                 currency: method.value,
                                                 amount: amt,
@@ -2605,10 +2612,9 @@ export default function AdminDashboard() {
                                             const response = await fetch(`/api/admin/currency-limits/${method.value}`, {
                                               method: "POST",
                                               headers: { 
-                                                "Content-Type": "application/json",
-                                                "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+                                                "Content-Type": "application/json"
                                               },
-                                              credentials: "include",
+                                              credentials: "include", // Use session-based authentication
                                               body: JSON.stringify({
                                                 minAmount: minAmount,
                                                 maxAmount: 10000 // Keep standard maximum

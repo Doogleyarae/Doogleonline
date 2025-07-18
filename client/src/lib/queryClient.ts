@@ -10,31 +10,30 @@ async function throwIfResNotOk(res: Response) {
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: any,
+  isAdminRequest: boolean = false
 ): Promise<Response> {
-  // Check if this is an admin request and include bypass token
-  const isAdminRequest = url.includes('/api/admin/');
-  const adminToken = sessionStorage.getItem('adminToken');
-  
-  const headers: Record<string, string> = {};
-  if (data) {
-    headers["Content-Type"] = "application/json";
-  }
-  
-  // Add admin bypass token for admin requests
-  if (isAdminRequest && adminToken) {
-    headers['x-admin-bypass'] = adminToken;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  // For admin requests, only use session-based authentication
+  if (isAdminRequest) {
+    // Remove bypass token - only use session cookies
+    console.log('🔐 [API REQUEST] Using session-based authentication for admin request');
   }
 
-  const res = await fetch(url, {
+  const config: RequestInit = {
     method,
     headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+    credentials: "include", // Always include credentials for session
+  };
 
-  await throwIfResNotOk(res);
-  return res;
+  if (data) {
+    config.body = JSON.stringify(data);
+  }
+
+  return fetch(url, config);
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

@@ -81,9 +81,9 @@ export default function AdminExchangeRates() {
         const res = await fetch("/api/admin/balances", {
           method: "GET",
           headers: { 
-            "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+            "Content-Type": "application/json"
           },
-          credentials: "include"
+          credentials: "include" // Use session-based authentication
         });
         
         if (!res.ok) {
@@ -119,10 +119,9 @@ export default function AdminExchangeRates() {
       const response = await fetch("/api/admin/exchange-rates", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+          "Content-Type": "application/json"
         },
-        credentials: "include",
+        credentials: "include", // Use session-based authentication
         body: JSON.stringify(data)
       });
       
@@ -181,10 +180,9 @@ export default function AdminExchangeRates() {
       const res = await fetch("/api/admin/balances", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+          "Content-Type": "application/json"
         },
-        credentials: "include",
+        credentials: "include", // Use session-based authentication
         body: JSON.stringify({ 
           currency, 
           amount: editAmounts[currency] 
