@@ -434,7 +434,7 @@ export default function Exchange() {
       // Clear any existing exchange rate data to prevent stale data
       setExchangeRate(0);
       
-      // Force re-render
+      // Force re-render immediately
       setForceUpdate(prev => prev + 1);
       
       // Remove old queries from cache completely
@@ -452,6 +452,21 @@ export default function Exchange() {
       }, 50); // Reduced delay for faster response
     }
   }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
+
+  // Additional effect to ensure UI stays in sync with currency changes
+  useEffect(() => {
+    if (sendMethod && receiveMethod) {
+      console.log('🔄 Ensuring UI sync - sendMethod:', sendMethod, 'receiveMethod:', receiveMethod);
+      
+      // Force immediate UI update
+      setForceUpdate(prev => prev + 1);
+      
+      // Update rate display immediately if no rate data is available
+      if (!rateData || rateLoading) {
+        setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
+      }
+    }
+  }, [sendMethod, receiveMethod, rateData, rateLoading]);
 
   // Trigger initial data fetch on mount
   useEffect(() => {
@@ -562,6 +577,12 @@ export default function Exchange() {
       }
     }
     
+    // Additional validation: ensure we have valid currency selections
+    if (!sendMethod || !receiveMethod || sendMethod === receiveMethod) {
+      console.log('⚠️ Invalid currency selection:', { sendMethod, receiveMethod });
+      return;
+    }
+    
     if (rateData?.rate && !rateLoading) {
       const rate = rateData.rate;
       setExchangeRate(rate);
@@ -620,6 +641,12 @@ export default function Exchange() {
       receiveMethod,
       sendMethod
     });
+    
+    // Validate currency selections
+    if (!sendMethod || !receiveMethod || sendMethod === receiveMethod) {
+      console.log('❌ Invalid currency selection for limits calculation');
+      return;
+    }
     
     if (!sendCurrencyLimits?.minAmount || !receiveCurrencyLimits?.minAmount || exchangeRate <= 0) {
       console.log('❌ Cannot calculate limits - missing data');
@@ -1080,7 +1107,10 @@ export default function Exchange() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Exchange Rate Display */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div 
+                key={`${sendMethod}-${receiveMethod}-${forceUpdate}`}
+                className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"
+              >
                 {/* System Status Indicator */}
                 {publicBalanceData?.systemStatus === 'off' && (
                   <div className="mb-3 p-2 bg-red-100 border border-red-300 rounded-md">
@@ -1160,6 +1190,9 @@ export default function Exchange() {
                             <Select
                               value={field.value}
                               onValueChange={(value) => {
+                                console.log('🔄 Send method changing from', sendMethod, 'to', value);
+                                
+                                // Update state immediately
                                 field.onChange(value);
                                 setSendMethod(value);
                                 saveFormDataImmediately('sendMethod', value);
@@ -1170,11 +1203,10 @@ export default function Exchange() {
                                 // Immediately update rate display to show loading state
                                 setRateDisplay(`Loading rate for ${value.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
                                 
-                                // Force re-render
+                                // Force immediate re-render
                                 setForceUpdate(prev => prev + 1);
                                 
                                 // Remove old queries from cache completely
-                                console.log('Send method changed to:', value);
                                 queryClient.removeQueries({ queryKey: ["/api/balances"] });
                                 queryClient.removeQueries({ queryKey: [`/api/exchange-rate/${value}/${receiveMethod}`] });
                                 queryClient.removeQueries({ queryKey: [`/api/currency-limits/${value}`] });
@@ -1186,7 +1218,7 @@ export default function Exchange() {
                                   refetchRate();
                                   refetchSendLimits();
                                   refetchReceiveLimits();
-                                }, 50);
+                                }, 25); // Even faster response
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -1262,6 +1294,9 @@ export default function Exchange() {
                             <Select
                               value={field.value}
                               onValueChange={(value) => {
+                                console.log('🔄 Receive method changing from', receiveMethod, 'to', value);
+                                
+                                // Update state immediately
                                 field.onChange(value);
                                 setReceiveMethod(value);
                                 saveFormDataImmediately('receiveMethod', value);
@@ -1272,11 +1307,10 @@ export default function Exchange() {
                                 // Immediately update rate display to show loading state
                                 setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${value.toUpperCase()}...`);
                                 
-                                // Force re-render
+                                // Force immediate re-render
                                 setForceUpdate(prev => prev + 1);
                                 
                                 // Remove old queries from cache completely
-                                console.log('Receive method changed to:', value);
                                 queryClient.removeQueries({ queryKey: ["/api/balances"] });
                                 queryClient.removeQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${value}`] });
                                 queryClient.removeQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
@@ -1288,7 +1322,7 @@ export default function Exchange() {
                                   refetchRate();
                                   refetchSendLimits();
                                   refetchReceiveLimits();
-                                }, 50);
+                                }, 25); // Even faster response
                               }}
                             >
                               <SelectTrigger className="h-12">
