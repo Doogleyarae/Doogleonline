@@ -560,7 +560,7 @@ export default function Exchange() {
       minReceiveAmount: receiveCurrencyLimits.minAmount,
       maxReceiveAmount: effectiveMaxReceive,
     });
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, publicBalanceData, receiveMethod, getPublicDisplayBalance]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, publicBalanceData, receiveMethod]);
 
   useEffect(() => {
     calculateDynamicLimits();
