@@ -1814,9 +1814,9 @@ export default function AdminDashboard() {
                       <TableHeader>
                         <TableRow className="bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-50/70 dark:hover:bg-gray-800/70">
                           <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Order ID</TableHead>
-                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Customer</TableHead>
-                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">From</TableHead>
-                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">To</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Customer Info</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Send Details</TableHead>
+                          <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Receive Details</TableHead>
                           <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Status</TableHead>
                           <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Date</TableHead>
                           <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Actions</TableHead>
@@ -1847,21 +1847,64 @@ export default function AdminDashboard() {
                             <TableRow key={order.orderId} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
                               <TableCell className="font-medium text-blue-600 dark:text-blue-400">{order.orderId}</TableCell>
                               <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-gray-900 dark:text-gray-100">{order.fullName}</span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">{order.phoneNumber}</span>
+                                <div className="flex flex-col space-y-1">
+                                  <div className="font-medium text-gray-900 dark:text-gray-100">{order.fullName || 'Anonymous User'}</div>
+                                  {order.email && (
+                                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                                      📧 {order.email}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    📱 {order.phoneNumber}
+                                  </div>
+                                  {order.senderAccount && (
+                                    <div className="text-xs text-green-600 dark:text-green-400 font-mono">
+                                      💳 {order.senderAccount}
+                                    </div>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{formatCurrency(order.sendAmount, order.sendMethod)}</span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{order.sendMethod}</span>
+                                <div className="flex flex-col space-y-1">
+                                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                                    {formatCurrency(order.sendAmount, order.sendMethod)}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                    {order.sendMethod.toUpperCase()}
+                                  </div>
+                                  {order.senderAccount && (
+                                    <div className="text-xs text-green-600 dark:text-green-400 font-mono">
+                                      {order.sendMethod.toLowerCase() === 'zaad' ? '🏦 Edahab: ' : 
+                                       order.sendMethod.toLowerCase() === 'trc20' ? '🔗 Wallet: ' :
+                                       order.sendMethod.toLowerCase() === 'sahal' ? '🏦 Golis: ' :
+                                       order.sendMethod.toLowerCase() === 'evcplus' ? '🏦 EVC+: ' :
+                                       order.sendMethod.toLowerCase() === 'edahab' ? '🏦 eDahab: ' :
+                                       order.sendMethod.toLowerCase() === 'premier' ? '🏦 Premier: ' :
+                                       '💳 Account: '}
+                                      {order.senderAccount}
+                                    </div>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{formatCurrency(order.receiveAmount, order.receiveMethod)}</span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{order.receiveMethod}</span>
+                                <div className="flex flex-col space-y-1">
+                                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                                    {formatCurrency(order.receiveAmount, order.receiveMethod)}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                    {order.receiveMethod.toUpperCase()}
+                                  </div>
+                                  {order.walletAddress && (
+                                    <div className="text-xs text-purple-600 dark:text-purple-400 font-mono">
+                                      {order.receiveMethod.toLowerCase() === 'moneygo' ? '💳 MoneyGo: ' :
+                                       order.receiveMethod.toLowerCase() === 'trc20' ? '🔗 Wallet: ' :
+                                       order.receiveMethod.toLowerCase() === 'trx' ? '🔗 TRX: ' :
+                                       order.receiveMethod.toLowerCase() === 'peb20' ? '🔗 PEB20: ' :
+                                       order.receiveMethod.toLowerCase() === 'usdc' ? '🔗 USDC: ' :
+                                       '💳 Account: '}
+                                      {order.walletAddress}
+                                    </div>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -1899,7 +1942,7 @@ export default function AdminDashboard() {
                                                   <div>
                                                     <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Customer Information</h4>
                                                     <p><strong>Order ID:</strong> <span className="text-blue-600 font-mono">{order.orderId}</span></p>
-                                                    <p><strong>Full Name:</strong> {order.fullName}</p>
+                                                    <p><strong>Full Name:</strong> {order.fullName || 'Anonymous User'}</p>
                                                     <p><strong>Email:</strong> {order.email || 'Not provided'}</p>
                                                     <p><strong>Phone:</strong> {order.phoneNumber}</p>
                                                     <p><strong>Sender Account:</strong> <span className="text-green-600 font-mono">{order.senderAccount || 'Not provided'}</span></p>
@@ -1916,6 +1959,30 @@ export default function AdminDashboard() {
                                                   <p className="text-sm text-blue-800">
                                                     <strong>Summary:</strong> Customer sent {formatCurrency(order.sendAmount, order.sendMethod)} from account {order.senderAccount || 'N/A'} 
                                                     and wants to receive {formatCurrency(order.receiveAmount, order.receiveMethod)} to {order.walletAddress || 'N/A'}
+                                                  </p>
+                                                </div>
+                                                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                                                  <p className="text-sm text-yellow-800">
+                                                    <strong>Wallet Details:</strong><br/>
+                                                    <strong>Send Method:</strong> {order.sendMethod.toUpperCase()}
+                                                    {order.senderAccount && (
+                                                      <span> - {order.sendMethod.toLowerCase() === 'zaad' ? 'Edahab Account' : 
+                                                             order.sendMethod.toLowerCase() === 'trc20' ? 'TRC20 Wallet' :
+                                                             order.sendMethod.toLowerCase() === 'sahal' ? 'Golis Account' :
+                                                             order.sendMethod.toLowerCase() === 'evcplus' ? 'EVC Plus Account' :
+                                                             order.sendMethod.toLowerCase() === 'edahab' ? 'eDahab Account' :
+                                                             order.sendMethod.toLowerCase() === 'premier' ? 'Premier Bank Account' :
+                                                             'Account'}: {order.senderAccount}</span>
+                                                    )}<br/>
+                                                    <strong>Receive Method:</strong> {order.receiveMethod.toUpperCase()}
+                                                    {order.walletAddress && (
+                                                      <span> - {order.receiveMethod.toLowerCase() === 'moneygo' ? 'MoneyGo Account' :
+                                                             order.receiveMethod.toLowerCase() === 'trc20' ? 'TRC20 Wallet' :
+                                                             order.receiveMethod.toLowerCase() === 'trx' ? 'TRX Wallet' :
+                                                             order.receiveMethod.toLowerCase() === 'peb20' ? 'PEB20 Wallet' :
+                                                             order.receiveMethod.toLowerCase() === 'usdc' ? 'USDC Wallet' :
+                                                             'Account'}: {order.walletAddress}</span>
+                                                    )}
                                                   </p>
                                                 </div>
                                               </div>
@@ -1960,7 +2027,7 @@ export default function AdminDashboard() {
                                                     <div>
                                                       <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Customer Information</h4>
                                                       <p><strong>Order ID:</strong> <span className="text-blue-600 font-mono">{order.orderId}</span></p>
-                                                      <p><strong>Full Name:</strong> {order.fullName}</p>
+                                                      <p><strong>Full Name:</strong> {order.fullName || 'Anonymous User'}</p>
                                                       <p><strong>Email:</strong> {order.email || 'Not provided'}</p>
                                                       <p><strong>Phone:</strong> {order.phoneNumber}</p>
                                                       <p><strong>Sender Account:</strong> <span className="text-green-600 font-mono">{order.senderAccount || 'Not provided'}</span></p>
@@ -1977,6 +2044,30 @@ export default function AdminDashboard() {
                                                     <p className="text-sm text-green-800">
                                                       <strong>Payment Confirmed:</strong> Customer has sent {formatCurrency(order.sendAmount, order.sendMethod)} from account {order.senderAccount || 'N/A'}. 
                                                       Ready to send {formatCurrency(order.receiveAmount, order.receiveMethod)} to {order.walletAddress || 'N/A'}
+                                                    </p>
+                                                  </div>
+                                                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                                                    <p className="text-sm text-yellow-800">
+                                                      <strong>Wallet Details:</strong><br/>
+                                                      <strong>Send Method:</strong> {order.sendMethod.toUpperCase()}
+                                                      {order.senderAccount && (
+                                                        <span> - {order.sendMethod.toLowerCase() === 'zaad' ? 'Edahab Account' : 
+                                                               order.sendMethod.toLowerCase() === 'trc20' ? 'TRC20 Wallet' :
+                                                               order.sendMethod.toLowerCase() === 'sahal' ? 'Golis Account' :
+                                                               order.sendMethod.toLowerCase() === 'evcplus' ? 'EVC Plus Account' :
+                                                               order.sendMethod.toLowerCase() === 'edahab' ? 'eDahab Account' :
+                                                               order.sendMethod.toLowerCase() === 'premier' ? 'Premier Bank Account' :
+                                                               'Account'}: {order.senderAccount}</span>
+                                                      )}<br/>
+                                                      <strong>Receive Method:</strong> {order.receiveMethod.toUpperCase()}
+                                                      {order.walletAddress && (
+                                                        <span> - {order.receiveMethod.toLowerCase() === 'moneygo' ? 'MoneyGo Account' :
+                                                               order.receiveMethod.toLowerCase() === 'trc20' ? 'TRC20 Wallet' :
+                                                               order.receiveMethod.toLowerCase() === 'trx' ? 'TRX Wallet' :
+                                                               order.receiveMethod.toLowerCase() === 'peb20' ? 'PEB20 Wallet' :
+                                                               order.receiveMethod.toLowerCase() === 'usdc' ? 'USDC Wallet' :
+                                                               'Account'}: {order.walletAddress}</span>
+                                                      )}
                                                     </p>
                                                   </div>
                                                 </div>
@@ -2021,7 +2112,7 @@ export default function AdminDashboard() {
                                                   <div>
                                                     <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">Customer Information</h4>
                                                     <p><strong>Order ID:</strong> <span className="text-blue-600 font-mono">{order.orderId}</span></p>
-                                                    <p><strong>Full Name:</strong> {order.fullName}</p>
+                                                    <p><strong>Full Name:</strong> {order.fullName || 'Anonymous User'}</p>
                                                     <p><strong>Email:</strong> {order.email || 'Not provided'}</p>
                                                     <p><strong>Phone:</strong> {order.phoneNumber}</p>
                                                     <p><strong>Sender Account:</strong> <span className="text-green-600 font-mono">{order.senderAccount || 'Not provided'}</span></p>
@@ -2038,6 +2129,30 @@ export default function AdminDashboard() {
                                                   <p className="text-sm text-red-800">
                                                     <strong>⚠️ Warning:</strong> Cancelling this order will notify the customer and restore the balance. 
                                                     This action cannot be undone.
+                                                  </p>
+                                                </div>
+                                                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                                                  <p className="text-sm text-yellow-800">
+                                                    <strong>Wallet Details:</strong><br/>
+                                                    <strong>Send Method:</strong> {order.sendMethod.toUpperCase()}
+                                                    {order.senderAccount && (
+                                                      <span> - {order.sendMethod.toLowerCase() === 'zaad' ? 'Edahab Account' : 
+                                                             order.sendMethod.toLowerCase() === 'trc20' ? 'TRC20 Wallet' :
+                                                             order.sendMethod.toLowerCase() === 'sahal' ? 'Golis Account' :
+                                                             order.sendMethod.toLowerCase() === 'evcplus' ? 'EVC Plus Account' :
+                                                             order.sendMethod.toLowerCase() === 'edahab' ? 'eDahab Account' :
+                                                             order.sendMethod.toLowerCase() === 'premier' ? 'Premier Bank Account' :
+                                                             'Account'}: {order.senderAccount}</span>
+                                                    )}<br/>
+                                                    <strong>Receive Method:</strong> {order.receiveMethod.toUpperCase()}
+                                                    {order.walletAddress && (
+                                                      <span> - {order.receiveMethod.toLowerCase() === 'moneygo' ? 'MoneyGo Account' :
+                                                             order.receiveMethod.toLowerCase() === 'trc20' ? 'TRC20 Wallet' :
+                                                             order.receiveMethod.toLowerCase() === 'trx' ? 'TRX Wallet' :
+                                                             order.receiveMethod.toLowerCase() === 'peb20' ? 'PEB20 Wallet' :
+                                                             order.receiveMethod.toLowerCase() === 'usdc' ? 'USDC Wallet' :
+                                                             'Account'}: {order.walletAddress}</span>
+                                                    )}
                                                   </p>
                                                 </div>
                                               </div>
