@@ -35,6 +35,7 @@ interface ExchangeRateResponse {
   rate: number;
   from: string;
   to: string;
+  timestamp?: number; // Optional timestamp for data freshness validation
 }
 
 interface CurrencyLimitsResponse {
