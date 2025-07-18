@@ -36,7 +36,9 @@ app.use(session({
     sameSite: 'lax', // Set to lax for development
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   },
-  name: 'doogle-admin-session' // Custom session name
+  name: 'doogle-admin-session', // Custom session name
+  rolling: true, // Extend session on each request
+  unset: 'destroy' // Destroy session when unset
 }));
 
 app.use((req, res, next) => {

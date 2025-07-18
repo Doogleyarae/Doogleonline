@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (adminLogin(username, password)) {
         console.log('[ADMIN LOGIN] Credentials valid, setting session');
         
-        // Set session properties
+        // Set session properties directly
         req.session.isAdmin = true;
         req.session.userId = 'admin';
         req.session.username = username;
@@ -103,37 +103,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           loginTime: req.session.loginTime
         });
         
-        // Force session save and wait for it to complete
-        req.session.save((err: any) => {
-          if (err) {
-            console.error('[ADMIN LOGIN] Session save error:', err);
-            return res.status(500).json({ message: 'Session save failed' });
-          }
-          
-          console.log('[ADMIN LOGIN] Session saved successfully');
-          console.log('[ADMIN LOGIN] Session ID after save:', req.sessionID);
-          console.log('[ADMIN LOGIN] Session isAdmin after save:', req.session.isAdmin);
-          console.log('[ADMIN LOGIN] Full session data after save:', req.session);
-          
-          // Verify session was saved correctly
-          if (req.session.isAdmin) {
-            res.json({ 
-              success: true, 
-              message: "Admin login successful", 
-              authenticated: true,
-              token: "admin-session-" + Date.now(),
-              sessionId: req.sessionID,
-              sessionData: {
-                isAdmin: req.session.isAdmin,
-                userId: req.session.userId,
-                username: req.session.username
-              }
-            });
-          } else {
-            console.error('[ADMIN LOGIN] Session isAdmin not set after save');
-            res.status(500).json({ message: 'Session not properly set' });
-          }
+        // Use a promise-based approach for session save
+        await new Promise((resolve, reject) => {
+          req.session.save((err: any) => {
+            if (err) {
+              console.error('[ADMIN LOGIN] Session save error:', err);
+              reject(err);
+            } else {
+              console.log('[ADMIN LOGIN] Session saved successfully');
+              console.log('[ADMIN LOGIN] Session ID after save:', req.sessionID);
+              console.log('[ADMIN LOGIN] Session isAdmin after save:', req.session.isAdmin);
+              console.log('[ADMIN LOGIN] Full session data after save:', req.session);
+              resolve(true);
+            }
+          });
         });
+        
+        // Verify session was saved correctly
+        if (req.session.isAdmin) {
+          res.json({ 
+            success: true, 
+            message: "Admin login successful", 
+            authenticated: true,
+            token: "admin-session-" + Date.now(),
+            sessionId: req.sessionID,
+            sessionData: {
+              isAdmin: req.session.isAdmin,
+              userId: req.session.userId,
+              username: req.session.username
+            }
+          });
+        } else {
+          console.error('[ADMIN LOGIN] Session isAdmin not set after save');
+          res.status(500).json({ message: 'Session not properly set' });
+        }
       } else {
         console.log('[ADMIN LOGIN] Invalid credentials');
         res.status(401).json({ 
@@ -155,6 +158,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: "Logout failed" });
     }
+  });
+
+  // Session debugging endpoint
+  app.get("/api/debug-session", (req: any, res) => {
+    console.log('🔍 [DEBUG SESSION] Request received');
+    console.log('🔍 [DEBUG SESSION] Session exists:', !!req.session);
+    console.log('🔍 [DEBUG SESSION] Session ID:', req.sessionID);
+    console.log('🔍 [DEBUG SESSION] Session isAdmin:', req.session?.isAdmin);
+    console.log('🔍 [DEBUG SESSION] Session data:', req.session);
+    console.log('🔍 [DEBUG SESSION] Session keys:', req.session ? Object.keys(req.session) : 'no session');
+    
+    res.json({
+      sessionExists: !!req.session,
+      sessionId: req.sessionID,
+      isAdmin: req.session?.isAdmin || false,
+      sessionData: req.session,
+      sessionKeys: req.session ? Object.keys(req.session) : [],
+      timestamp: Date.now()
+    });
   });
 
   app.get("/api/admin/check-auth", (req: any, res) => {
@@ -1121,6 +1143,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to update currency limits" });
+    }
+  });
+
+  // Get wallet addresses (public - for exchange form)
+  app.get("/api/wallet-addresses", async (req, res) => {
+    try {
+      console.log(' [PUBLIC WALLET-ADDRESSES] Fetching wallet addresses...');
+      
+      // Add aggressive no-cache headers to prevent any caching
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
+      const walletData = await storage.getAllWalletAddresses();
+      console.log(' [PUBLIC WALLET-ADDRESSES] Database result:', walletData);
+      
+      // Create a map of method -> address
+      const walletMap: Record<string, string> = {};
+      
+      // Default addresses (fallback)
+      const defaults = {
+        zaad: "*880*637834431*amount#",
+        sahal: "*883*905865292*amount#",
+        evc: "*799*34996012*amount#",
+        edahab: "0626451011",
+        premier: "0616451011",
+        moneygo: "U2778451",
+        trx: "THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv",
+        trc20: "THspUcX2atLi7e4cQdMLqNBrn13RrNaRkv",
+        peb20: "0x5f3c72277de38d91e12f6f594ac8353c21d73c83"
+      };
+      
+      // Start with defaults
+      Object.assign(walletMap, defaults);
+      
+      // Override with database values
+      if (walletData && Array.isArray(walletData)) {
+        walletData.forEach(wallet => {
+          if (wallet && wallet.method && wallet.address) {
+            walletMap[wallet.method] = wallet.address;
+          }
+        });
+      }
+      
+      console.log('✅ [PUBLIC WALLET-ADDRESSES] Final wallet map:', walletMap);
+      res.json(walletMap);
+    } catch (error) {
+      console.error('❌ [PUBLIC WALLET-ADDRESSES] Error:', error);
+      res.status(500).json({ 
+        message: "Failed to get wallet addresses",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
