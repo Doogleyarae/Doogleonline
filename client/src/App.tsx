@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import WelcomeBanner from "@/components/welcome-banner";
+import FloatingChatButton from "@/components/floating-chat-button";
 import { useScrollMemory } from "@/hooks/use-scroll-memory";
 import { LanguageProvider } from "@/contexts/language-context";
 import { AuthProvider } from "@/contexts/auth-context";
@@ -166,6 +167,7 @@ function App() {
                     </main>
                     {!isAdminRoute && !isAuthRoute && <Footer />}
                   </div>
+                  {!isAdminRoute && !isAuthRoute && <FloatingChatButton />}
                   <Toaster />
                 </Suspense>
               </ErrorBoundary>
