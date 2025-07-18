@@ -233,8 +233,7 @@ export default function Exchange() {
     saveOnChange: true,
     saveOnBlur: true,
     restoreOnMount: true,
-    saveOnSubmit: true, // Save on form submission
-    saveOnUnload: true // Save when user leaves page
+    saveOnSubmit: true // Save on form submission
   });
 
   // Load saved data when it becomes available (for cross-page persistence)
@@ -269,18 +268,32 @@ export default function Exchange() {
   // Enhanced save function for immediate saving using new auto-save system
   const saveFormDataImmediately = useCallback((field: string, value: any) => {
     try {
-      // Don't save empty amount fields to prevent auto-restoration
-      if ((field === 'sendAmount' || field === 'receiveAmount') && (!value || value.trim() === "")) {
-        console.log(`🚫 Not saving empty ${field} to prevent auto-restoration`);
-        return;
-      }
-      
       console.log(`💾 Immediately saving ${field}:`, value);
+      
+      // Save the field to auto-save system
       saveField(field as keyof typeof formData, value);
+      
+      // Also save to legacy system for backup
+      saveCompleteExchangeState({
+        sendMethod,
+        receiveMethod,
+        sendAmount,
+        receiveAmount,
+        fullName,
+        email,
+        senderAccount,
+        walletAddress,
+        exchangeRate,
+        rateDisplay,
+        dynamicLimits,
+        timestamp: Date.now(),
+      });
+      
+      console.log(`✅ Successfully saved ${field}:`, value);
     } catch (error) {
       console.error(`Error saving field ${field}:`, error);
     }
-  }, [saveField]);
+  }, [saveField, sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
 
 
 
@@ -435,6 +448,32 @@ export default function Exchange() {
     retry: 1, // Only retry once to avoid delays
     retryDelay: 50, // Very quick retry
   });
+
+  // Save ALL information whenever anything changes
+  useEffect(() => {
+    if (isLoaded) {
+      console.log('💾 Auto-saving ALL form data due to changes');
+      
+      // Save to auto-save system
+      saveImmediately(formData);
+      
+      // Also save to legacy system for backup
+      saveCompleteExchangeState({
+        sendMethod,
+        receiveMethod,
+        sendAmount,
+        receiveAmount,
+        fullName,
+        email,
+        senderAccount,
+        walletAddress,
+        exchangeRate,
+        rateDisplay,
+        dynamicLimits,
+        timestamp: Date.now(),
+      });
+    }
+  }, [fullName, email, senderAccount, walletAddress, sendMethod, receiveMethod, sendAmount, receiveAmount, exchangeRate, rateDisplay, dynamicLimits, isLoaded, saveImmediately]);
 
   // Aggressive data refresh when currency selections change
   useEffect(() => {
