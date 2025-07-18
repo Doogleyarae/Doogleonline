@@ -417,6 +417,9 @@ export default function Exchange() {
     if (sendMethod && receiveMethod) {
       console.log('🔄 Currency selection changed - sendMethod:', sendMethod, 'receiveMethod:', receiveMethod);
       
+      // Immediately update rate display to show loading state
+      setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
+      
       // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
       queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
@@ -539,7 +542,7 @@ export default function Exchange() {
       }
     } else if (!rateData && !rateLoading) {
       setExchangeRate(0);
-      setRateDisplay("Rate not available");
+      setRateDisplay(`Rate not available for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}`);
       console.log('❌ Rate not available');
     }
   }, [rateData, rateLoading, sendMethod, receiveMethod, form, isClearingFields]);
@@ -612,6 +615,15 @@ export default function Exchange() {
   useEffect(() => {
     calculateDynamicLimits();
   }, [calculateDynamicLimits]);
+
+  // Force re-calculation when currencies change
+  useEffect(() => {
+    if (sendMethod && receiveMethod) {
+      console.log('🔄 Forcing re-calculation for currencies:', sendMethod, receiveMethod);
+      // This will trigger the calculateDynamicLimits function
+      calculateDynamicLimits();
+    }
+  }, [sendMethod, receiveMethod, calculateDynamicLimits]);
 
   // Exchange rate changes no longer trigger automatic recalculation
   // Users can manually enter any amount they want
@@ -1102,6 +1114,9 @@ export default function Exchange() {
                                 setSendMethod(value);
                                 saveFormDataImmediately('sendMethod', value);
                                 
+                                // Immediately update rate display to show loading state
+                                setRateDisplay(`Loading rate for ${value.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
+                                
                                 // Invalidate and refetch data when send method changes
                                 console.log('Send method changed to:', value);
                                 queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
@@ -1194,6 +1209,9 @@ export default function Exchange() {
                                 field.onChange(value);
                                 setReceiveMethod(value);
                                 saveFormDataImmediately('receiveMethod', value);
+                                
+                                // Immediately update rate display to show loading state
+                                setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${value.toUpperCase()}...`);
                                 
                                 // Invalidate and refetch data when receive method changes
                                 console.log('Receive method changed to:', value);
