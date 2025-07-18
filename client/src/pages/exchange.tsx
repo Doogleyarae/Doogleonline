@@ -996,6 +996,14 @@ export default function Exchange() {
       return;
     }
     
+    // Recalculate receive amount with current exchange rate before submitting
+    const sendAmount = parseFloat(data.sendAmount);
+    if (!isNaN(sendAmount) && sendAmount > 0) {
+      const recalculatedReceiveAmount = (sendAmount * exchangeRate).toFixed(2);
+      data.receiveAmount = recalculatedReceiveAmount;
+      console.log(`[EXCHANGE] Recalculated receive amount: ${recalculatedReceiveAmount} based on current rate: ${exchangeRate}`);
+    }
+    
     createOrderMutation.mutate(data);
   };
 
