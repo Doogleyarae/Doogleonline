@@ -88,7 +88,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (adminLogin(username, password)) {
         console.log('[ADMIN LOGIN] Credentials valid, setting session');
+        
+        // Set session properties
         req.session.isAdmin = true;
+        req.session.userId = 'admin';
+        req.session.username = username;
         
         // Force session save and wait for it to complete
         req.session.save((err: any) => {
@@ -97,7 +101,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(500).json({ message: 'Session save failed' });
           }
           
-          console.log('[ADMIN LOGIN] Session saved successfully, isAdmin:', req.session.isAdmin);
+          console.log('[ADMIN LOGIN] Session saved successfully');
+          console.log('[ADMIN LOGIN] Session isAdmin after save:', req.session.isAdmin);
+          console.log('[ADMIN LOGIN] Full session data:', req.session);
           
           // Verify session was saved correctly
           if (req.session.isAdmin) {
@@ -105,7 +111,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               success: true, 
               message: "Admin login successful", 
               authenticated: true,
-              token: "admin-session-" + Date.now() 
+              token: "admin-session-" + Date.now(),
+              sessionId: req.sessionID
             });
           } else {
             console.error('[ADMIN LOGIN] Session isAdmin not set after save');
@@ -140,12 +147,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('[CHECK AUTH] Session exists:', !!req.session);
     console.log('[CHECK AUTH] Session ID:', req.sessionID);
     console.log('[CHECK AUTH] Session isAdmin:', req.session?.isAdmin);
+    console.log('[CHECK AUTH] Session userId:', req.session?.userId);
+    console.log('[CHECK AUTH] Session username:', req.session?.username);
     console.log('[CHECK AUTH] Full session data:', req.session);
     
     const isAuthenticated = req.session?.isAdmin || false;
     console.log('[CHECK AUTH] Returning authenticated:', isAuthenticated);
     
-    res.json({ authenticated: isAuthenticated });
+    res.json({ 
+      authenticated: isAuthenticated,
+      sessionId: req.sessionID,
+      sessionExists: !!req.session,
+      sessionData: {
+        isAdmin: req.session?.isAdmin,
+        userId: req.session?.userId,
+        username: req.session?.username
+      }
+    });
   });
   
   // Get exchange rate with bidirectional support and no-cache headers
