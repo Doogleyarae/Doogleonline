@@ -199,22 +199,45 @@ export default function Exchange() {
     maxReceiveAmount: 10000,
   });
 
-  // Create form data object for auto-save
+  // Create comprehensive form data object for auto-save
   const formData = {
-      fullName,
-      email,
-      senderAccount,
-      walletAddress,
+    fullName,
+    email,
+    senderAccount,
+    walletAddress,
     sendMethod,
     receiveMethod,
     sendAmount,
     receiveAmount,
+    exchangeRate,
+    rateDisplay,
+    dynamicLimits,
+    timestamp: Date.now(), // Add timestamp for data freshness
+  };
+
+  // Comprehensive save function that saves everything
+  const saveAllData = useCallback(() => {
+    console.log('💾 Saving all form data:', formData);
+    saveImmediately();
+    
+    // Also save to legacy system for backup
+    saveCompleteExchangeState({
+      sendMethod,
+      receiveMethod,
+      sendAmount,
+      receiveAmount,
+      fullName,
+      email,
+      senderAccount,
+      walletAddress,
       exchangeRate,
       rateDisplay,
       dynamicLimits,
-  };
+      timestamp: Date.now(),
+    });
+  }, [formData, saveImmediately, sendMethod, receiveMethod, sendAmount, receiveAmount, fullName, email, senderAccount, walletAddress, exchangeRate, rateDisplay, dynamicLimits]);
 
-  // Use enhanced auto-save hook
+  // Use enhanced auto-save hook with comprehensive saving
   const { 
     isReminded, 
     isLoaded,
@@ -226,10 +249,13 @@ export default function Exchange() {
     clearAll
   } = useAutoSave(formData, {
     formKey: 'exchange',
-    debounceMs: 200, // Faster auto-save
+    debounceMs: 100, // Very fast auto-save
     saveOnChange: true,
     saveOnBlur: true,
-    restoreOnMount: true
+    saveOnFocus: true, // Save when user focuses on fields
+    restoreOnMount: true,
+    saveOnSubmit: true, // Save on form submission
+    saveOnUnload: true // Save when user leaves page
   });
 
   // Load saved data when it becomes available (for cross-page persistence)
@@ -480,6 +506,14 @@ export default function Exchange() {
     }
   }, [sendMethod, receiveMethod, rateData, rateLoading]);
 
+  // Save data whenever form fields change
+  useEffect(() => {
+    if (isLoaded) {
+      console.log('💾 Auto-saving form data due to field changes');
+      saveAllData();
+    }
+  }, [fullName, email, senderAccount, walletAddress, sendMethod, receiveMethod, sendAmount, receiveAmount, exchangeRate, rateDisplay, dynamicLimits, isLoaded, saveAllData]);
+
   // Ensure fresh data when page becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -504,6 +538,17 @@ export default function Exchange() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
+
+  // Save data on page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('🚪 Page unloading - saving all data');
+      saveAllData();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveAllData]);
 
   // Aggressive initial data fetch on mount
   useEffect(() => {
@@ -546,32 +591,63 @@ export default function Exchange() {
     },
   });
 
-  // Only restore saved data on first mount - ONCE ONLY
+  // Restore ALL saved data on mount - complete restoration
   useEffect(() => {
     if (isLoaded && hasSavedData && savedData) {
       try {
-        // Only restore if fields are completely empty (user hasn't typed yet)
-        const currentValues = form.getValues();
+        console.log('🔄 Restoring saved data:', savedData);
         
-        if (savedData.fullName && !currentValues.fullName) {
+        // Restore ALL form fields from saved data
+        if (savedData.fullName) {
           form.setValue("fullName", savedData.fullName);
+          setFullName(savedData.fullName);
         }
-        if (savedData.email && !currentValues.email) {
+        if (savedData.email) {
           form.setValue("email", savedData.email);
+          setEmail(savedData.email);
         }
-        if (savedData.senderAccount && !currentValues.senderAccount) {
+        if (savedData.senderAccount) {
           form.setValue("senderAccount", savedData.senderAccount);
+          setSenderAccount(savedData.senderAccount);
         }
-        if (savedData.walletAddress && !currentValues.walletAddress) {
+        if (savedData.walletAddress) {
           form.setValue("walletAddress", savedData.walletAddress);
+          setWalletAddress(savedData.walletAddress);
         }
-        if (savedData.sendMethod && !currentValues.sendMethod) {
+        if (savedData.sendMethod) {
           form.setValue("sendMethod", savedData.sendMethod);
+          setSendMethod(savedData.sendMethod);
         }
-        if (savedData.receiveMethod && !currentValues.receiveMethod) {
+        if (savedData.receiveMethod) {
           form.setValue("receiveMethod", savedData.receiveMethod);
+          setReceiveMethod(savedData.receiveMethod);
         }
-        // NEVER restore amount fields automatically
+        if (savedData.sendAmount) {
+          form.setValue("sendAmount", savedData.sendAmount);
+          setSendAmount(savedData.sendAmount);
+        }
+        if (savedData.receiveAmount) {
+          form.setValue("receiveAmount", savedData.receiveAmount);
+          setReceiveAmount(savedData.receiveAmount);
+        }
+        if (savedData.exchangeRate) {
+          form.setValue("exchangeRate", savedData.exchangeRate.toString());
+          setExchangeRate(savedData.exchangeRate);
+        }
+        if (savedData.rateDisplay) {
+          setRateDisplay(savedData.rateDisplay);
+        }
+        if (savedData.dynamicLimits) {
+          setDynamicLimits(savedData.dynamicLimits);
+        }
+        
+        console.log('✅ All saved data restored successfully');
+        
+        // Trigger form validation after restoration
+        setTimeout(() => {
+          form.trigger();
+        }, 100);
+        
       } catch (error) {
         console.error('Error restoring saved data:', error);
         clearAll();
