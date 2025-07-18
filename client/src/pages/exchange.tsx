@@ -285,6 +285,7 @@ export default function Exchange() {
     staleTime: 0, // Always fetch fresh data when currency changes
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   // Fetch currency limits
@@ -294,6 +295,7 @@ export default function Exchange() {
     staleTime: 0, // Always fetch fresh data when currency changes
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading } = useQuery<CurrencyLimitsResponse>({
@@ -302,6 +304,7 @@ export default function Exchange() {
     staleTime: 0, // Always fetch fresh data when currency changes
     refetchOnWindowFocus: false,
     refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   // Fetch wallet addresses
@@ -412,14 +415,21 @@ export default function Exchange() {
   // Invalidate and refetch data when currency selections change
   useEffect(() => {
     if (sendMethod && receiveMethod) {
+      console.log('🔄 Currency selection changed - sendMethod:', sendMethod, 'receiveMethod:', receiveMethod);
+      
       // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
       queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
       
-      // Refetch public balances immediately
-      refetchPublicBalances();
+      // Force immediate refetch with new values
+      setTimeout(() => {
+        refetchPublicBalances();
+        queryClient.refetchQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+        queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+        queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+      }, 100);
     }
   }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances]);
 
@@ -504,11 +514,15 @@ export default function Exchange() {
 
   // Update exchange rate when data is fetched - but don't interfere with user input
   useEffect(() => {
+    console.log('🔄 Rate data updated:', { rateData, rateLoading, sendMethod, receiveMethod });
+    
     if (rateData?.rate && !rateLoading) {
       const rate = rateData.rate;
       setExchangeRate(rate);
       form.setValue("exchangeRate", rate.toString());
       setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
+      
+      console.log('✅ Rate display updated:', `1 ${sendMethod.toUpperCase()} = ${rate} ${receiveMethod.toUpperCase()}`);
       
       // Only provide initial calculation if both fields are empty and not clearing
       if (!isClearingFields) {
@@ -526,12 +540,19 @@ export default function Exchange() {
     } else if (!rateData && !rateLoading) {
       setExchangeRate(0);
       setRateDisplay("Rate not available");
+      console.log('❌ Rate not available');
     }
   }, [rateData, rateLoading, sendMethod, receiveMethod, form, isClearingFields]);
 
   // Get public display balance for users
   const getPublicDisplayBalance = (currency: string) => {
+    console.log('🔄 Getting public display balance for:', currency, {
+      publicBalanceData,
+      balances: publicBalanceData?.balances
+    });
+    
     if (!publicBalanceData?.balances) {
+      console.log('❌ No public balance data available');
       return 0;
     }
     
@@ -539,12 +560,22 @@ export default function Exchange() {
     const balanceKeyUpper = currency.toUpperCase();
     const balance = publicBalanceData.balances[balanceKeyUpper] || 0;
     
+    console.log('💰 Balance for', currency, ':', balance, '(key:', balanceKeyUpper, ')');
     return balance;
   };
 
   // Calculate dynamic limits with memoization
   const calculateDynamicLimits = useCallback(() => {
+    console.log('🔄 Calculating dynamic limits:', {
+      sendCurrencyLimits,
+      receiveCurrencyLimits,
+      exchangeRate,
+      publicBalanceData,
+      receiveMethod
+    });
+    
     if (!sendCurrencyLimits?.minAmount || !receiveCurrencyLimits?.minAmount || exchangeRate <= 0) {
+      console.log('❌ Cannot calculate limits - missing data');
       return;
     }
 
@@ -567,12 +598,15 @@ export default function Exchange() {
       }
     }
 
-    setDynamicLimits({
+    const newLimits = {
       minSendAmount: effectiveMinSend,
       maxSendAmount: effectiveMaxSend,
       minReceiveAmount: receiveCurrencyLimits.minAmount,
       maxReceiveAmount: effectiveMaxReceive,
-    });
+    };
+    
+    console.log('✅ New dynamic limits:', newLimits);
+    setDynamicLimits(newLimits);
   }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, publicBalanceData, receiveMethod]);
 
   useEffect(() => {
@@ -933,14 +967,25 @@ export default function Exchange() {
     const minAmount = 5; // Minimum transaction amount
     let maxAmount = 10000; // Default maximum
     
+    console.log('🔄 Getting dynamic transaction limits:', {
+      publicBalanceData,
+      exchangeRate,
+      receiveMethod,
+      sendMethod
+    });
+    
     // If we have balance data and exchange rate, calculate dynamic limits
     if (publicBalanceData?.balances && exchangeRate > 0 && publicBalanceData.systemStatus === 'on') {
       const availableBalance = getPublicDisplayBalance(receiveMethod);
+      
+      console.log('💰 Available balance for', receiveMethod, ':', availableBalance);
       
       if (availableBalance > 0) {
         // Calculate maximum send amount based on available receive balance
         // Formula: maxSendAmount = availableReceiveBalance / exchangeRate
         const calculatedMaxSend = availableBalance / exchangeRate;
+        
+        console.log('📊 Calculated max send amount:', calculatedMaxSend);
         
         // Use the smaller of calculated max or default max
         maxAmount = Math.min(calculatedMaxSend, 10000);
@@ -952,10 +997,13 @@ export default function Exchange() {
       }
     }
     
-    return {
+    const limits = {
       min: minAmount,
       max: Math.floor(maxAmount) // Round down to whole number
     };
+    
+    console.log('✅ Final transaction limits:', limits);
+    return limits;
   };
 
   return (
@@ -1060,7 +1108,14 @@ export default function Exchange() {
                                 queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${value}/${receiveMethod}`] });
                                 queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${value}`] });
                                 queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
-                                refetchPublicBalances();
+                                
+                                // Force immediate refetch with new values
+                                setTimeout(() => {
+                                  refetchPublicBalances();
+                                  queryClient.refetchQueries({ queryKey: [`/api/exchange-rate/${value}/${receiveMethod}`] });
+                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${value}`] });
+                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+                                }, 100);
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -1146,7 +1201,14 @@ export default function Exchange() {
                                 queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${value}`] });
                                 queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
                                 queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${value}`] });
-                                refetchPublicBalances();
+                                
+                                // Force immediate refetch with new values
+                                setTimeout(() => {
+                                  refetchPublicBalances();
+                                  queryClient.refetchQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${value}`] });
+                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${value}`] });
+                                }, 100);
                               }}
                             >
                               <SelectTrigger className="h-12">
