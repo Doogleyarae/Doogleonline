@@ -345,11 +345,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (status === "paid") {
         // Send payment confirmation email
         await emailService.sendPaymentConfirmation(order);
+      } else if (status === "processing") {
+        // Send processing notification email
+        await emailService.sendProcessingNotification(order);
       } else if (status === "completed") {
         // Send order completion email
         await emailService.sendOrderCompletion(order);
+      } else if (status === "cancelled") {
+        // Send cancellation notification email
+        await emailService.sendCancellationNotification(order);
       }
-      // Removed general status update emails to prevent duplicates
       
       // Notify connected clients via WebSocket
       wsManager.notifyOrderUpdate(order);

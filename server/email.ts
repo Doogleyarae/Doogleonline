@@ -246,6 +246,100 @@ export class EmailService {
     }
   }
 
+  async sendProcessingNotification(order: Order): Promise<boolean> {
+    try {
+      // Skip email if no valid email address provided
+      if (!order.email || order.email.trim() === "") {
+        console.log(`[ORDER ${order.orderId}] No email address provided - skipping processing notification email`);
+        return false;
+      }
+      
+      const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
+      
+      const timestamp = Date.now();
+      const emailConfig = {
+        from: "onboarding@resend.dev",
+        to: order.email,
+        subject: `Order Processing Started (Order ${order.orderId}) - ${timestamp}`,
+        html: this.generateProcessingNotificationHTML(order, trackingLink)
+      };
+
+      if (resend) {
+        const result = await resend.emails.send(emailConfig);
+        console.log(`[ORDER ${order.orderId}] Processing notification email sent via Resend to: ${order.email}`);
+        
+        // Log email delivery for admin tracking
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'processing_notification',
+          status: 'sent',
+        });
+      } else {
+        console.log(`[ORDER ${order.orderId}] Mock processing notification email sent to: ${order.email}`);
+        
+        // Log mock email for testing
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'processing_notification',
+          status: 'sent',
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error(`[ORDER ${order.orderId}] Failed to send processing notification email:`, error);
+      return false;
+    }
+  }
+
+  async sendCancellationNotification(order: Order): Promise<boolean> {
+    try {
+      // Skip email if no valid email address provided
+      if (!order.email || order.email.trim() === "") {
+        console.log(`[ORDER ${order.orderId}] No email address provided - skipping cancellation notification email`);
+        return false;
+      }
+      
+      const trackingLink = `${process.env.FRONTEND_URL || 'https://doogleonline.com'}/track/${order.orderId}`;
+      
+      const timestamp = Date.now();
+      const emailConfig = {
+        from: "onboarding@resend.dev",
+        to: order.email,
+        subject: `Order Cancelled (Order ${order.orderId}) - ${timestamp}`,
+        html: this.generateCancellationNotificationHTML(order, trackingLink)
+      };
+
+      if (resend) {
+        const result = await resend.emails.send(emailConfig);
+        console.log(`[ORDER ${order.orderId}] Cancellation notification email sent via Resend to: ${order.email}`);
+        
+        // Log email delivery for admin tracking
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'cancellation_notification',
+          status: 'sent',
+        });
+      } else {
+        console.log(`[ORDER ${order.orderId}] Mock cancellation notification email sent to: ${order.email}`);
+        
+        // Log mock email for testing
+        await this.logEmailDelivery({
+          orderId: order.orderId,
+          emailAddress: order.email,
+          emailType: 'cancellation_notification',
+          status: 'sent',
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error(`[ORDER ${order.orderId}] Failed to send cancellation notification email:`, error);
+      return false;
+    }
+  }
+
   async sendTestEmail(email: string, subject: string, message: string): Promise<boolean> {
     try {
       const emailConfig = {
@@ -636,6 +730,145 @@ export class EmailService {
           <div class="footer">
             <p>Thank you for choosing DoogleOnline for your exchange needs!</p>
             <p>For support, contact us at support@doogleonline.com</p>
+            <p style="font-size: 11px; color: #999;">Fresh Email ID: ${Date.now()}_${Math.random().toString(36).substr(2, 9)}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateProcessingNotificationHTML(order: Order, trackingLink?: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Order Processing Started</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9f9f9; }
+          .processing-details { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #1e40af; }
+          .footer { text-align: center; padding: 20px; color: #666; }
+          .processing-banner { background: #dbeafe; color: #1e40af; padding: 15px; border-radius: 5px; margin: 15px 0; text-align: center; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>⚡ Processing Started!</h1>
+            <p>Your exchange is now being processed</p>
+          </div>
+          <div class="content">
+            <div class="processing-banner">
+              We are now processing your ${order.receiveAmount} ${order.receiveMethod.toUpperCase()} transfer!
+            </div>
+            
+            <h2>Order Processing Notification</h2>
+            <p>Dear ${order.fullName},</p>
+            <p><strong>This is a processing notification for order ${order.orderId}.</strong></p>
+            <p>Great news! Our team has started processing your exchange request. Your funds will be sent to your wallet shortly.</p>
+            
+            <div class="processing-details">
+              <h3>Processing Details</h3>
+              <p><strong>Order ID:</strong> ${order.orderId}</p>
+              <p><strong>You Sent:</strong> ${order.sendAmount} ${order.sendMethod.toUpperCase()}</p>
+              <p><strong>You Will Receive:</strong> ${order.receiveAmount} ${order.receiveMethod.toUpperCase()}</p>
+              <p><strong>Exchange Rate:</strong> ${parseFloat(order.exchangeRate).toFixed(6)}</p>
+              <p><strong>Processing Started:</strong> ${new Date().toLocaleString()}</p>
+              <p><strong>Status:</strong> <span style="color: #1e40af; font-weight: bold;">⚡ PROCESSING</span></p>
+            </div>
+            
+            <div style="background: #f0f9ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <h3>What happens next:</h3>
+              <ul>
+                <li>Our team is verifying your payment and preparing the transfer</li>
+                <li>You will receive another email when the transfer is completed</li>
+                <li>Funds should appear in your wallet within 5-15 minutes</li>
+                <li>If you don't receive funds within 30 minutes, please contact us</li>
+              </ul>
+            </div>
+            
+            ${trackingLink ? `<p><a href="${trackingLink}" style="background: #1e40af; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Track Your Order</a></p>` : ''}
+          </div>
+          <div class="footer">
+            <p>Thank you for choosing DoogleOnline for your exchange needs!</p>
+            <p>For support, contact us at support@doogleonline.com</p>
+            <p style="font-size: 11px; color: #999;">Fresh Email ID: ${Date.now()}_${Math.random().toString(36).substr(2, 9)}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateCancellationNotificationHTML(order: Order, trackingLink?: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Order Cancelled</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #dc2626; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9f9f9; }
+          .cancellation-details { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #dc2626; }
+          .footer { text-align: center; padding: 20px; color: #666; }
+          .cancellation-banner { background: #fef2f2; color: #dc2626; padding: 15px; border-radius: 5px; margin: 15px 0; text-align: center; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>❌ Order Cancelled</h1>
+            <p>Your exchange request has been cancelled</p>
+          </div>
+          <div class="content">
+            <div class="cancellation-banner">
+              Order ${order.orderId} has been cancelled
+            </div>
+            
+            <h2>Order Cancellation Notification</h2>
+            <p>Dear ${order.fullName},</p>
+            <p><strong>This is a cancellation notification for order ${order.orderId}.</strong></p>
+            <p>We regret to inform you that your exchange order has been cancelled. No funds have been transferred.</p>
+            
+            <div class="cancellation-details">
+              <h3>Cancelled Order Details</h3>
+              <p><strong>Order ID:</strong> ${order.orderId}</p>
+              <p><strong>You Were To Send:</strong> ${order.sendAmount} ${order.sendMethod.toUpperCase()}</p>
+              <p><strong>You Were To Receive:</strong> ${order.receiveAmount} ${order.receiveMethod.toUpperCase()}</p>
+              <p><strong>Exchange Rate:</strong> ${parseFloat(order.exchangeRate).toFixed(6)}</p>
+              <p><strong>Cancelled:</strong> ${new Date().toLocaleString()}</p>
+              <p><strong>Status:</strong> <span style="color: #dc2626; font-weight: bold;">❌ CANCELLED</span></p>
+            </div>
+            
+            <div style="background: #fef2f2; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <h3>Important Information:</h3>
+              <ul>
+                <li>No funds have been transferred from your account</li>
+                <li>If you made a payment, it will be refunded to your original account</li>
+                <li>You can create a new order at any time</li>
+                <li>Contact us if you have any questions about the cancellation</li>
+              </ul>
+            </div>
+            
+            <div style="background: #f0f9ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
+              <h3>Need Help?</h3>
+              <p>If you believe this cancellation was made in error or have any questions, please contact our support team immediately.</p>
+              <p><strong>Support Email:</strong> support@doogleonline.com</p>
+              <p><strong>Support Phone:</strong> +252 61 234 5678</p>
+            </div>
+            
+            ${trackingLink ? `<p><a href="${trackingLink}" style="background: #dc2626; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">View Order Details</a></p>` : ''}
+          </div>
+          <div class="footer">
+            <p>Thank you for considering DoogleOnline for your exchange needs!</p>
+            <p>We hope to serve you again in the future.</p>
             <p style="font-size: 11px; color: #999;">Fresh Email ID: ${Date.now()}_${Math.random().toString(36).substr(2, 9)}</p>
           </div>
         </div>
