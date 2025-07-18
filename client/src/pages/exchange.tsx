@@ -438,11 +438,21 @@ export default function Exchange() {
     if (sendMethod && receiveMethod) {
       console.log('🔄 Currency selection changed - sendMethod:', sendMethod, 'receiveMethod:', receiveMethod);
       
+      // Set clearing state to prevent interference with user input
+      setIsClearingFields(true);
+      
       // Immediately update rate display to show loading state
       setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
       
       // Clear any existing exchange rate data to prevent stale data
       setExchangeRate(0);
+      
+      // RESET ALL FORM FIELDS when currency changes
+      setSendAmount("");
+      setReceiveAmount("");
+      form.setValue("sendAmount", "");
+      form.setValue("receiveAmount", "");
+      form.setValue("exchangeRate", "0");
       
       // Force re-render immediately
       setForceUpdate(prev => prev + 1);
@@ -463,6 +473,11 @@ export default function Exchange() {
         refetchRate();
         refetchSendLimits();
         refetchReceiveLimits();
+        
+        // Clear the clearing state after a short delay
+        setTimeout(() => {
+          setIsClearingFields(false);
+        }, 100);
       }, 25); // Even faster response
     }
   }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
@@ -498,26 +513,6 @@ export default function Exchange() {
 
 
 
-  // Aggressive initial data fetch on mount
-  useEffect(() => {
-    console.log('🚀 Component mounted - forcing fresh data fetch');
-    
-    // Clear all cached data on mount to ensure fresh data
-    queryClient.removeQueries({ queryKey: ["/api/balances"] });
-    queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
-    queryClient.removeQueries({ queryKey: [/^\/api\/currency-limits\//] });
-    
-    // Force initial fetch of all data when component mounts
-    if (sendMethod && receiveMethod) {
-      setTimeout(() => {
-        refetchPublicBalances();
-        refetchRate();
-        refetchSendLimits();
-        refetchReceiveLimits();
-      }, 100); // Small delay to ensure queries are properly cleared
-    }
-  }, []); // Empty dependency array - only run on mount
-
   const form = useForm<ExchangeFormData>({
     resolver: zodResolver(createExchangeFormSchema(
       dynamicLimits.minSendAmount, 
@@ -538,6 +533,26 @@ export default function Exchange() {
       agreeToTerms: false,
     },
   });
+
+  // Aggressive initial data fetch on mount
+  useEffect(() => {
+    console.log('🚀 Component mounted - forcing fresh data fetch');
+    
+    // Clear all cached data on mount to ensure fresh data
+    queryClient.removeQueries({ queryKey: ["/api/balances"] });
+    queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
+    queryClient.removeQueries({ queryKey: [/^\/api\/currency-limits\//] });
+    
+    // Force initial fetch of all data when component mounts
+    if (sendMethod && receiveMethod) {
+      setTimeout(() => {
+        refetchPublicBalances();
+        refetchRate();
+        refetchSendLimits();
+        refetchReceiveLimits();
+      }, 100); // Small delay to ensure queries are properly cleared
+    }
+  }, []); // Empty dependency array - only run on mount
 
   // Restore ALL saved data on mount - complete restoration
   useEffect(() => {
@@ -619,7 +634,13 @@ export default function Exchange() {
 
   // Update exchange rate when data is fetched - but don't interfere with user input
   useEffect(() => {
-    console.log('🔄 Rate data updated:', { rateData, rateLoading, sendMethod, receiveMethod });
+    console.log('🔄 Rate data updated:', { rateData, rateLoading, sendMethod, receiveMethod, isClearingFields });
+    
+    // Don't update if we're currently clearing fields
+    if (isClearingFields) {
+      console.log('⏸️ Skipping rate update - fields are being cleared');
+      return;
+    }
     
     // Validate that the rate data matches the current currency selection
     if (rateData?.from && rateData?.to) {
@@ -709,8 +730,15 @@ export default function Exchange() {
       exchangeRate,
       publicBalanceData,
       receiveMethod,
-      sendMethod
+      sendMethod,
+      isClearingFields
     });
+    
+    // Don't calculate if we're currently clearing fields
+    if (isClearingFields) {
+      console.log('⏸️ Skipping limits calculation - fields are being cleared');
+      return;
+    }
     
     // Validate currency selections
     if (!sendMethod || !receiveMethod || sendMethod === receiveMethod) {
@@ -1272,10 +1300,20 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 console.log('🔄 Send method changing from', sendMethod, 'to', value);
                                 
+                                // Set clearing state to prevent interference
+                                setIsClearingFields(true);
+                                
                                 // Update state immediately
                                 field.onChange(value);
                                 setSendMethod(value);
                                 saveFormDataImmediately('sendMethod', value);
+                                
+                                // RESET ALL FORM FIELDS when currency changes
+                                setSendAmount("");
+                                setReceiveAmount("");
+                                form.setValue("sendAmount", "");
+                                form.setValue("receiveAmount", "");
+                                form.setValue("exchangeRate", "0");
                                 
                                 // Clear any existing exchange rate data to prevent stale data
                                 setExchangeRate(0);
@@ -1298,6 +1336,11 @@ export default function Exchange() {
                                   refetchRate();
                                   refetchSendLimits();
                                   refetchReceiveLimits();
+                                  
+                                  // Clear the clearing state after a short delay
+                                  setTimeout(() => {
+                                    setIsClearingFields(false);
+                                  }, 100);
                                 }, 25); // Even faster response
                               }}
                             >
@@ -1376,10 +1419,20 @@ export default function Exchange() {
                               onValueChange={(value) => {
                                 console.log('🔄 Receive method changing from', receiveMethod, 'to', value);
                                 
+                                // Set clearing state to prevent interference
+                                setIsClearingFields(true);
+                                
                                 // Update state immediately
                                 field.onChange(value);
                                 setReceiveMethod(value);
                                 saveFormDataImmediately('receiveMethod', value);
+                                
+                                // RESET ALL FORM FIELDS when currency changes
+                                setSendAmount("");
+                                setReceiveAmount("");
+                                form.setValue("sendAmount", "");
+                                form.setValue("receiveAmount", "");
+                                form.setValue("exchangeRate", "0");
                                 
                                 // Clear any existing exchange rate data to prevent stale data
                                 setExchangeRate(0);
@@ -1402,6 +1455,11 @@ export default function Exchange() {
                                   refetchRate();
                                   refetchSendLimits();
                                   refetchReceiveLimits();
+                                  
+                                  // Clear the clearing state after a short delay
+                                  setTimeout(() => {
+                                    setIsClearingFields(false);
+                                  }, 100);
                                 }, 25); // Even faster response
                               }}
                             >
