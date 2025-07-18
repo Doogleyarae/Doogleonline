@@ -281,42 +281,45 @@ export default function Exchange() {
 
 
 
-  // Fetch exchange rate with improved cache handling
+  // Fetch exchange rate with aggressive fresh data fetching
   const { data: rateData, isLoading: rateLoading, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
-    staleTime: 0, // Always fetch fresh data when currency changes
+    staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache at all - always fetch fresh
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always refetch on mount
+    refetchOnReconnect: true, // Refetch on reconnect
     retry: 1, // Only retry once to avoid delays
-    retryDelay: 100, // Quick retry
+    retryDelay: 50, // Very quick retry
+    refetchInterval: 5000, // Refetch every 5 seconds for fresh data
   });
 
-  // Fetch currency limits with improved cache handling
+  // Fetch currency limits with aggressive fresh data fetching
   const { data: sendCurrencyLimits, isLoading: sendLimitsLoading, refetch: refetchSendLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
-    staleTime: 0, // Always fetch fresh data when currency changes
+    staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache at all - always fetch fresh
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always refetch on mount
+    refetchOnReconnect: true, // Refetch on reconnect
     retry: 1, // Only retry once to avoid delays
-    retryDelay: 100, // Quick retry
+    retryDelay: 50, // Very quick retry
+    refetchInterval: 5000, // Refetch every 5 seconds for fresh data
   });
 
   const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading, refetch: refetchReceiveLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
-    staleTime: 0, // Always fetch fresh data when currency changes
+    staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache at all - always fetch fresh
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always refetch on mount
+    refetchOnReconnect: true, // Refetch on reconnect
     retry: 1, // Only retry once to avoid delays
-    retryDelay: 100, // Quick retry
+    retryDelay: 50, // Very quick retry
+    refetchInterval: 5000, // Refetch every 5 seconds for fresh data
   });
 
   // Fetch wallet addresses
@@ -415,16 +418,20 @@ export default function Exchange() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch public balances for user display
+  // Fetch public balances for user display with aggressive fresh data fetching
   const { data: publicBalanceData, isLoading: publicBalanceLoading, refetch: refetchPublicBalances } = useQuery<{ balances: Record<string, number>; status: string; systemStatus: string }>({
     queryKey: ["/api/balances"],
-    refetchInterval: 3000, // Refresh every 3 seconds for immediate updates
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: true,
+    refetchInterval: 2000, // Refresh every 2 seconds for immediate updates
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache at all - always fetch fresh
+    refetchOnMount: true, // Always refetch on mount
     refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnReconnect: true, // Refetch on reconnect
+    retry: 1, // Only retry once to avoid delays
+    retryDelay: 50, // Very quick retry
   });
 
-  // Invalidate and refetch data when currency selections change
+  // Aggressive data refresh when currency selections change
   useEffect(() => {
     if (sendMethod && receiveMethod) {
       console.log('🔄 Currency selection changed - sendMethod:', sendMethod, 'receiveMethod:', receiveMethod);
@@ -438,11 +445,15 @@ export default function Exchange() {
       // Force re-render immediately
       setForceUpdate(prev => prev + 1);
       
-      // Remove old queries from cache completely
+      // Aggressively clear ALL related queries from cache
       queryClient.removeQueries({ queryKey: ["/api/balances"] });
       queryClient.removeQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
       queryClient.removeQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
       queryClient.removeQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+      
+      // Also clear any cached data for other currency pairs to ensure fresh data
+      queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
+      queryClient.removeQueries({ queryKey: [/^\/api\/currency-limits\//] });
       
       // Force immediate refetch with new values
       setTimeout(() => {
@@ -450,7 +461,7 @@ export default function Exchange() {
         refetchRate();
         refetchSendLimits();
         refetchReceiveLimits();
-      }, 50); // Reduced delay for faster response
+      }, 25); // Even faster response
     }
   }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
 
@@ -469,14 +480,48 @@ export default function Exchange() {
     }
   }, [sendMethod, receiveMethod, rateData, rateLoading]);
 
-  // Trigger initial data fetch on mount
+  // Ensure fresh data when page becomes visible
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && sendMethod && receiveMethod) {
+        console.log('👁️ Page became visible - refreshing data');
+        
+        // Clear cache and refetch fresh data
+        queryClient.removeQueries({ queryKey: ["/api/balances"] });
+        queryClient.removeQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+        queryClient.removeQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+        queryClient.removeQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+        
+        setTimeout(() => {
+          refetchPublicBalances();
+          refetchRate();
+          refetchSendLimits();
+          refetchReceiveLimits();
+        }, 50);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
+
+  // Aggressive initial data fetch on mount
+  useEffect(() => {
+    console.log('🚀 Component mounted - forcing fresh data fetch');
+    
+    // Clear all cached data on mount to ensure fresh data
+    queryClient.removeQueries({ queryKey: ["/api/balances"] });
+    queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
+    queryClient.removeQueries({ queryKey: [/^\/api\/currency-limits\//] });
+    
     // Force initial fetch of all data when component mounts
     if (sendMethod && receiveMethod) {
-      queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+      setTimeout(() => {
+        refetchPublicBalances();
+        refetchRate();
+        refetchSendLimits();
+        refetchReceiveLimits();
+      }, 100); // Small delay to ensure queries are properly cleared
     }
   }, []); // Empty dependency array - only run on mount
 
