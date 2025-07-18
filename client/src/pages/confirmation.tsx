@@ -15,6 +15,7 @@ export default function Confirmation() {
   const [order, setOrder] = useState<Order | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -23,40 +24,52 @@ export default function Confirmation() {
 
   useEffect(() => {
     try {
+      console.log('🔄 Loading order from session storage...');
       const storedOrder = sessionStorage.getItem("currentOrder");
+      
       if (storedOrder) {
         const orderData = JSON.parse(storedOrder);
+        console.log('✅ Order loaded successfully:', orderData);
         setOrder(orderData);
         
         // Auto-redirect if order is already completed or cancelled
         if (orderData.status === 'completed') {
+          console.log('🔄 Order completed, redirecting...');
           setLocation('/order-completed');
         } else if (orderData.status === 'cancelled') {
+          console.log('🔄 Order cancelled, redirecting...');
           setLocation('/order-cancelled');
         }
       } else {
-        setError("No order information found in session storage");
+        console.log('❌ No order found in session storage');
+        setError("No order information found. Please create a new exchange order.");
       }
     } catch (err) {
-      console.error("Error loading order from session storage:", err);
-      setError("Failed to load order information");
+      console.error("❌ Error loading order from session storage:", err);
+      setError("Failed to load order information. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   }, [setLocation]);
 
   // Listen for real-time order updates
   useEffect(() => {
     const handleOrderUpdate = () => {
-      const storedOrder = sessionStorage.getItem("currentOrder");
-      if (storedOrder) {
-        const orderData = JSON.parse(storedOrder);
-        setOrder(orderData);
-        
-        // Auto-redirect based on new status
-        if (orderData.status === 'completed') {
-          setLocation('/order-completed');
-        } else if (orderData.status === 'cancelled') {
-          setLocation('/order-cancelled');
+      try {
+        const storedOrder = sessionStorage.getItem("currentOrder");
+        if (storedOrder) {
+          const orderData = JSON.parse(storedOrder);
+          setOrder(orderData);
+          
+          // Auto-redirect based on new status
+          if (orderData.status === 'completed') {
+            setLocation('/order-completed');
+          } else if (orderData.status === 'cancelled') {
+            setLocation('/order-cancelled');
+          }
         }
+      } catch (error) {
+        console.error('Error handling order update:', error);
       }
     };
 
@@ -78,6 +91,8 @@ export default function Confirmation() {
   // Fetch live wallet addresses from admin dashboard
   const { data: walletAddresses } = useQuery<Record<string, string>>({
     queryKey: ["/api/admin/wallet-addresses"],
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Countdown timer for paid orders
@@ -107,17 +122,22 @@ export default function Confirmation() {
 
   // Check cancellation limit before allowing cancellation
   const checkCancellationLimit = async (phoneNumber: string, email: string) => {
-    const response = await fetch("/api/orders/check-cancellation-limit", {
-      method: "POST",
-      body: JSON.stringify({ phoneNumber, email }),
-      headers: { "Content-Type": "application/json" },
-    });
-    
-    if (!response.ok) {
-      throw new Error("Failed to check cancellation limit");
+    try {
+      const response = await fetch("/api/orders/check-cancellation-limit", {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber, email }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to check cancellation limit");
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking cancellation limit:', error);
+      throw error;
     }
-    
-    return await response.json();
   };
 
   const updateOrderStatusMutation = useMutation({
@@ -145,6 +165,7 @@ export default function Confirmation() {
         method: "PATCH",
         body: JSON.stringify({ status }),
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
       
       if (!response.ok) {
@@ -172,10 +193,11 @@ export default function Confirmation() {
         }, 1500); // 1.5 second delay to show the toast message
       }
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('Order status update error:', error);
       toast({
         title: "Update Failed",
-        description: "Failed to update order status",
+        description: error.message || "Failed to update order status",
         variant: "destructive",
       });
     },
@@ -183,7 +205,9 @@ export default function Confirmation() {
 
   // Function to replace amount placeholder in payment strings
   const getFormattedPaymentString = (paymentString: string | undefined, amount: string | undefined): string => {
-    if (!paymentString || !amount) return paymentString || '';
+    if (!paymentString || !amount) {
+      return paymentString || '';
+    }
     
     // Format amount to remove unnecessary decimal places (e.g., 55.00 -> 55, 55.75 -> 55.75)
     const numericAmount = parseFloat(amount);
@@ -194,25 +218,28 @@ export default function Confirmation() {
   };
 
   const handleCopyWallet = async () => {
-    // Use live wallet address from admin dashboard, fallback to order wallet
-    // FIXED: Use sendMethod instead of receiveMethod - customer sends TO the send currency wallet
-    const rawWallet = walletAddresses?.[order?.sendMethod || ''] || order?.paymentWallet || '';
-    const currentWallet = getFormattedPaymentString(rawWallet, order?.sendAmount || '');
-    
-    if (currentWallet) {
-      try {
+    try {
+      // Use live wallet address from admin dashboard, fallback to order wallet
+      // FIXED: Use sendMethod instead of receiveMethod - customer sends TO the send currency wallet
+      const rawWallet = walletAddresses?.[order?.sendMethod || ''] || order?.paymentWallet || '';
+      const currentWallet = getFormattedPaymentString(rawWallet, order?.sendAmount || '');
+      
+      if (currentWallet) {
         await copyToClipboard(currentWallet);
         toast({
           title: "Copied!",
           description: "Payment string copied to clipboard",
         });
-      } catch (error) {
-        toast({
-          title: "Failed to copy",
-          description: "Please copy the address manually",
-          variant: "destructive",
-        });
+      } else {
+        throw new Error("No wallet address available");
       }
+    } catch (error) {
+      console.error('Copy wallet error:', error);
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the address manually",
+        variant: "destructive",
+      });
     }
   };
 
@@ -261,6 +288,7 @@ export default function Confirmation() {
       setLocation('/order-cancelled');
     },
     onError: (error: any) => {
+      console.error('Cancel order error:', error);
       toast({
         title: "Cancellation Failed",
         description: error.message || "Failed to cancel order",
@@ -292,6 +320,21 @@ export default function Confirmation() {
     }
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Card className="text-center p-8">
+          <CardContent>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-600 mb-4">Loading order information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state
   if (error) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -318,13 +361,17 @@ export default function Confirmation() {
     );
   }
 
+  // Show no order state
   if (!order) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Card className="text-center p-8">
           <CardContent>
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-lg text-gray-600 mb-4">Loading order information...</p>
+            <div className="text-gray-600 mb-4">
+              <X className="w-12 h-12 mx-auto mb-2" />
+              <h2 className="text-xl font-bold mb-2">No Order Found</h2>
+              <p className="text-sm">No order information was found. Please create a new exchange order.</p>
+            </div>
             <Link href="/exchange">
               <Button>Create New Exchange</Button>
             </Link>
@@ -360,36 +407,25 @@ export default function Confirmation() {
             )}
             {order.status === "completed" && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <p className="text-xl font-semibold text-green-800">Order Completed Successfully.</p>
-              </div>
-            )}
-            {order.status === "cancelled" && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <p className="text-xl font-semibold text-red-800">This order has been cancelled.</p>
+                <p className="text-xl font-semibold text-green-800">Order completed successfully!</p>
               </div>
             )}
           </div>
 
-          <Card className="bg-gray-50 mb-6">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Order ID:</span>
-                  <span className="text-lg font-bold text-primary">{order.orderId}</span>
+          {/* Order Details */}
+          <Card className="bg-gray-50 border border-gray-200 mb-6">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Order Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p><strong>Order ID:</strong> <span className="font-mono text-blue-600">{order.orderId}</span></p>
+                  <p><strong>Status:</strong> {getStatusBadge(order.status)}</p>
+                  <p><strong>Date:</strong> {formatDate(order.createdAt)}</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Date & Time:</span>
-                  <span className="text-sm text-gray-900">{order.createdAt ? formatDate(order.createdAt) : 'Just now'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Amount:</span>
-                  <span className="text-sm text-gray-900">
-                    {formatCurrency(order.sendAmount, order.sendMethod)} → {formatCurrency(order.receiveAmount, order.receiveMethod)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Status:</span>
-                  {getStatusBadge(order.status)}
+                <div>
+                  <p><strong>From:</strong> {formatCurrency(order.sendAmount, order.sendMethod)} ({order.sendMethod.toUpperCase()})</p>
+                  <p><strong>To:</strong> {formatCurrency(order.receiveAmount, order.receiveMethod)} ({order.receiveMethod.toUpperCase()})</p>
+                  <p><strong>Rate:</strong> {parseFloat(order.exchangeRate).toFixed(6)}</p>
                 </div>
               </div>
             </CardContent>
@@ -418,7 +454,6 @@ export default function Confirmation() {
                     toast({ title: "Copied!", description: "Payment string copied to clipboard" });
                   }}
                   className="ml-2 text-primary hover:text-blue-700"
-                  title="Copy to clipboard"
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
@@ -464,35 +499,23 @@ export default function Confirmation() {
                 <p className="text-blue-700 text-sm mb-3">
                   Your order will be automatically completed in:
                 </p>
-                <div className="text-2xl font-bold text-blue-800 mb-2">
+                <div className="text-2xl font-bold text-blue-900">
                   {formatCountdown(countdown)}
                 </div>
-                <p className="text-xs text-blue-600">
-                  Processing typically takes 15 minutes after payment confirmation
-                </p>
               </CardContent>
             </Card>
           )}
 
-          {/* Email Notification Information */}
-          <Card className="bg-gray-50 border border-gray-200 mb-6">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Email Notifications</h3>
-              <p className="text-sm text-gray-700">
-                Dear Customer, thank you for submitting your exchange request. If you did not receive an email confirmation, please make sure you entered a correct email address and check your spam/junk folder. If you still haven't received anything, please contact our support team for assistance.
-              </p>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-3">
-            <Link href="/track">
-              <Button className="w-full">
-                Track Your Order
+          {/* Navigation */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link href="/exchange">
+              <Button variant="outline" className="w-full sm:w-auto">
+                Create New Exchange
               </Button>
             </Link>
-            <Link href="/exchange">
-              <Button variant="outline" className="w-full">
-                Make Another Exchange
+            <Link href={`/track/${order.orderId}`}>
+              <Button className="w-full sm:w-auto">
+                Track Order
               </Button>
             </Link>
           </div>
