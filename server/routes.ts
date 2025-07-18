@@ -856,6 +856,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update exchange rate (admin only) with complete data preservation
   app.post("/api/admin/exchange-rates", requireAdminAuth, async (req, res) => {
     try {
+      console.log('🔄 [EXCHANGE RATE UPDATE] Request received:', req.body);
+      
       const validatedData = insertExchangeRateSchema.parse(req.body);
       
       // Preserve existing currency limits before updating exchange rate
@@ -865,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fromLimits = await getCurrencyLimits(fromCurrency);
       const toLimits = await getCurrencyLimits(toCurrency);
       
-      console.log(`Updating exchange rate ${fromCurrency} → ${toCurrency} = ${validatedData.rate} while preserving limits:
+      console.log(`🔄 [EXCHANGE RATE UPDATE] Updating exchange rate ${fromCurrency} → ${toCurrency} = ${validatedData.rate} while preserving limits:
         ${fromCurrency.toUpperCase()}: min $${fromLimits.min}, max $${fromLimits.max}
         ${toCurrency.toUpperCase()}: min $${toLimits.min}, max $${toLimits.max}`);
       
@@ -874,6 +876,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const changeReason = req.body.changeReason;
       
       const rate = await storage.updateExchangeRate(validatedData, adminUsername, changeReason);
+      
+      console.log('✅ [EXCHANGE RATE UPDATE] Rate updated successfully:', rate);
       
       // Broadcast exchange rate update to all connected clients via WebSocket with forced refresh
       wsManager.broadcast({
@@ -893,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toISOString()
       });
       
-      console.log(`EXCHANGE RATE UPDATE BROADCAST: ${validatedData.fromCurrency} → ${validatedData.toCurrency} = ${validatedData.rate} (forced cache refresh)`);
+      console.log(`✅ [EXCHANGE RATE UPDATE] Broadcast sent: ${validatedData.fromCurrency} → ${validatedData.toCurrency} = ${validatedData.rate} (forced cache refresh)`);
       
       // Also send status notification
       wsManager.notifyStatusChange(
@@ -915,6 +919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "NEW DATA PERSISTED: Exchange rate completely replaced, all limits preserved"
       });
     } catch (error) {
+      console.error('❌ [EXCHANGE RATE UPDATE] Error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid rate data", errors: error.errors });
       }

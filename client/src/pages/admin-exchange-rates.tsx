@@ -114,23 +114,55 @@ export default function AdminExchangeRates() {
       changedBy: string;
       changeReason?: string;
     }) => {
-      const response = await apiRequest("POST", "/api/admin/exchange-rates", data);
-      return response.json();
+      console.log('🔄 [ADMIN] Updating exchange rate:', data);
+      
+      const response = await fetch("/api/admin/exchange-rates", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-bypass": sessionStorage.getItem("adminToken") || ""
+        },
+        credentials: "include",
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ [ADMIN] Exchange rate update failed:', errorData);
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ [ADMIN] Exchange rate updated successfully:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      console.log('✅ [ADMIN] Exchange rate update mutation success:', data);
+      
+      // Force complete cache removal for immediate fresh data
+      queryClient.removeQueries({ queryKey: ["/api/admin/exchange-rates"] });
+      queryClient.removeQueries({ queryKey: ["/api/admin/exchange-rate-history"] });
+      queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
+      queryClient.removeQueries({ queryKey: ["/api/balances"] });
+      
+      // Force immediate refetch
       queryClient.invalidateQueries({ queryKey: ["/api/admin/exchange-rates"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/exchange-rate-history"] });
+      queryClient.refetchQueries({ queryKey: ["/api/admin/exchange-rates"] });
+      queryClient.refetchQueries({ queryKey: ["/api/admin/exchange-rate-history"] });
+      
       toast({
-        title: "Rate Updated",
-        description: `Exchange rate updated successfully: ${selectedFrom} → ${selectedTo} = ${newRate}`,
+        title: "Rate Updated Successfully",
+        description: `Exchange rate updated: ${variables.fromCurrency} → ${variables.toCurrency} = ${variables.rate}`,
       });
       setIsUpdateDialogOpen(false);
       setNewRate("");
       setChangeReason("");
     },
     onError: (error: any) => {
+      console.error('❌ [ADMIN] Exchange rate update mutation error:', error);
       toast({
-        title: "Error",
+        title: "Update Failed",
         description: error.message || "Failed to update exchange rate",
         variant: "destructive",
       });
