@@ -136,7 +136,8 @@ export class DatabaseStorage implements IStorage {
       const orderCount = await db.select().from(orders);
       const orderId = `DGL-${new Date().getFullYear()}-${(orderCount.length + 1).toString().padStart(6, '0')}`;
       
-      // Payment wallet addresses based on receive method
+      // Payment wallet addresses based on send method (customer sends TO this wallet)
+      const sendMethod = insertOrder.sendMethod || 'unknown';
       const receiveMethod = insertOrder.receiveMethod || 'unknown';
       const paymentWallets: Record<string, string> = {
         'zaad': '*880*637834431*amount#',
