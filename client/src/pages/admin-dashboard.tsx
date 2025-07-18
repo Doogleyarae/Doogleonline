@@ -485,7 +485,7 @@ export default function AdminDashboard() {
   
   // State for order history filters
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [dateRange, setDateRange] = useState<string>("all");
 
   // Fetch all orders
@@ -1773,7 +1773,7 @@ export default function AdminDashboard() {
                       <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter:</Label>
                       <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-full sm:w-40 bg-white/50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 rounded-xl h-10">
-                          <SelectValue placeholder="All Orders" />
+                          <SelectValue placeholder="Pending" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-0 shadow-xl">
                           <SelectItem value="all" className="rounded-lg">All Orders</SelectItem>
