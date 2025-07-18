@@ -280,33 +280,42 @@ export default function Exchange() {
 
 
 
-  // Fetch exchange rate
-  const { data: rateData, isLoading: rateLoading } = useQuery<ExchangeRateResponse>({
+  // Fetch exchange rate with improved cache handling
+  const { data: rateData, isLoading: rateLoading, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
     staleTime: 0, // Always fetch fresh data when currency changes
+    gcTime: 0, // Don't cache at all - always fetch fresh
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     refetchOnReconnect: true,
+    retry: 1, // Only retry once to avoid delays
+    retryDelay: 100, // Quick retry
   });
 
-  // Fetch currency limits
-  const { data: sendCurrencyLimits, isLoading: sendLimitsLoading } = useQuery<CurrencyLimitsResponse>({
+  // Fetch currency limits with improved cache handling
+  const { data: sendCurrencyLimits, isLoading: sendLimitsLoading, refetch: refetchSendLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
     staleTime: 0, // Always fetch fresh data when currency changes
+    gcTime: 0, // Don't cache at all - always fetch fresh
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     refetchOnReconnect: true,
+    retry: 1, // Only retry once to avoid delays
+    retryDelay: 100, // Quick retry
   });
 
-  const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading } = useQuery<CurrencyLimitsResponse>({
+  const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading, refetch: refetchReceiveLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${receiveMethod}`],
     enabled: !!receiveMethod,
     staleTime: 0, // Always fetch fresh data when currency changes
+    gcTime: 0, // Don't cache at all - always fetch fresh
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     refetchOnReconnect: true,
+    retry: 1, // Only retry once to avoid delays
+    retryDelay: 100, // Quick retry
   });
 
   // Fetch wallet addresses
@@ -422,24 +431,27 @@ export default function Exchange() {
       // Immediately update rate display to show loading state
       setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
       
+      // Clear any existing exchange rate data to prevent stale data
+      setExchangeRate(0);
+      
       // Force re-render
       setForceUpdate(prev => prev + 1);
       
-      // Invalidate queries to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+      // Remove old queries from cache completely
+      queryClient.removeQueries({ queryKey: ["/api/balances"] });
+      queryClient.removeQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
+      queryClient.removeQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+      queryClient.removeQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
       
       // Force immediate refetch with new values
       setTimeout(() => {
         refetchPublicBalances();
-        queryClient.refetchQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
-        queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
-        queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
-      }, 100);
+        refetchRate();
+        refetchSendLimits();
+        refetchReceiveLimits();
+      }, 50); // Reduced delay for faster response
     }
-  }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances]);
+  }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
 
   // Trigger initial data fetch on mount
   useEffect(() => {
@@ -537,6 +549,15 @@ export default function Exchange() {
           actual: `${actualFrom} to ${actualTo}`
         });
         // Don't use this rate data - it's for a different currency pair
+        return;
+      }
+    }
+    
+    // Check if the rate data is fresh (has timestamp)
+    if (rateData?.timestamp) {
+      const dataAge = Date.now() - rateData.timestamp;
+      if (dataAge > 5000) { // 5 seconds old
+        console.log('⚠️ Rate data is stale:', dataAge, 'ms old');
         return;
       }
     }
@@ -1152,20 +1173,20 @@ export default function Exchange() {
                                 // Force re-render
                                 setForceUpdate(prev => prev + 1);
                                 
-                                // Invalidate and refetch data when send method changes
+                                // Remove old queries from cache completely
                                 console.log('Send method changed to:', value);
-                                queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
-                                queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${value}/${receiveMethod}`] });
-                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${value}`] });
-                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
+                                queryClient.removeQueries({ queryKey: ["/api/balances"] });
+                                queryClient.removeQueries({ queryKey: [`/api/exchange-rate/${value}/${receiveMethod}`] });
+                                queryClient.removeQueries({ queryKey: [`/api/currency-limits/${value}`] });
+                                queryClient.removeQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
                                 
                                 // Force immediate refetch with new values
                                 setTimeout(() => {
                                   refetchPublicBalances();
-                                  queryClient.refetchQueries({ queryKey: [`/api/exchange-rate/${value}/${receiveMethod}`] });
-                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${value}`] });
-                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${receiveMethod}`] });
-                                }, 100);
+                                  refetchRate();
+                                  refetchSendLimits();
+                                  refetchReceiveLimits();
+                                }, 50);
                               }}
                             >
                               <SelectTrigger className="h-12">
@@ -1254,20 +1275,20 @@ export default function Exchange() {
                                 // Force re-render
                                 setForceUpdate(prev => prev + 1);
                                 
-                                // Invalidate and refetch data when receive method changes
+                                // Remove old queries from cache completely
                                 console.log('Receive method changed to:', value);
-                                queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
-                                queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${value}`] });
-                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
-                                queryClient.invalidateQueries({ queryKey: [`/api/currency-limits/${value}`] });
+                                queryClient.removeQueries({ queryKey: ["/api/balances"] });
+                                queryClient.removeQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${value}`] });
+                                queryClient.removeQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
+                                queryClient.removeQueries({ queryKey: [`/api/currency-limits/${value}`] });
                                 
                                 // Force immediate refetch with new values
                                 setTimeout(() => {
                                   refetchPublicBalances();
-                                  queryClient.refetchQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${value}`] });
-                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${sendMethod}`] });
-                                  queryClient.refetchQueries({ queryKey: [`/api/currency-limits/${value}`] });
-                                }, 100);
+                                  refetchRate();
+                                  refetchSendLimits();
+                                  refetchReceiveLimits();
+                                }, 50);
                               }}
                             >
                               <SelectTrigger className="h-12">
