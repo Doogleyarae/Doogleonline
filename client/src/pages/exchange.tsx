@@ -534,31 +534,42 @@ export default function Exchange() {
     },
   });
 
-  // Aggressive initial data fetch on mount
+  // Aggressive initial data fetch on mount - only if no saved data is being restored
   useEffect(() => {
-    console.log('🚀 Component mounted - forcing fresh data fetch');
+    console.log('🚀 Component mounted - checking if fresh data fetch is needed');
     
-    // Clear all cached data on mount to ensure fresh data
-    queryClient.removeQueries({ queryKey: ["/api/balances"] });
-    queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
-    queryClient.removeQueries({ queryKey: [/^\/api\/currency-limits\//] });
-    
-    // Force initial fetch of all data when component mounts
-    if (sendMethod && receiveMethod) {
-      setTimeout(() => {
-        refetchPublicBalances();
-        refetchRate();
-        refetchSendLimits();
-        refetchReceiveLimits();
-      }, 100); // Small delay to ensure queries are properly cleared
+    // Only run this if we don't have saved data to restore
+    // This prevents interference with the data restoration process
+    if (!isLoaded || !hasSavedData) {
+      console.log('🚀 No saved data to restore - forcing fresh data fetch');
+      
+      // Clear all cached data on mount to ensure fresh data
+      queryClient.removeQueries({ queryKey: ["/api/balances"] });
+      queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
+      queryClient.removeQueries({ queryKey: [/^\/api\/currency-limits\//] });
+      
+      // Force initial fetch of all data when component mounts
+      if (sendMethod && receiveMethod) {
+        setTimeout(() => {
+          refetchPublicBalances();
+          refetchRate();
+          refetchSendLimits();
+          refetchReceiveLimits();
+        }, 100); // Small delay to ensure queries are properly cleared
+      }
+    } else {
+      console.log('🚀 Saved data will be restored - skipping initial data fetch');
     }
-  }, []); // Empty dependency array - only run on mount
+  }, [isLoaded, hasSavedData]); // Depend on auto-save state to prevent interference
 
   // Restore ALL saved data on mount - complete restoration
   useEffect(() => {
     if (isLoaded && hasSavedData && savedData) {
       try {
         console.log('🔄 Restoring saved data:', savedData);
+        
+        // Set clearing state to prevent interference during restoration
+        setIsClearingFields(true);
         
         // Restore ALL form fields from saved data
         if (savedData.fullName) {
@@ -577,6 +588,8 @@ export default function Exchange() {
           form.setValue("walletAddress", savedData.walletAddress);
           setWalletAddress(savedData.walletAddress);
         }
+        
+        // Restore currency selections and immediately clear all cached data
         if (savedData.sendMethod) {
           form.setValue("sendMethod", savedData.sendMethod);
           setSendMethod(savedData.sendMethod);
@@ -585,35 +598,51 @@ export default function Exchange() {
           form.setValue("receiveMethod", savedData.receiveMethod);
           setReceiveMethod(savedData.receiveMethod);
         }
-        if (savedData.sendAmount) {
-          form.setValue("sendAmount", savedData.sendAmount);
-          setSendAmount(savedData.sendAmount);
-        }
-        if (savedData.receiveAmount) {
-          form.setValue("receiveAmount", savedData.receiveAmount);
-          setReceiveAmount(savedData.receiveAmount);
-        }
-        if (savedData.exchangeRate) {
-          form.setValue("exchangeRate", savedData.exchangeRate.toString());
-          setExchangeRate(savedData.exchangeRate);
-        }
-        if (savedData.rateDisplay) {
-          setRateDisplay(savedData.rateDisplay);
-        }
-        if (savedData.dynamicLimits) {
-          setDynamicLimits(savedData.dynamicLimits);
-        }
+        
+        // DO NOT restore amount fields from saved data to prevent stale amounts
+        // Reset amount fields to ensure fresh start
+        setSendAmount("");
+        setReceiveAmount("");
+        form.setValue("sendAmount", "");
+        form.setValue("receiveAmount", "");
+        
+        // DO NOT restore exchange rate and rate display from saved data
+        // These will be fetched fresh based on current currency selections
+        setExchangeRate(0);
+        setRateDisplay(`Loading rate for ${savedData.sendMethod?.toUpperCase() || 'TRC20'} to ${savedData.receiveMethod?.toUpperCase() || 'MONEYGO'}...`);
+        
+        // DO NOT restore dynamic limits from saved data
+        // These will be calculated fresh based on current data
         
         console.log('✅ All saved data restored successfully');
+        
+        // Clear ALL cached data to ensure fresh data fetch
+        queryClient.removeQueries({ queryKey: ["/api/balances"] });
+        queryClient.removeQueries({ queryKey: [/^\/api\/exchange-rate\//] });
+        queryClient.removeQueries({ queryKey: [/^\/api\/currency-limits\//] });
+        
+        // Force immediate refetch of all data with restored currency selections
+        setTimeout(() => {
+          refetchPublicBalances();
+          refetchRate();
+          refetchSendLimits();
+          refetchReceiveLimits();
+          
+          // Clear the clearing state after data is fetched
+          setTimeout(() => {
+            setIsClearingFields(false);
+          }, 200);
+        }, 50);
         
         // Trigger form validation after restoration
         setTimeout(() => {
           form.trigger();
-        }, 100);
+        }, 300);
         
       } catch (error) {
         console.error('Error restoring saved data:', error);
         clearAll();
+        setIsClearingFields(false);
       }
     }
     // Only run on mount - no dependencies that could cause re-runs
@@ -701,6 +730,20 @@ export default function Exchange() {
       console.log('❌ Rate not available');
     }
   }, [rateData, rateLoading, sendMethod, receiveMethod, form, isClearingFields]);
+
+  // Additional effect to ensure rate display is always in sync with currency selections
+  useEffect(() => {
+    if (!isClearingFields && sendMethod && receiveMethod && sendMethod !== receiveMethod) {
+      // If we don't have rate data yet, show loading state
+      if (!rateData || rateLoading) {
+        setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
+      }
+      // If we have no rate data and not loading, show error state
+      else if (!rateData && !rateLoading) {
+        setRateDisplay(`Rate not available for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}`);
+      }
+    }
+  }, [sendMethod, receiveMethod, rateData, rateLoading, isClearingFields]);
 
   // Get public display balance for users
   const getPublicDisplayBalance = (currency: string) => {
