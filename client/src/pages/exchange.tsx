@@ -229,20 +229,14 @@ export default function Exchange() {
     clearAll
   } = useAutoSave(formData, {
     formKey: 'exchange',
-    debounceMs: 50, // Very fast auto-save
+    debounceMs: 200, // Reduced frequency to prevent high effects
     saveOnChange: true,
     saveOnBlur: true,
     restoreOnMount: true,
     saveOnSubmit: true // Save on form submission
   });
 
-  // Add a save trigger for form changes
-  useEffect(() => {
-    if (isLoaded && isReminded) {
-      console.log('💾 Form data changed - triggering save');
-      saveImmediately(formData);
-    }
-  }, [formData, isLoaded, isReminded, saveImmediately]);
+
 
   // Load saved data when it becomes available (for cross-page persistence)
   useEffect(() => {
@@ -273,41 +267,21 @@ export default function Exchange() {
 
 
 
-  // Enhanced save function for immediate saving using new auto-save system
+  // Simple save function - no duplicate storage
   const saveFormDataImmediately = useCallback((field: string, value: any) => {
     try {
-      console.log(`💾 Immediately saving ${field}:`, value);
-      
-      // Save the field to auto-save system
+      console.log(`💾 Saving ${field}:`, value);
       saveField(field as keyof typeof formData, value);
-      
-      // Also save to legacy system for backup
-      saveCompleteExchangeState({
-        sendMethod,
-        receiveMethod,
-        sendAmount,
-        receiveAmount,
-        fullName,
-        email,
-        senderAccount,
-        walletAddress,
-        exchangeRate,
-        rateDisplay,
-        dynamicLimits,
-        timestamp: Date.now(),
-      });
-      
-      console.log(`✅ Successfully saved ${field}:`, value);
     } catch (error) {
       console.error(`Error saving field ${field}:`, error);
     }
-  }, [saveField, formData]);
+  }, [saveField]);
 
 
 
 
 
-  // Fetch exchange rate with aggressive fresh data fetching
+  // Fetch exchange rate with optimized fresh data fetching
   const { data: rateData, isLoading: rateLoading, refetch: refetchRate } = useQuery<ExchangeRateResponse>({
     queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`],
     enabled: !!(sendMethod && receiveMethod && sendMethod !== receiveMethod),
@@ -318,10 +292,10 @@ export default function Exchange() {
     refetchOnReconnect: true, // Refetch on reconnect
     retry: 1, // Only retry once to avoid delays
     retryDelay: 50, // Very quick retry
-    refetchInterval: 5000, // Refetch every 5 seconds for fresh data
+    refetchInterval: 10000, // Refetch every 10 seconds to reduce effects
   });
 
-  // Fetch currency limits with aggressive fresh data fetching
+  // Fetch currency limits with optimized fresh data fetching
   const { data: sendCurrencyLimits, isLoading: sendLimitsLoading, refetch: refetchSendLimits } = useQuery<CurrencyLimitsResponse>({
     queryKey: [`/api/currency-limits/${sendMethod}`],
     enabled: !!sendMethod,
@@ -332,7 +306,7 @@ export default function Exchange() {
     refetchOnReconnect: true, // Refetch on reconnect
     retry: 1, // Only retry once to avoid delays
     retryDelay: 50, // Very quick retry
-    refetchInterval: 5000, // Refetch every 5 seconds for fresh data
+    refetchInterval: 10000, // Refetch every 10 seconds to reduce effects
   });
 
   const { data: receiveCurrencyLimits, isLoading: receiveLimitsLoading, refetch: refetchReceiveLimits } = useQuery<CurrencyLimitsResponse>({
@@ -345,7 +319,7 @@ export default function Exchange() {
     refetchOnReconnect: true, // Refetch on reconnect
     retry: 1, // Only retry once to avoid delays
     retryDelay: 50, // Very quick retry
-    refetchInterval: 5000, // Refetch every 5 seconds for fresh data
+    refetchInterval: 10000, // Refetch every 10 seconds to reduce effects
   });
 
   // Fetch wallet addresses
@@ -447,7 +421,7 @@ export default function Exchange() {
   // Fetch public balances for user display with aggressive fresh data fetching
   const { data: publicBalanceData, isLoading: publicBalanceLoading, refetch: refetchPublicBalances } = useQuery<{ balances: Record<string, number>; status: string; systemStatus: string }>({
     queryKey: ["/api/balances"],
-    refetchInterval: 2000, // Refresh every 2 seconds for immediate updates
+    refetchInterval: 5000, // Refresh every 5 seconds to reduce effects
     staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache at all - always fetch fresh
     refetchOnMount: true, // Always refetch on mount
@@ -457,31 +431,7 @@ export default function Exchange() {
     retryDelay: 50, // Very quick retry
   });
 
-  // Save ALL information whenever anything changes (simplified to prevent infinite loops)
-  useEffect(() => {
-    if (isLoaded) {
-      console.log('💾 Auto-saving ALL form data due to changes');
-      
-      // Save to auto-save system
-      saveImmediately(formData);
-      
-      // Also save to legacy system for backup
-      saveCompleteExchangeState({
-        sendMethod,
-        receiveMethod,
-        sendAmount,
-        receiveAmount,
-        fullName,
-        email,
-        senderAccount,
-        walletAddress,
-        exchangeRate,
-        rateDisplay,
-        dynamicLimits,
-        timestamp: Date.now(),
-      });
-    }
-  }, [formData, isLoaded, saveImmediately]);
+
 
   // Aggressive data refresh when currency selections change
   useEffect(() => {
@@ -517,20 +467,7 @@ export default function Exchange() {
     }
   }, [sendMethod, receiveMethod, queryClient, refetchPublicBalances, refetchRate, refetchSendLimits, refetchReceiveLimits]);
 
-  // Additional effect to ensure UI stays in sync with currency changes
-  useEffect(() => {
-    if (sendMethod && receiveMethod) {
-      console.log('🔄 Ensuring UI sync - sendMethod:', sendMethod, 'receiveMethod:', receiveMethod);
-      
-      // Force immediate UI update
-      setForceUpdate(prev => prev + 1);
-      
-      // Update rate display immediately if no rate data is available
-      if (!rateData || rateLoading) {
-        setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
-      }
-    }
-  }, [sendMethod, receiveMethod, rateData, rateLoading]);
+
 
 
 
