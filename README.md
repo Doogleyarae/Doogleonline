@@ -79,11 +79,11 @@ The application will be available at `http://localhost:5000`
 
 ## Admin Access
 
-Access the admin dashboard at `/admin/login` with the following default credentials:
-- **Username**: admin
-- **Password**: admin123
+Access the admin dashboard at `/admin/login` with the following credentials:
+- **Username**: Doogle
+- **Password**: Aa121322@Doogle143
 
-> **Important**: Change the admin credentials before deploying to production.
+> **Important**: These are secure production credentials. Do not share or change them without proper authorization.
 
 ## API Endpoints
 

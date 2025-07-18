@@ -13,7 +13,7 @@ export function requireAdminAuth(req: RequestWithSession, res: Response, next: N
   console.log('🔐 [ADMIN AUTH] Checking authentication...');
   console.log('🔐 [ADMIN AUTH] Session exists:', !!req.session);
   console.log('🔐 [ADMIN AUTH] Session isAdmin:', req.session?.isAdmin);
-  console.log('🔐 [ADMIN AUTH] Admin bypass token:', req.headers['x-admin-bypass']);
+  console.log('🔐 [ADMIN AUTH] Admin bypass token:', req.headers['x-admin-bypass'] ? '***' : 'none');
   
   // Check if user is authenticated as admin via session
   if (req.session?.isAdmin) {
@@ -45,14 +45,15 @@ export function requireAdminAuth(req: RequestWithSession, res: Response, next: N
   });
 }
 
-// Admin login function - Updated to match expected credentials
+// Admin login function - Reverted to original secure credentials
 export function adminLogin(username: string, password: string): boolean {
-  // Updated credentials to match the expected admin/admin123
-  const correctUsername = "admin";
-  const correctPassword = "admin123";
+  // Original secure credentials - DO NOT CHANGE
+  const correctUsername = "Doogle";
+  const correctPassword = "Aa121322@Doogle143";
   
   console.log('🔐 [ADMIN LOGIN] Attempt:', { username, password: '***' });
-  console.log('🔐 [ADMIN LOGIN] Expected:', { correctUsername, correctPassword: '***' });
+  console.log('🔐 [ADMIN LOGIN] Expected username:', correctUsername);
+  console.log('🔐 [ADMIN LOGIN] Password check:', password === correctPassword ? 'MATCH' : 'NO MATCH');
   
   const isValid = username === correctUsername && password === correctPassword;
   console.log('🔐 [ADMIN LOGIN] Result:', isValid ? 'SUCCESS' : 'FAILED');

@@ -20,8 +20,8 @@
 
 3. **Admin Access**
    - Access admin dashboard at: `/admin/login`
-   - Default credentials: admin / admin123
-   - **Important**: Change admin credentials immediately after deployment
+   - Credentials: Doogle / Aa121322@Doogle143
+   - **Important**: These are secure production credentials
 
 ## Manual Deployment
 
