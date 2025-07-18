@@ -186,6 +186,7 @@ export default function Exchange() {
   const [receiveAmount, setReceiveAmount] = useState("");
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [rateDisplay, setRateDisplay] = useState("1 USD = 1.05 EUR");
+  const [forceUpdate, setForceUpdate] = useState(0); // Force re-render counter
 
   // Field clearing state for bidirectional calculation
   const [isClearingFields, setIsClearingFields] = useState(false);
@@ -420,6 +421,9 @@ export default function Exchange() {
       // Immediately update rate display to show loading state
       setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
       
+      // Force re-render
+      setForceUpdate(prev => prev + 1);
+      
       // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
       queryClient.invalidateQueries({ queryKey: [`/api/exchange-rate/${sendMethod}/${receiveMethod}`] });
@@ -574,7 +578,8 @@ export default function Exchange() {
       receiveCurrencyLimits,
       exchangeRate,
       publicBalanceData,
-      receiveMethod
+      receiveMethod,
+      sendMethod
     });
     
     if (!sendCurrencyLimits?.minAmount || !receiveCurrencyLimits?.minAmount || exchangeRate <= 0) {
@@ -610,7 +615,7 @@ export default function Exchange() {
     
     console.log('✅ New dynamic limits:', newLimits);
     setDynamicLimits(newLimits);
-  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, publicBalanceData, receiveMethod]);
+  }, [sendCurrencyLimits, receiveCurrencyLimits, exchangeRate, publicBalanceData, receiveMethod, sendMethod]);
 
   useEffect(() => {
     calculateDynamicLimits();
@@ -622,8 +627,13 @@ export default function Exchange() {
       console.log('🔄 Forcing re-calculation for currencies:', sendMethod, receiveMethod);
       // This will trigger the calculateDynamicLimits function
       calculateDynamicLimits();
+      
+      // Also force immediate update of rate display if we have rate data
+      if (rateData?.rate && !rateLoading) {
+        setRateDisplay(`1 ${sendMethod.toUpperCase()} = ${rateData.rate} ${receiveMethod.toUpperCase()}`);
+      }
     }
-  }, [sendMethod, receiveMethod, calculateDynamicLimits]);
+  }, [sendMethod, receiveMethod, calculateDynamicLimits, rateData, rateLoading, forceUpdate]);
 
   // Exchange rate changes no longer trigger automatic recalculation
   // Users can manually enter any amount they want
@@ -1117,6 +1127,9 @@ export default function Exchange() {
                                 // Immediately update rate display to show loading state
                                 setRateDisplay(`Loading rate for ${value.toUpperCase()} to ${receiveMethod.toUpperCase()}...`);
                                 
+                                // Force re-render
+                                setForceUpdate(prev => prev + 1);
+                                
                                 // Invalidate and refetch data when send method changes
                                 console.log('Send method changed to:', value);
                                 queryClient.invalidateQueries({ queryKey: ["/api/balances"] });
@@ -1212,6 +1225,9 @@ export default function Exchange() {
                                 
                                 // Immediately update rate display to show loading state
                                 setRateDisplay(`Loading rate for ${sendMethod.toUpperCase()} to ${value.toUpperCase()}...`);
+                                
+                                // Force re-render
+                                setForceUpdate(prev => prev + 1);
                                 
                                 // Invalidate and refetch data when receive method changes
                                 console.log('Receive method changed to:', value);
